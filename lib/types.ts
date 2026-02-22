@@ -25,12 +25,15 @@ export interface ExtraCosts {
   others: number;
 }
 
+export type SaleType = 'unidad' | 'docena' | 'media-docena';
+
 export interface Recipe {
   id: string;
   name: string;
   ingredients: RecipeIngredient[];
   extraCosts: ExtraCosts;
   unitsProduced: number;
+  saleType: SaleType;
   totalCost: number;
   costPerUnit: number;
 }

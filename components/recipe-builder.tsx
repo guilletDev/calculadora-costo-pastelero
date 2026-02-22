@@ -18,7 +18,8 @@ export function RecipeBuilder() {
     name: '',
     ingredients: [],
     extraCosts: { packaging: 0, bags: 0, labels: 0, shipping: 0, others: 0 },
-    unitsProduced: 1,
+    unitsProduced: 0,
+    saleType: 'unidad',
   });
   const [expandedRecipes, setExpandedRecipes] = useState<Set<string>>(new Set());
   const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
@@ -97,7 +98,8 @@ export function RecipeBuilder() {
       name: currentRecipe.name,
       ingredients: currentRecipe.ingredients,
       extraCosts: currentRecipe.extraCosts!,
-      unitsProduced: currentRecipe.unitsProduced || 1,
+      unitsProduced: currentRecipe.unitsProduced || 0,
+      saleType: currentRecipe.saleType || 'unidad',
       totalCost,
       costPerUnit,
     };
@@ -110,7 +112,8 @@ export function RecipeBuilder() {
       name: '',
       ingredients: [],
       extraCosts: { packaging: 0, bags: 0, labels: 0, shipping: 0, others: 0 },
-      unitsProduced: 1,
+      unitsProduced: 0,
+      saleType: 'unidad',
     });
   };
 
@@ -127,6 +130,7 @@ export function RecipeBuilder() {
       ingredients: recipe.ingredients,
       extraCosts: recipe.extraCosts,
       unitsProduced: recipe.unitsProduced,
+      saleType: recipe.saleType || 'unidad',
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -141,7 +145,8 @@ export function RecipeBuilder() {
       name: currentRecipe.name,
       ingredients: currentRecipe.ingredients,
       extraCosts: currentRecipe.extraCosts!,
-      unitsProduced: currentRecipe.unitsProduced || 1,
+      unitsProduced: currentRecipe.unitsProduced || 0,
+      saleType: currentRecipe.saleType || 'unidad',
       totalCost,
       costPerUnit,
     };
@@ -155,7 +160,8 @@ export function RecipeBuilder() {
       name: '',
       ingredients: [],
       extraCosts: { packaging: 0, bags: 0, labels: 0, shipping: 0, others: 0 },
-      unitsProduced: 1,
+      unitsProduced: 0,
+      saleType: 'unidad',
     });
   };
 
@@ -165,7 +171,8 @@ export function RecipeBuilder() {
       name: '',
       ingredients: [],
       extraCosts: { packaging: 0, bags: 0, labels: 0, shipping: 0, others: 0 },
-      unitsProduced: 1,
+      unitsProduced: 0,
+      saleType: 'unidad',
     });
   };
 
@@ -334,23 +341,45 @@ export function RecipeBuilder() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="units-produced">¿Cuántas unidades rinde esta receta?</Label>
-                  <Input
-                    id="units-produced"
-                    type="number"
-                    min="0"
-                    max="1000"
-                    step="0.01"
-                    value={currentRecipe.unitsProduced || 1}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value) || 0;
-                      setCurrentRecipe({
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="units-produced">¿Cuántas unidades rinde esta receta?</Label>
+                    <Input
+                      id="units-produced"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      placeholder="0"
+                      value={currentRecipe.unitsProduced || ''}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        setCurrentRecipe({
+                          ...currentRecipe,
+                          unitsProduced: Math.min(Math.max(value, 0), 100),
+                        });
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sale-type">Tipo de venta</Label>
+                    <Select
+                      value={currentRecipe.saleType || 'unidad'}
+                      onValueChange={(value) => setCurrentRecipe({
                         ...currentRecipe,
-                        unitsProduced: Math.min(Math.max(value, 0), 1000),
-                      });
-                    }}
-                  />
+                        saleType: value as SaleType,
+                      })}
+                    >
+                      <SelectTrigger id="sale-type">
+                        <SelectValue placeholder="Seleccionar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unidad">Por unidad</SelectItem>
+                        <SelectItem value="docena">Por docena (12)</SelectItem>
+                        <SelectItem value="media-docena">Por media docena (6)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <CostSummary
@@ -396,9 +425,9 @@ export function RecipeBuilder() {
                     <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
                       <span>{recipe.ingredients.length} ingredientes</span>
                       <span>•</span>
-                      <span>{recipe.unitsProduced} unidades</span>
+                      <span>{recipe.unitsProduced} {recipe.saleType === 'docena' ? 'docenas' : recipe.saleType === 'media-docena' ? 'medias docenas' : 'unidades'}</span>
                       <span>•</span>
-                      <span className="font-semibold text-primary">{formatCurrency(recipe.costPerUnit)} por unidad</span>
+                      <span className="font-semibold text-primary">{formatCurrency(recipe.costPerUnit)} por {recipe.saleType === 'docena' ? 'docena' : recipe.saleType === 'media-docena' ? 'media docena' : 'unidad'}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
