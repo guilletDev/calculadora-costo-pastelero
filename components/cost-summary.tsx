@@ -17,6 +17,8 @@ export function CostSummary({
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
   };
 
+  const totalProfit = totalCost * 4;
+
   return (
     <div className="space-y-3 p-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
       <div className="flex justify-between text-sm">
@@ -31,6 +33,10 @@ export function CostSummary({
         <div className="flex justify-between mb-3">
           <span className="font-semibold">Total del lote</span>
           <span className="font-bold text-lg">{formatCurrency(totalCost)}</span>
+        </div>
+        <div className="flex justify-between mb-3">
+          <span className="font-semibold text-green-700 dark:text-green-400">Ganancia total (x4)</span>
+          <span className="font-bold text-lg text-green-700 dark:text-green-400">{formatCurrency(totalProfit)}</span>
         </div>
         <div className="flex justify-between items-center p-3 rounded-md bg-primary text-primary-foreground">
           <div>

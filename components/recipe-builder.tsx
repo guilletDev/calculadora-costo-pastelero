@@ -21,10 +21,12 @@ export function RecipeBuilder() {
     unitsProduced: 1,
   });
   const [expandedRecipes, setExpandedRecipes] = useState<Set<string>>(new Set());
+  const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
   
   const [newIngredient, setNewIngredient] = useState({
     baseIngredientId: '',
     quantityUsed: '',
+    unit: 'g' as Unit,
   });
 
   useEffect(() => {
@@ -66,6 +68,7 @@ export function RecipeBuilder() {
       id: crypto.randomUUID(),
       baseIngredientId: newIngredient.baseIngredientId,
       quantityUsed,
+      unit: newIngredient.unit,
       cost,
     };
 
@@ -74,7 +77,7 @@ export function RecipeBuilder() {
       ingredients: [...(currentRecipe.ingredients || []), recipeIngredient],
     });
 
-    setNewIngredient({ baseIngredientId: '', quantityUsed: '' });
+    setNewIngredient({ baseIngredientId: '', quantityUsed: '', unit: 'g' });
   };
 
   const removeIngredientFromRecipe = (id: string) => {
@@ -115,6 +118,55 @@ export function RecipeBuilder() {
     const updated = recipes.filter(r => r.id !== id);
     setRecipes(updated);
     storage.saveRecipes(updated);
+  };
+
+  const editRecipe = (recipe: Recipe) => {
+    setEditingRecipeId(recipe.id);
+    setCurrentRecipe({
+      name: recipe.name,
+      ingredients: recipe.ingredients,
+      extraCosts: recipe.extraCosts,
+      unitsProduced: recipe.unitsProduced,
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const updateRecipe = () => {
+    if (!currentRecipe.name || !currentRecipe.ingredients?.length || !editingRecipeId) return;
+
+    const { totalCost, costPerUnit } = calculateRecipeTotals(currentRecipe);
+
+    const recipe: Recipe = {
+      id: editingRecipeId,
+      name: currentRecipe.name,
+      ingredients: currentRecipe.ingredients,
+      extraCosts: currentRecipe.extraCosts!,
+      unitsProduced: currentRecipe.unitsProduced || 1,
+      totalCost,
+      costPerUnit,
+    };
+
+    const updated = recipes.map(r => r.id === editingRecipeId ? recipe : r);
+    setRecipes(updated);
+    storage.saveRecipes(updated);
+
+    setEditingRecipeId(null);
+    setCurrentRecipe({
+      name: '',
+      ingredients: [],
+      extraCosts: { packaging: 0, bags: 0, labels: 0, shipping: 0, others: 0 },
+      unitsProduced: 1,
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingRecipeId(null);
+    setCurrentRecipe({
+      name: '',
+      ingredients: [],
+      extraCosts: { packaging: 0, bags: 0, labels: 0, shipping: 0, others: 0 },
+      unitsProduced: 1,
+    });
   };
 
   const toggleRecipeExpanded = (id: string) => {
@@ -173,7 +225,7 @@ export function RecipeBuilder() {
             <div className="space-y-4">
               <Label>Ingredientes de la receta</Label>
               
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-4">
                 <div className="md:col-span-1">
                   <Select
                     value={newIngredient.baseIngredientId}
@@ -200,6 +252,23 @@ export function RecipeBuilder() {
                     onChange={(e) => setNewIngredient({ ...newIngredient, quantityUsed: e.target.value })}
                   />
                 </div>
+                <div className="md:col-span-1">
+                  <Select
+                    value={newIngredient.unit}
+                    onValueChange={(value) => setNewIngredient({ ...newIngredient, unit: value as Unit })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Unidad" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="kg">Kilogramos (kg)</SelectItem>
+                      <SelectItem value="g">Gramos (g)</SelectItem>
+                      <SelectItem value="l">Litros (l)</SelectItem>
+                      <SelectItem value="ml">Mililitros (ml)</SelectItem>
+                      <SelectItem value="unidad">Unidad</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button onClick={addIngredientToRecipe} className="w-full md:w-auto">
                   <Plus className="mr-2 h-4 w-4" />
                   Agregar
@@ -213,7 +282,7 @@ export function RecipeBuilder() {
                       <div className="flex-1">
                         <p className="font-medium">{getIngredientName(ing.baseIngredientId)}</p>
                         <p className="text-sm text-muted-foreground">
-                          {ing.quantityUsed} {getIngredientUnit(ing.baseIngredientId)} • {formatCurrency(ing.cost)}
+                          {ing.quantityUsed} {ing.unit} • {formatCurrency(ing.cost)}
                         </p>
                       </div>
                       <Button
@@ -270,12 +339,17 @@ export function RecipeBuilder() {
                   <Input
                     id="units-produced"
                     type="number"
-                    min="1"
+                    min="0"
+                    max="1000"
+                    step="0.01"
                     value={currentRecipe.unitsProduced || 1}
-                    onChange={(e) => setCurrentRecipe({
-                      ...currentRecipe,
-                      unitsProduced: parseInt(e.target.value) || 1,
-                    })}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value) || 0;
+                      setCurrentRecipe({
+                        ...currentRecipe,
+                        unitsProduced: Math.min(Math.max(value, 0), 1000),
+                      });
+                    }}
                   />
                 </div>
 
@@ -287,9 +361,20 @@ export function RecipeBuilder() {
                   unitsProduced={currentRecipe.unitsProduced || 1}
                 />
 
-                <Button onClick={saveRecipe} className="w-full" size="lg">
-                  Guardar Receta
-                </Button>
+                <div className="flex gap-2">
+                  {editingRecipeId && (
+                    <Button onClick={cancelEdit} variant="outline" className="flex-1" size="lg">
+                      Cancelar
+                    </Button>
+                  )}
+                  <Button 
+                    onClick={editingRecipeId ? updateRecipe : saveRecipe} 
+                    className="flex-1" 
+                    size="lg"
+                  >
+                    {editingRecipeId ? 'Actualizar Receta' : 'Guardar Receta'}
+                  </Button>
+                </div>
               </>
             )}
           </div>
@@ -320,6 +405,16 @@ export function RecipeBuilder() {
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
+                        editRecipe(recipe);
+                      }}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
                         deleteRecipe(recipe.id);
                       }}
                       variant="ghost"
@@ -344,7 +439,7 @@ export function RecipeBuilder() {
                       <div className="space-y-1">
                         {recipe.ingredients.map((ing) => (
                           <div key={ing.id} className="flex justify-between text-sm">
-                            <span>{getIngredientName(ing.baseIngredientId)} ({ing.quantityUsed} {getIngredientUnit(ing.baseIngredientId)})</span>
+                            <span>{getIngredientName(ing.baseIngredientId)} ({ing.quantityUsed} {ing.unit})</span>
                             <span className="font-medium">{formatCurrency(ing.cost)}</span>
                           </div>
                         ))}

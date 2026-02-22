@@ -13,6 +13,7 @@ export interface RecipeIngredient {
   id: string;
   baseIngredientId: string;
   quantityUsed: number;
+  unit: Unit;
   cost: number;
 }
 
