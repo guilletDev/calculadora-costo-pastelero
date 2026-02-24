@@ -10,10 +10,20 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 
-export function IngredientList() {
+interface IngredientListProps {
+  onLockChange?: (isLocked: boolean) => void;
+}
+
+export function IngredientList({ onLockChange }: IngredientListProps) {
   const [ingredients, setIngredients] = useState<BaseIngredient[]>([]);
+  const [isLocked, setIsLocked] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+
+  const handleLockToggle = (locked: boolean) => {
+    setIsLocked(locked);
+    onLockChange?.(locked);
+  };
   
   const [formData, setFormData] = useState({
     name: '',
@@ -128,7 +138,7 @@ export function IngredientList() {
           <h2 className="text-2xl font-bold tracking-tight">Lista de Ingredientes</h2>
           <p className="text-muted-foreground">Gestiona tu inventario base de ingredientes</p>
         </div>
-        {!isAdding && !editingId && (
+        {!isLocked && !isAdding && !editingId && (
           <Button onClick={() => setIsAdding(true)} size="sm">
             <Plus className="mr-2 h-4 w-4" />
             Agregar Ingrediente
@@ -226,22 +236,24 @@ export function IngredientList() {
                   <p className="font-semibold text-primary">{formatCurrency(ingredient.pricePerUnit)}</p>
                 </div>
               </div>
-              <div className="flex gap-2 ml-4">
-                <Button
-                  onClick={() => handleEdit(ingredient)}
-                  variant="ghost"
-                  size="icon"
-                >
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-                <Button
-                  onClick={() => handleDelete(ingredient.id)}
-                  variant="ghost"
-                  size="icon"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+              {!isLocked && (
+                <div className="flex gap-2 ml-4">
+                  <Button
+                    onClick={() => handleEdit(ingredient)}
+                    variant="ghost"
+                    size="icon"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={() => handleDelete(ingredient.id)}
+                    variant="ghost"
+                    size="icon"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           </Card>
         ))}
@@ -249,9 +261,24 @@ export function IngredientList() {
 
       {ingredients.length > 0 && (
         <Card className="p-6 bg-primary/5 border-primary/20">
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">Inversión total en ingredientes</p>
-            <p className="text-3xl font-bold text-primary">{formatCurrency(totalInvestment)}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Inversión total en ingredientes</p>
+              <p className="text-3xl font-bold text-primary">{formatCurrency(totalInvestment)}</p>
+            </div>
+            <div className="flex gap-2">
+              {isLocked ? (
+                <Button onClick={() => handleLockToggle(false)} variant="outline">
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  Editar lista
+                </Button>
+              ) : (
+                <Button onClick={() => handleLockToggle(true)}>
+                  <Check className="mr-2 h-4 w-4" />
+                  Lista terminada
+                </Button>
+              )}
+            </div>
           </div>
         </Card>
       )}

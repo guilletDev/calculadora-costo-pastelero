@@ -1,9 +1,14 @@
+'use client';
+
+import { useState } from 'react';
 import { IngredientList } from '@/components/ingredient-list';
 import { RecipeBuilder } from '@/components/recipe-builder';
 import { Separator } from '@/components/ui/separator';
 import { ChefHat } from 'lucide-react';
 
 export default function Home() {
+  const [isIngredientsLocked, setIsIngredientsLocked] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
@@ -22,13 +27,13 @@ export default function Home() {
 
       <main className="container mx-auto px-4 py-8 space-y-12">
         <section>
-          <IngredientList />
+          <IngredientList onLockChange={setIsIngredientsLocked} />
         </section>
 
         <Separator className="my-8" />
 
         <section>
-          <RecipeBuilder />
+          <RecipeBuilder isIngredientsLocked={isIngredientsLocked} />
         </section>
       </main>
 
