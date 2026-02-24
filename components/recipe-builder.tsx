@@ -11,7 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { CostSummary } from './cost-summary';
 
-export function RecipeBuilder() {
+interface RecipeBuilderProps {
+  isIngredientsLocked?: boolean;
+}
+
+export function RecipeBuilder({ isIngredientsLocked = false }: RecipeBuilderProps) {
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [currentRecipe, setCurrentRecipe] = useState<Partial<Recipe>>({
@@ -213,7 +217,13 @@ export function RecipeBuilder() {
       {baseIngredients.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-muted-foreground">
-            Primero debes agregar ingredientes en la sección {"Lista de Ingredientes"}
+            Primero debes agregar ingredientes en la sección Lista de Ingredientes
+          </p>
+        </Card>
+      ) : !isIngredientsLocked ? (
+        <Card className="p-8 text-center">
+          <p className="text-muted-foreground">
+            Debes presionar Lista terminada en la sección de ingredientes para poder crear recetas
           </p>
         </Card>
       ) : (
@@ -233,7 +243,8 @@ export function RecipeBuilder() {
               <Label>Ingredientes de la receta</Label>
               
               <div className="grid gap-4 md:grid-cols-4">
-                <div className="md:col-span-1">
+                <div className="md:col-span-2">
+                  <Label className="text-xs text-muted-foreground">Ingrediente</Label>
                   <Select
                     value={newIngredient.baseIngredientId}
                     onValueChange={(value) => setNewIngredient({ ...newIngredient, baseIngredientId: value })}
@@ -250,37 +261,39 @@ export function RecipeBuilder() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="md:col-span-1">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Cantidad</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    placeholder="Cantidad"
+                    placeholder="Ej: 200"
                     value={newIngredient.quantityUsed}
                     onChange={(e) => setNewIngredient({ ...newIngredient, quantityUsed: e.target.value })}
                   />
                 </div>
-                <div className="md:col-span-1">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Unidad</Label>
                   <Select
                     value={newIngredient.unit}
                     onValueChange={(value) => setNewIngredient({ ...newIngredient, unit: value as Unit })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Unidad" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="kg">Kilogramos (kg)</SelectItem>
-                      <SelectItem value="g">Gramos (g)</SelectItem>
-                      <SelectItem value="l">Litros (l)</SelectItem>
-                      <SelectItem value="ml">Mililitros (ml)</SelectItem>
-                      <SelectItem value="unidad">Unidad</SelectItem>
+                      <SelectItem value="kg">kg</SelectItem>
+                      <SelectItem value="g">g</SelectItem>
+                      <SelectItem value="l">l</SelectItem>
+                      <SelectItem value="ml">ml</SelectItem>
+                      <SelectItem value="unidad">unidad</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={addIngredientToRecipe} className="w-full md:w-auto">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Agregar
-                </Button>
               </div>
+              <Button onClick={addIngredientToRecipe} className="w-full">
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar Ingrediente
+              </Button>
 
               {currentRecipe.ingredients && currentRecipe.ingredients.length > 0 && (
                 <div className="space-y-2 mt-4">

@@ -10,11 +10,20 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 
-export function IngredientList() {
+interface IngredientListProps {
+  onLockChange?: (isLocked: boolean) => void;
+}
+
+export function IngredientList({ onLockChange }: IngredientListProps) {
   const [ingredients, setIngredients] = useState<BaseIngredient[]>([]);
   const [isLocked, setIsLocked] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+
+  const handleLockToggle = (locked: boolean) => {
+    setIsLocked(locked);
+    onLockChange?.(locked);
+  };
   
   const [formData, setFormData] = useState({
     name: '',
@@ -39,6 +48,17 @@ export function IngredientList() {
 
   const handleSave = () => {
     if (!formData.name || !formData.purchasedQuantity || !formData.totalPrice) return;
+
+    // Check for duplicate names (case insensitive)
+    const normalizedName = formData.name.toLowerCase().trim();
+    const isDuplicate = ingredients.some(
+      ing => ing.name.toLowerCase().trim() === normalizedName && ing.id !== editingId
+    );
+    
+    if (isDuplicate) {
+      alert('Ya existe un ingrediente con ese nombre. Por favor, elige otro nombre.');
+      return;
+    }
 
     const quantity = parseFloat(formData.purchasedQuantity);
     const price = parseFloat(formData.totalPrice);
@@ -136,7 +156,6 @@ export function IngredientList() {
                 placeholder="Ej: Harina"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                disabled={isLocked}
               />
             </div>
             <div className="space-y-2">
@@ -148,7 +167,6 @@ export function IngredientList() {
                 placeholder="10"
                 value={formData.purchasedQuantity}
                 onChange={(e) => setFormData({ ...formData, purchasedQuantity: e.target.value })}
-                disabled={isLocked}
               />
             </div>
             <div className="space-y-2">
@@ -156,7 +174,6 @@ export function IngredientList() {
               <Select
                 value={formData.unit}
                 onValueChange={(value) => setFormData({ ...formData, unit: value as Unit })}
-                disabled={isLocked}
               >
                 <SelectTrigger id="unit">
                   <SelectValue />
@@ -179,7 +196,6 @@ export function IngredientList() {
                 placeholder="8500"
                 value={formData.totalPrice}
                 onChange={(e) => setFormData({ ...formData, totalPrice: e.target.value })}
-                disabled={isLocked}
               />
             </div>
           </div>
@@ -252,12 +268,12 @@ export function IngredientList() {
             </div>
             <div className="flex gap-2">
               {isLocked ? (
-                <Button onClick={() => setIsLocked(false)} variant="outline">
+                <Button onClick={() => handleLockToggle(false)} variant="outline">
                   <Edit2 className="mr-2 h-4 w-4" />
                   Editar lista
                 </Button>
               ) : (
-                <Button onClick={() => setIsLocked(true)}>
+                <Button onClick={() => handleLockToggle(true)}>
                   <Check className="mr-2 h-4 w-4" />
                   Lista terminada
                 </Button>
