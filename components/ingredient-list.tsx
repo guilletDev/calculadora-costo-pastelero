@@ -12,7 +12,6 @@ import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 
 export function IngredientList() {
   const [ingredients, setIngredients] = useState<BaseIngredient[]>([]);
-  const [isLocked, setIsLocked] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   
@@ -39,6 +38,17 @@ export function IngredientList() {
 
   const handleSave = () => {
     if (!formData.name || !formData.purchasedQuantity || !formData.totalPrice) return;
+
+    // Check for duplicate names (case insensitive)
+    const normalizedName = formData.name.toLowerCase().trim();
+    const isDuplicate = ingredients.some(
+      ing => ing.name.toLowerCase().trim() === normalizedName && ing.id !== editingId
+    );
+    
+    if (isDuplicate) {
+      alert('Ya existe un ingrediente con ese nombre. Por favor, elige otro nombre.');
+      return;
+    }
 
     const quantity = parseFloat(formData.purchasedQuantity);
     const price = parseFloat(formData.totalPrice);
@@ -118,7 +128,7 @@ export function IngredientList() {
           <h2 className="text-2xl font-bold tracking-tight">Lista de Ingredientes</h2>
           <p className="text-muted-foreground">Gestiona tu inventario base de ingredientes</p>
         </div>
-        {!isLocked && !isAdding && !editingId && (
+        {!isAdding && !editingId && (
           <Button onClick={() => setIsAdding(true)} size="sm">
             <Plus className="mr-2 h-4 w-4" />
             Agregar Ingrediente
@@ -136,7 +146,6 @@ export function IngredientList() {
                 placeholder="Ej: Harina"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                disabled={isLocked}
               />
             </div>
             <div className="space-y-2">
@@ -148,7 +157,6 @@ export function IngredientList() {
                 placeholder="10"
                 value={formData.purchasedQuantity}
                 onChange={(e) => setFormData({ ...formData, purchasedQuantity: e.target.value })}
-                disabled={isLocked}
               />
             </div>
             <div className="space-y-2">
@@ -156,7 +164,6 @@ export function IngredientList() {
               <Select
                 value={formData.unit}
                 onValueChange={(value) => setFormData({ ...formData, unit: value as Unit })}
-                disabled={isLocked}
               >
                 <SelectTrigger id="unit">
                   <SelectValue />
@@ -179,7 +186,6 @@ export function IngredientList() {
                 placeholder="8500"
                 value={formData.totalPrice}
                 onChange={(e) => setFormData({ ...formData, totalPrice: e.target.value })}
-                disabled={isLocked}
               />
             </div>
           </div>
@@ -220,24 +226,22 @@ export function IngredientList() {
                   <p className="font-semibold text-primary">{formatCurrency(ingredient.pricePerUnit)}</p>
                 </div>
               </div>
-              {!isLocked && (
-                <div className="flex gap-2 ml-4">
-                  <Button
-                    onClick={() => handleEdit(ingredient)}
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={() => handleDelete(ingredient.id)}
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
+              <div className="flex gap-2 ml-4">
+                <Button
+                  onClick={() => handleEdit(ingredient)}
+                  variant="ghost"
+                  size="icon"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={() => handleDelete(ingredient.id)}
+                  variant="ghost"
+                  size="icon"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </Card>
         ))}
@@ -245,24 +249,9 @@ export function IngredientList() {
 
       {ingredients.length > 0 && (
         <Card className="p-6 bg-primary/5 border-primary/20">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Inversión total en ingredientes</p>
-              <p className="text-3xl font-bold text-primary">{formatCurrency(totalInvestment)}</p>
-            </div>
-            <div className="flex gap-2">
-              {isLocked ? (
-                <Button onClick={() => setIsLocked(false)} variant="outline">
-                  <Edit2 className="mr-2 h-4 w-4" />
-                  Editar lista
-                </Button>
-              ) : (
-                <Button onClick={() => setIsLocked(true)}>
-                  <Check className="mr-2 h-4 w-4" />
-                  Lista terminada
-                </Button>
-              )}
-            </div>
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Inversión total en ingredientes</p>
+            <p className="text-3xl font-bold text-primary">{formatCurrency(totalInvestment)}</p>
           </div>
         </Card>
       )}
