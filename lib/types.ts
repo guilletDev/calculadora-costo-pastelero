@@ -12,7 +12,9 @@ export interface BaseIngredient {
 export interface RecipeIngredient {
   id: string;
   baseIngredientId: string;
-  quantityUsed: number;
+  packageQuantity: number; // número de paquetes/envases
+  quantityPerPackage: number; // cantidad por paquete en la unidad especificada
+  quantityUsed: number; // total calculado (packageQuantity * quantityPerPackage)
   unit: Unit;
   cost: number;
 }

@@ -26,7 +26,8 @@ export function RecipeBuilder() {
   
   const [newIngredient, setNewIngredient] = useState({
     baseIngredientId: '',
-    quantityUsed: '',
+    packageQuantity: '',
+    quantityPerPackage: '',
     unit: 'g' as Unit,
   });
 
@@ -60,14 +61,18 @@ export function RecipeBuilder() {
   };
 
   const addIngredientToRecipe = () => {
-    if (!newIngredient.baseIngredientId || !newIngredient.quantityUsed) return;
+    if (!newIngredient.baseIngredientId || !newIngredient.packageQuantity || !newIngredient.quantityPerPackage) return;
 
-    const quantityUsed = parseFloat(newIngredient.quantityUsed);
+    const packageQuantity = parseFloat(newIngredient.packageQuantity);
+    const quantityPerPackage = parseFloat(newIngredient.quantityPerPackage);
+    const quantityUsed = packageQuantity * quantityPerPackage;
     const cost = calculateIngredientCost(newIngredient.baseIngredientId, quantityUsed);
 
     const recipeIngredient: RecipeIngredient = {
       id: crypto.randomUUID(),
       baseIngredientId: newIngredient.baseIngredientId,
+      packageQuantity,
+      quantityPerPackage,
       quantityUsed,
       unit: newIngredient.unit,
       cost,
@@ -78,7 +83,7 @@ export function RecipeBuilder() {
       ingredients: [...(currentRecipe.ingredients || []), recipeIngredient],
     });
 
-    setNewIngredient({ baseIngredientId: '', quantityUsed: '', unit: 'g' });
+    setNewIngredient({ baseIngredientId: '', packageQuantity: '', quantityPerPackage: '', unit: 'g' });
   };
 
   const removeIngredientFromRecipe = (id: string) => {
@@ -232,14 +237,15 @@ export function RecipeBuilder() {
             <div className="space-y-4">
               <Label>Ingredientes de la receta</Label>
               
-              <div className="grid gap-4 md:grid-cols-4">
-                <div className="md:col-span-1">
+              <div className="grid gap-4 md:grid-cols-5">
+                <div className="md:col-span-2">
+                  <Label className="text-xs text-muted-foreground">Ingrediente</Label>
                   <Select
                     value={newIngredient.baseIngredientId}
                     onValueChange={(value) => setNewIngredient({ ...newIngredient, baseIngredientId: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar ingrediente" />
+                      <SelectValue placeholder="Seleccionar" />
                     </SelectTrigger>
                     <SelectContent>
                       {baseIngredients.map((ing) => (
@@ -250,37 +256,49 @@ export function RecipeBuilder() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="md:col-span-1">
+                <div>
+                  <Label className="text-xs text-muted-foreground">N° Paquetes</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    placeholder="Cantidad"
-                    value={newIngredient.quantityUsed}
-                    onChange={(e) => setNewIngredient({ ...newIngredient, quantityUsed: e.target.value })}
+                    placeholder="Ej: 2"
+                    value={newIngredient.packageQuantity}
+                    onChange={(e) => setNewIngredient({ ...newIngredient, packageQuantity: e.target.value })}
                   />
                 </div>
-                <div className="md:col-span-1">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Cantidad/Paquete</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Ej: 100"
+                    value={newIngredient.quantityPerPackage}
+                    onChange={(e) => setNewIngredient({ ...newIngredient, quantityPerPackage: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Unidad</Label>
                   <Select
                     value={newIngredient.unit}
                     onValueChange={(value) => setNewIngredient({ ...newIngredient, unit: value as Unit })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Unidad" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="kg">Kilogramos (kg)</SelectItem>
-                      <SelectItem value="g">Gramos (g)</SelectItem>
-                      <SelectItem value="l">Litros (l)</SelectItem>
-                      <SelectItem value="ml">Mililitros (ml)</SelectItem>
-                      <SelectItem value="unidad">Unidad</SelectItem>
+                      <SelectItem value="kg">kg</SelectItem>
+                      <SelectItem value="g">g</SelectItem>
+                      <SelectItem value="l">l</SelectItem>
+                      <SelectItem value="ml">ml</SelectItem>
+                      <SelectItem value="unidad">unidad</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={addIngredientToRecipe} className="w-full md:w-auto">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Agregar
-                </Button>
               </div>
+              <Button onClick={addIngredientToRecipe} className="w-full">
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar Ingrediente
+              </Button>
 
               {currentRecipe.ingredients && currentRecipe.ingredients.length > 0 && (
                 <div className="space-y-2 mt-4">
@@ -289,7 +307,7 @@ export function RecipeBuilder() {
                       <div className="flex-1">
                         <p className="font-medium">{getIngredientName(ing.baseIngredientId)}</p>
                         <p className="text-sm text-muted-foreground">
-                          {ing.quantityUsed} {ing.unit} • {formatCurrency(ing.cost)}
+                          {ing.packageQuantity} paquete{ing.packageQuantity !== 1 ? 's' : ''} × {ing.quantityPerPackage} {ing.unit} = {ing.quantityUsed} {ing.unit} • {formatCurrency(ing.cost)}
                         </p>
                       </div>
                       <Button
@@ -468,7 +486,7 @@ export function RecipeBuilder() {
                       <div className="space-y-1">
                         {recipe.ingredients.map((ing) => (
                           <div key={ing.id} className="flex justify-between text-sm">
-                            <span>{getIngredientName(ing.baseIngredientId)} ({ing.quantityUsed} {ing.unit})</span>
+                            <span>{getIngredientName(ing.baseIngredientId)} ({ing.packageQuantity} × {ing.quantityPerPackage} {ing.unit} = {ing.quantityUsed} {ing.unit})</span>
                             <span className="font-medium">{formatCurrency(ing.cost)}</span>
                           </div>
                         ))}
