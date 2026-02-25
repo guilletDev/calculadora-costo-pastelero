@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BaseIngredient, Recipe, RecipeIngredient, ExtraCosts } from '@/lib/types';
+import { BaseIngredient, Recipe, RecipeIngredient, ExtraCosts, Unit, SaleType } from '@/lib/types';
 import { storage } from '@/lib/storage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,11 +13,10 @@ import { CostSummary } from './cost-summary';
 
 interface RecipeBuilderProps {
   isIngredientsLocked?: boolean;
+  ingredientsVersion?: number;
 }
 
-export function RecipeBuilder({ isIngredientsLocked = false }: RecipeBuilderProps) {
-  console.log('[v0] RecipeBuilder isIngredientsLocked prop:', isIngredientsLocked);
-  
+export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion = 0 }: RecipeBuilderProps) {
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [currentRecipe, setCurrentRecipe] = useState<Partial<Recipe>>({
@@ -41,17 +40,35 @@ export function RecipeBuilder({ isIngredientsLocked = false }: RecipeBuilderProp
     setRecipes(storage.getRecipes());
   }, []);
 
+  // Reload ingredients + recalculate recipes when ingredients change
+  useEffect(() => {
+    if (ingredientsVersion === 0) return;
+    const freshIngredients = storage.getIngredients();
+    setBaseIngredients(freshIngredients);
+
+    // Recalculate all saved recipe costs based on updated ingredient prices
+    const savedRecipes = storage.getRecipes();
+    const updatedRecipes = savedRecipes.map(recipe => {
+      const updatedIngredients = recipe.ingredients.map(ing => {
+        const base = freshIngredients.find(b => b.id === ing.baseIngredientId);
+        if (!base) return ing;
+        const cost = base.pricePerUnit * ing.quantityUsed;
+        return { ...ing, cost };
+      });
+      const ingredientsCost = updatedIngredients.reduce((sum, ing) => sum + ing.cost, 0);
+      const extraCostsTotal = Object.values(recipe.extraCosts).reduce((sum, c) => sum + c, 0);
+      const totalCost = ingredientsCost + extraCostsTotal;
+      const costPerUnit = recipe.unitsProduced ? totalCost / recipe.unitsProduced : 0;
+      return { ...recipe, ingredients: updatedIngredients, totalCost, costPerUnit };
+    });
+    setRecipes(updatedRecipes);
+    storage.saveRecipes(updatedRecipes);
+  }, [ingredientsVersion]);
+
   const calculateIngredientCost = (baseIngredientId: string, quantityUsed: number): number => {
     const baseIngredient = baseIngredients.find(ing => ing.id === baseIngredientId);
     if (!baseIngredient) return 0;
-
-    let quantity = quantityUsed;
-    // Convert to base unit if needed
-    if (baseIngredient.unit === 'kg' || baseIngredient.unit === 'l') {
-      quantity = quantityUsed; // assuming user enters in grams or ml
-    }
-
-    return baseIngredient.pricePerUnit * quantity;
+    return baseIngredient.pricePerUnit * quantityUsed;
   };
 
   const calculateRecipeTotals = (recipe: Partial<Recipe>) => {
@@ -61,7 +78,6 @@ export function RecipeBuilder({ isIngredientsLocked = false }: RecipeBuilderProp
       : 0;
     const totalCost = ingredientsCost + extraCostsTotal;
     const costPerUnit = recipe.unitsProduced ? totalCost / recipe.unitsProduced : 0;
-
     return { ingredientsCost, extraCostsTotal, totalCost, costPerUnit };
   };
 
@@ -200,14 +216,15 @@ export function RecipeBuilder({ isIngredientsLocked = false }: RecipeBuilderProp
     return baseIngredients.find(ing => ing.id === baseIngredientId)?.name || 'Desconocido';
   };
 
-  const getIngredientUnit = (baseIngredientId: string) => {
-    const ingredient = baseIngredients.find(ing => ing.id === baseIngredientId);
-    if (!ingredient) return '';
-    return ingredient.unit === 'kg' || ingredient.unit === 'l' ? 
-      (ingredient.unit === 'kg' ? 'g' : 'ml') : ingredient.unit;
-  };
-
   const totals = calculateRecipeTotals(currentRecipe);
+
+  const extraCostLabels: Record<string, string> = {
+    packaging: 'Packaging',
+    bags: 'Bolsas',
+    labels: 'Etiquetas',
+    shipping: 'Envio',
+    others: 'Otros',
+  };
 
   return (
     <div className="space-y-8">
@@ -219,13 +236,13 @@ export function RecipeBuilder({ isIngredientsLocked = false }: RecipeBuilderProp
       {baseIngredients.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-muted-foreground">
-            Primero debes agregar ingredientes en la sección Lista de Ingredientes
+            Primero debes agregar ingredientes en la seccion Lista de Ingredientes
           </p>
         </Card>
       ) : !isIngredientsLocked ? (
         <Card className="p-8 text-center">
           <p className="text-muted-foreground">
-            Debes presionar Lista terminada en la sección de ingredientes para poder crear recetas
+            Debes presionar Lista terminada en la seccion de ingredientes para poder crear recetas
           </p>
         </Card>
       ) : (
@@ -304,7 +321,7 @@ export function RecipeBuilder({ isIngredientsLocked = false }: RecipeBuilderProp
                       <div className="flex-1">
                         <p className="font-medium">{getIngredientName(ing.baseIngredientId)}</p>
                         <p className="text-sm text-muted-foreground">
-                          {ing.quantityUsed} {ing.unit} • {formatCurrency(ing.cost)}
+                          {ing.quantityUsed} {ing.unit} - {formatCurrency(ing.cost)}
                         </p>
                       </div>
                       <Button
@@ -331,26 +348,27 @@ export function RecipeBuilder({ isIngredientsLocked = false }: RecipeBuilderProp
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {Object.entries(currentRecipe.extraCosts || {}).map(([key, value]) => (
                       <div key={key} className="space-y-2">
-                        <Label htmlFor={key} className="capitalize">
-                          {key === 'packaging' ? 'Packaging' :
-                           key === 'bags' ? 'Bolsas' :
-                           key === 'labels' ? 'Etiquetas' :
-                           key === 'shipping' ? 'Envío' : 'Otros'}
+                        <Label htmlFor={key}>
+                          {extraCostLabels[key] || key}
                         </Label>
-                        <Input
-                          id={key}
-                          type="number"
-                          step="0.01"
-                          placeholder="0"
-                          value={value || ''}
-                          onChange={(e) => setCurrentRecipe({
-                            ...currentRecipe,
-                            extraCosts: {
-                              ...currentRecipe.extraCosts!,
-                              [key]: parseFloat(e.target.value) || 0,
-                            },
-                          })}
-                        />
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                          <Input
+                            id={key}
+                            type="number"
+                            step="0.01"
+                            placeholder="0"
+                            className="pl-7"
+                            value={value || ''}
+                            onChange={(e) => setCurrentRecipe({
+                              ...currentRecipe,
+                              extraCosts: {
+                                ...currentRecipe.extraCosts!,
+                                [key]: parseFloat(e.target.value) || 0,
+                              },
+                            })}
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -358,7 +376,7 @@ export function RecipeBuilder({ isIngredientsLocked = false }: RecipeBuilderProp
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="units-produced">¿Cuántas unidades rinde esta receta?</Label>
+                    <Label htmlFor="units-produced">Cuantas unidades rinde esta receta?</Label>
                     <Input
                       id="units-produced"
                       type="number"
@@ -402,7 +420,7 @@ export function RecipeBuilder({ isIngredientsLocked = false }: RecipeBuilderProp
                   extraCostsTotal={totals.extraCostsTotal}
                   totalCost={totals.totalCost}
                   costPerUnit={totals.costPerUnit}
-                  unitsProduced={currentRecipe.unitsProduced || 1}
+                  unitsProduced={currentRecipe.unitsProduced || 0}
                 />
 
                 <div className="flex gap-2">
@@ -439,9 +457,9 @@ export function RecipeBuilder({ isIngredientsLocked = false }: RecipeBuilderProp
                     <h4 className="font-semibold text-lg">{recipe.name}</h4>
                     <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
                       <span>{recipe.ingredients.length} ingredientes</span>
-                      <span>•</span>
+                      <span>|</span>
                       <span>{recipe.unitsProduced} {recipe.saleType === 'docena' ? 'docenas' : recipe.saleType === 'media-docena' ? 'medias docenas' : 'unidades'}</span>
-                      <span>•</span>
+                      <span>|</span>
                       <span className="font-semibold text-primary">{formatCurrency(recipe.costPerUnit)} por {recipe.saleType === 'docena' ? 'docena' : recipe.saleType === 'media-docena' ? 'media docena' : 'unidad'}</span>
                     </div>
                   </div>

@@ -2,6 +2,7 @@ import { BaseIngredient, Recipe } from './types';
 
 const INGREDIENTS_KEY = 'recipe-calculator-ingredients';
 const RECIPES_KEY = 'recipe-calculator-recipes';
+const LOCKED_KEY = 'recipe-calculator-locked';
 
 export const storage = {
   // Base Ingredients
@@ -26,5 +27,16 @@ export const storage = {
   saveRecipes: (recipes: Recipe[]) => {
     if (typeof window === 'undefined') return;
     localStorage.setItem(RECIPES_KEY, JSON.stringify(recipes));
+  },
+
+  // Locked state
+  getIsLocked: (): boolean => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(LOCKED_KEY) === 'true';
+  },
+
+  saveIsLocked: (isLocked: boolean) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(LOCKED_KEY, isLocked ? 'true' : 'false');
   },
 };
