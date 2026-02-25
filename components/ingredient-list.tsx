@@ -216,7 +216,7 @@ export function IngredientList({ onLockChange }: IngredientListProps) {
         {ingredients.map((ingredient) => (
           <Card key={ingredient.id} className="p-4">
             <div className="flex items-center justify-between">
-              <div className="flex-1 grid gap-2 md:grid-cols-5">
+              <div className="flex-1 grid gap-2 md:grid-cols-3">
                 <div>
                   <p className="text-sm text-muted-foreground">Ingrediente</p>
                   <p className="font-semibold">{ingredient.name}</p>
@@ -230,10 +230,6 @@ export function IngredientList({ onLockChange }: IngredientListProps) {
                 <div>
                   <p className="text-sm text-muted-foreground">Precio total</p>
                   <p className="font-semibold">{formatCurrency(ingredient.totalPrice)}</p>
-                </div>
-                <div className="md:col-span-2">
-                  <p className="text-sm text-muted-foreground">Precio {getUnitDisplay(ingredient.unit)}</p>
-                  <p className="font-semibold text-primary">{formatCurrency(ingredient.pricePerUnit)}</p>
                 </div>
               </div>
               {!isLocked && (

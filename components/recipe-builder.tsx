@@ -16,8 +16,6 @@ interface RecipeBuilderProps {
 }
 
 export function RecipeBuilder({ isIngredientsLocked = false }: RecipeBuilderProps) {
-  console.log('[v0] RecipeBuilder isIngredientsLocked prop:', isIngredientsLocked);
-  
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [currentRecipe, setCurrentRecipe] = useState<Partial<Recipe>>({
