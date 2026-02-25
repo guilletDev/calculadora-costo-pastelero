@@ -12,9 +12,10 @@ import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 
 interface IngredientListProps {
   onLockChange?: (isLocked: boolean) => void;
+  onIngredientsChange?: (ingredients: BaseIngredient[]) => void;
 }
 
-export function IngredientList({ onLockChange }: IngredientListProps) {
+export function IngredientList({ onLockChange, onIngredientsChange }: IngredientListProps) {
   const [ingredients, setIngredients] = useState<BaseIngredient[]>([]);
   const [isLocked, setIsLocked] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -22,6 +23,7 @@ export function IngredientList({ onLockChange }: IngredientListProps) {
 
   const handleLockToggle = (locked: boolean) => {
     setIsLocked(locked);
+    storage.saveIsLocked(locked);
     onLockChange?.(locked);
   };
   
@@ -33,60 +35,74 @@ export function IngredientList({ onLockChange }: IngredientListProps) {
   });
 
   useEffect(() => {
-    setIngredients(storage.getIngredients());
+    const savedIngredients = storage.getIngredients();
+    const savedLocked = storage.getIsLocked();
+    setIngredients(savedIngredients);
+    setIsLocked(savedLocked);
+    onLockChange?.(savedLocked);
   }, []);
+
+  const updateIngredients = (updated: BaseIngredient[]) => {
+    setIngredients(updated);
+    storage.saveIngredients(updated);
+    onIngredientsChange?.(updated);
+  };
 
   const calculatePricePerUnit = (totalPrice: number, quantity: number, unit: Unit): number => {
     let baseQuantity = quantity;
-    
-    // Convert to smallest unit
-    if (unit === 'kg') baseQuantity = quantity * 1000; // to grams
-    if (unit === 'l') baseQuantity = quantity * 1000; // to ml
-    
+    if (unit === 'kg') baseQuantity = quantity * 1000;
+    if (unit === 'l') baseQuantity = quantity * 1000;
     return totalPrice / baseQuantity;
   };
 
   const handleSave = () => {
     if (!formData.name || !formData.purchasedQuantity || !formData.totalPrice) return;
 
-    // Check for duplicate names (case insensitive)
     const normalizedName = formData.name.toLowerCase().trim();
-    const isDuplicate = ingredients.some(
-      ing => ing.name.toLowerCase().trim() === normalizedName && ing.id !== editingId
-    );
-    
-    if (isDuplicate) {
-      alert('Ya existe un ingrediente con ese nombre. Por favor, elige otro nombre.');
-      return;
-    }
-
     const quantity = parseFloat(formData.purchasedQuantity);
     const price = parseFloat(formData.totalPrice);
-    
-    const pricePerUnit = calculatePricePerUnit(price, quantity, formData.unit);
-    
+
     if (editingId) {
+      const pricePerUnit = calculatePricePerUnit(price, quantity, formData.unit);
       const updated = ingredients.map(ing =>
         ing.id === editingId
-          ? { ...ing, ...formData, purchasedQuantity: quantity, totalPrice: price, pricePerUnit }
+          ? { ...ing, name: formData.name, purchasedQuantity: quantity, unit: formData.unit, totalPrice: price, pricePerUnit }
           : ing
       );
-      setIngredients(updated);
-      storage.saveIngredients(updated);
+      updateIngredients(updated);
       setEditingId(null);
     } else {
-      const newIngredient: BaseIngredient = {
-        id: crypto.randomUUID(),
-        name: formData.name,
-        purchasedQuantity: quantity,
-        unit: formData.unit,
-        totalPrice: price,
-        pricePerUnit,
-      };
-      const updated = [...ingredients, newIngredient];
-      setIngredients(updated);
-      storage.saveIngredients(updated);
-      setIsAdding(false);
+      const existingIndex = ingredients.findIndex(
+        ing => ing.name.toLowerCase().trim() === normalizedName
+      );
+
+      if (existingIndex !== -1) {
+        const existing = ingredients[existingIndex];
+        const newTotalQuantity = existing.purchasedQuantity + quantity;
+        const newTotalPrice = existing.totalPrice + price;
+        const newPricePerUnit = calculatePricePerUnit(newTotalPrice, newTotalQuantity, existing.unit);
+
+        const updated = ingredients.map((ing, idx) =>
+          idx === existingIndex
+            ? { ...ing, purchasedQuantity: newTotalQuantity, totalPrice: newTotalPrice, pricePerUnit: newPricePerUnit }
+            : ing
+        );
+        updateIngredients(updated);
+        setIsAdding(false);
+      } else {
+        const pricePerUnit = calculatePricePerUnit(price, quantity, formData.unit);
+        const newIngredient: BaseIngredient = {
+          id: crypto.randomUUID(),
+          name: formData.name,
+          purchasedQuantity: quantity,
+          unit: formData.unit,
+          totalPrice: price,
+          pricePerUnit,
+        };
+        const updated = [...ingredients, newIngredient];
+        updateIngredients(updated);
+        setIsAdding(false);
+      }
     }
     
     setFormData({ name: '', purchasedQuantity: '', unit: 'kg', totalPrice: '' });
@@ -104,8 +120,7 @@ export function IngredientList({ onLockChange }: IngredientListProps) {
 
   const handleDelete = (id: string) => {
     const updated = ingredients.filter(ing => ing.id !== id);
-    setIngredients(updated);
-    storage.saveIngredients(updated);
+    updateIngredients(updated);
   };
 
   const handleCancel = () => {
@@ -118,17 +133,6 @@ export function IngredientList({ onLockChange }: IngredientListProps) {
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
-  };
-
-  const getUnitDisplay = (unit: Unit) => {
-    const displays: Record<Unit, string> = {
-      kg: 'por gramo',
-      g: 'por gramo',
-      l: 'por ml',
-      ml: 'por ml',
-      unidad: 'por unidad',
-    };
-    return displays[unit];
   };
 
   return (
@@ -188,17 +192,26 @@ export function IngredientList({ onLockChange }: IngredientListProps) {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="price">Precio total</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                placeholder="8500"
-                value={formData.totalPrice}
-                onChange={(e) => setFormData({ ...formData, totalPrice: e.target.value })}
-              />
+              <Label htmlFor="price">Precio total ($)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  placeholder="8500"
+                  className="pl-7"
+                  value={formData.totalPrice}
+                  onChange={(e) => setFormData({ ...formData, totalPrice: e.target.value })}
+                />
+              </div>
             </div>
           </div>
+          {!editingId && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Si el ingrediente ya existe, se sumara la cantidad y el precio al registro actual.
+            </p>
+          )}
           <div className="flex gap-2 mt-4">
             <Button onClick={handleSave} size="sm">
               <Check className="mr-2 h-4 w-4" />
@@ -259,7 +272,7 @@ export function IngredientList({ onLockChange }: IngredientListProps) {
         <Card className="p-6 bg-primary/5 border-primary/20">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Inversión total en ingredientes</p>
+              <p className="text-sm text-muted-foreground mb-1">Inversion total en ingredientes</p>
               <p className="text-3xl font-bold text-primary">{formatCurrency(totalInvestment)}</p>
             </div>
             <div className="flex gap-2">
