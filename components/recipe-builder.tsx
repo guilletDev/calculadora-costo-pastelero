@@ -14,9 +14,10 @@ import { CostSummary } from './cost-summary';
 interface RecipeBuilderProps {
   isIngredientsLocked?: boolean;
   ingredientsVersion?: number;
+  onStockDeducted?: () => void;
 }
 
-export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion = 0 }: RecipeBuilderProps) {
+export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion = 0, onStockDeducted }: RecipeBuilderProps) {
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [currentRecipe, setCurrentRecipe] = useState<Partial<Recipe>>({
@@ -40,35 +41,49 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     setRecipes(storage.getRecipes());
   }, []);
 
-  // Reload ingredients + recalculate recipes when ingredients change
+  // Reload ingredients when they change (but do NOT recalculate saved recipes)
   useEffect(() => {
     if (ingredientsVersion === 0) return;
-    const freshIngredients = storage.getIngredients();
-    setBaseIngredients(freshIngredients);
-
-    // Recalculate all saved recipe costs based on updated ingredient prices
-    const savedRecipes = storage.getRecipes();
-    const updatedRecipes = savedRecipes.map(recipe => {
-      const updatedIngredients = recipe.ingredients.map(ing => {
-        const base = freshIngredients.find(b => b.id === ing.baseIngredientId);
-        if (!base) return ing;
-        const cost = base.pricePerUnit * ing.quantityUsed;
-        return { ...ing, cost };
-      });
-      const ingredientsCost = updatedIngredients.reduce((sum, ing) => sum + ing.cost, 0);
-      const extraCostsTotal = Object.values(recipe.extraCosts).reduce((sum, c) => sum + c, 0);
-      const totalCost = ingredientsCost + extraCostsTotal;
-      const costPerUnit = recipe.unitsProduced ? totalCost / recipe.unitsProduced : 0;
-      return { ...recipe, ingredients: updatedIngredients, totalCost, costPerUnit };
-    });
-    setRecipes(updatedRecipes);
-    storage.saveRecipes(updatedRecipes);
+    setBaseIngredients(storage.getIngredients());
   }, [ingredientsVersion]);
 
-  const calculateIngredientCost = (baseIngredientId: string, quantityUsed: number): number => {
+  // Convierte la cantidad de la receta a la unidad base del ingrediente (g o ml)
+  const toBaseQuantity = (quantity: number, unit: Unit): number => {
+    if (unit === 'kg') return quantity * 1000;
+    if (unit === 'l') return quantity * 1000;
+    return quantity;
+  };
+
+  const calculateIngredientCost = (baseIngredientId: string, quantityUsed: number, unit: Unit): number => {
     const baseIngredient = baseIngredients.find(ing => ing.id === baseIngredientId);
     if (!baseIngredient) return 0;
-    return baseIngredient.pricePerUnit * quantityUsed;
+    const quantityInBase = toBaseQuantity(quantityUsed, unit);
+    return baseIngredient.pricePerUnit * quantityInBase;
+  };
+
+  // Descuenta la cantidad usada del stock de ingredientes
+  const deductStock = (recipeIngredients: RecipeIngredient[]) => {
+    const currentIngredients = storage.getIngredients();
+    const updated = currentIngredients.map(ing => {
+      const usedItems = recipeIngredients.filter(ri => ri.baseIngredientId === ing.id);
+      if (usedItems.length === 0) return ing;
+
+      let totalUsedInBase = 0;
+      for (const item of usedItems) {
+        totalUsedInBase += toBaseQuantity(item.quantityUsed, item.unit);
+      }
+
+      const newQuantity = Math.max(0, ing.purchasedQuantity - totalUsedInBase);
+      const newTotalPrice = ing.purchasedQuantity > 0
+        ? (ing.totalPrice / ing.purchasedQuantity) * newQuantity
+        : 0;
+      const newPricePerUnit = newQuantity > 0 ? newTotalPrice / newQuantity : ing.pricePerUnit;
+
+      return { ...ing, purchasedQuantity: newQuantity, totalPrice: newTotalPrice, pricePerUnit: newPricePerUnit };
+    });
+    storage.saveIngredients(updated);
+    setBaseIngredients(updated);
+    onStockDeducted?.();
   };
 
   const calculateRecipeTotals = (recipe: Partial<Recipe>) => {
@@ -85,7 +100,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     if (!newIngredient.baseIngredientId || !newIngredient.quantityUsed) return;
 
     const quantityUsed = parseFloat(newIngredient.quantityUsed);
-    const cost = calculateIngredientCost(newIngredient.baseIngredientId, quantityUsed);
+    const cost = calculateIngredientCost(newIngredient.baseIngredientId, quantityUsed, newIngredient.unit);
 
     const recipeIngredient: RecipeIngredient = {
       id: crypto.randomUUID(),
@@ -129,6 +144,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     const updated = [...recipes, recipe];
     setRecipes(updated);
     storage.saveRecipes(updated);
+
+    // Descontar stock de ingredientes
+    deductStock(currentRecipe.ingredients);
 
     setCurrentRecipe({
       name: '',

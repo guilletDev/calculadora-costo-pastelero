@@ -14,12 +14,18 @@ export function AppShell() {
     setIngredientsVersion(v => v + 1);
   }, []);
 
+  // Cuando se descuenta stock desde la receta, actualizar version para que la lista se refresque
+  const handleStockDeducted = useCallback(() => {
+    setIngredientsVersion(v => v + 1);
+  }, []);
+
   return (
     <main className="container mx-auto px-4 py-8 space-y-12">
       <section>
         <IngredientList
           onLockChange={setIsIngredientsLocked}
           onIngredientsChange={handleIngredientsChange}
+          ingredientsVersion={ingredientsVersion}
         />
       </section>
 
@@ -29,6 +35,7 @@ export function AppShell() {
         <RecipeBuilder
           isIngredientsLocked={isIngredientsLocked}
           ingredientsVersion={ingredientsVersion}
+          onStockDeducted={handleStockDeducted}
         />
       </section>
     </main>
