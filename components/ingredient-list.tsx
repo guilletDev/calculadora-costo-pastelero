@@ -13,9 +13,10 @@ import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 interface IngredientListProps {
   onLockChange?: (isLocked: boolean) => void;
   onIngredientsChange?: (ingredients: BaseIngredient[]) => void;
+  ingredientsVersion?: number;
 }
 
-export function IngredientList({ onLockChange, onIngredientsChange }: IngredientListProps) {
+export function IngredientList({ onLockChange, onIngredientsChange, ingredientsVersion = 0 }: IngredientListProps) {
   const [ingredients, setIngredients] = useState<BaseIngredient[]>([]);
   const [isLocked, setIsLocked] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -42,31 +43,38 @@ export function IngredientList({ onLockChange, onIngredientsChange }: Ingredient
     onLockChange?.(savedLocked);
   }, []);
 
+  // Recargar ingredientes cuando el stock cambia externamente (ej: al guardar una receta)
+  useEffect(() => {
+    if (ingredientsVersion === 0) return;
+    setIngredients(storage.getIngredients());
+  }, [ingredientsVersion]);
+
   const updateIngredients = (updated: BaseIngredient[]) => {
     setIngredients(updated);
     storage.saveIngredients(updated);
     onIngredientsChange?.(updated);
   };
 
-  const calculatePricePerUnit = (totalPrice: number, quantity: number, unit: Unit): number => {
-    let baseQuantity = quantity;
-    if (unit === 'kg') baseQuantity = quantity * 1000;
-    if (unit === 'l') baseQuantity = quantity * 1000;
-    return totalPrice / baseQuantity;
+  // Convierte cualquier cantidad a gramos o ml segun la unidad
+  const toBaseUnit = (quantity: number, unit: Unit): { quantity: number; unit: Unit } => {
+    if (unit === 'kg') return { quantity: quantity * 1000, unit: 'g' };
+    if (unit === 'l') return { quantity: quantity * 1000, unit: 'ml' };
+    return { quantity, unit };
   };
 
   const handleSave = () => {
     if (!formData.name || !formData.purchasedQuantity || !formData.totalPrice) return;
 
     const normalizedName = formData.name.toLowerCase().trim();
-    const quantity = parseFloat(formData.purchasedQuantity);
+    const rawQuantity = parseFloat(formData.purchasedQuantity);
     const price = parseFloat(formData.totalPrice);
+    const converted = toBaseUnit(rawQuantity, formData.unit);
 
     if (editingId) {
-      const pricePerUnit = calculatePricePerUnit(price, quantity, formData.unit);
+      const pricePerUnit = price / converted.quantity;
       const updated = ingredients.map(ing =>
         ing.id === editingId
-          ? { ...ing, name: formData.name, purchasedQuantity: quantity, unit: formData.unit, totalPrice: price, pricePerUnit }
+          ? { ...ing, name: formData.name, purchasedQuantity: converted.quantity, unit: converted.unit, totalPrice: price, pricePerUnit }
           : ing
       );
       updateIngredients(updated);
@@ -78,9 +86,9 @@ export function IngredientList({ onLockChange, onIngredientsChange }: Ingredient
 
       if (existingIndex !== -1) {
         const existing = ingredients[existingIndex];
-        const newTotalQuantity = existing.purchasedQuantity + quantity;
+        const newTotalQuantity = existing.purchasedQuantity + converted.quantity;
         const newTotalPrice = existing.totalPrice + price;
-        const newPricePerUnit = calculatePricePerUnit(newTotalPrice, newTotalQuantity, existing.unit);
+        const newPricePerUnit = newTotalPrice / newTotalQuantity;
 
         const updated = ingredients.map((ing, idx) =>
           idx === existingIndex
@@ -90,12 +98,12 @@ export function IngredientList({ onLockChange, onIngredientsChange }: Ingredient
         updateIngredients(updated);
         setIsAdding(false);
       } else {
-        const pricePerUnit = calculatePricePerUnit(price, quantity, formData.unit);
+        const pricePerUnit = price / converted.quantity;
         const newIngredient: BaseIngredient = {
           id: crypto.randomUUID(),
           name: formData.name,
-          purchasedQuantity: quantity,
-          unit: formData.unit,
+          purchasedQuantity: converted.quantity,
+          unit: converted.unit,
           totalPrice: price,
           pricePerUnit,
         };
