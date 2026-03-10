@@ -1,3 +1,5 @@
+'use client';
+
 import { AppShell } from '@/components/app-shell';
 import { ChefHat } from 'lucide-react';
 
