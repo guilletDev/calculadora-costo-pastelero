@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react';
 import { IngredientList } from '@/components/ingredient-list';
 import { RecipeBuilder } from '@/components/recipe-builder';
-import { Separator } from '@/components/ui/separator';
 import { BaseIngredient } from '@/lib/types';
 
 export function AppShell() {
@@ -14,30 +13,23 @@ export function AppShell() {
     setIngredientsVersion(v => v + 1);
   }, []);
 
-  // Cuando se descuenta stock desde la receta, actualizar version para que la lista se refresque
   const handleStockDeducted = useCallback(() => {
     setIngredientsVersion(v => v + 1);
   }, []);
 
   return (
-    <main className="container mx-auto px-4 py-8 space-y-12">
-      <section>
-        <IngredientList
-          onLockChange={setIsIngredientsLocked}
-          onIngredientsChange={handleIngredientsChange}
-          ingredientsVersion={ingredientsVersion}
-        />
-      </section>
-
-      <Separator className="my-8" />
-
-      <section>
-        <RecipeBuilder
-          isIngredientsLocked={isIngredientsLocked}
-          ingredientsVersion={ingredientsVersion}
-          onStockDeducted={handleStockDeducted}
-        />
-      </section>
-    </main>
+    <>
+      <IngredientList
+        onLockChange={setIsIngredientsLocked}
+        onIngredientsChange={handleIngredientsChange}
+        ingredientsVersion={ingredientsVersion}
+      />
+      
+      <RecipeBuilder
+        isIngredientsLocked={isIngredientsLocked}
+        ingredientsVersion={ingredientsVersion}
+        onStockDeducted={handleStockDeducted}
+      />
+    </>
   );
 }

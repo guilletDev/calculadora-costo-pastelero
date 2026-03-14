@@ -3,13 +3,6 @@
 import { useState, useEffect } from 'react';
 import { BaseIngredient, Recipe, RecipeIngredient, ExtraCosts, Unit, SaleType } from '@/lib/types';
 import { storage } from '@/lib/storage';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
-import { CostSummary } from './cost-summary';
 
 interface RecipeBuilderProps {
   isIngredientsLocked?: boolean;
@@ -20,11 +13,12 @@ interface RecipeBuilderProps {
 export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion = 0, onStockDeducted }: RecipeBuilderProps) {
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [currentRecipe, setCurrentRecipe] = useState<Partial<Recipe>>({
+  const [currentRecipe, setCurrentRecipe] = useState<any>({
     name: '',
     ingredients: [],
-    extraCosts: { packaging: 0, bags: 0, labels: 0, shipping: 0, others: 0 },
-    unitsProduced: 0,
+    extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' },
+    unitsProduced: '',
+    profitMargin: '',
     saleType: 'unidad',
   });
   const [expandedRecipes, setExpandedRecipes] = useState<Set<string>>(new Set());
@@ -41,13 +35,11 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     setRecipes(storage.getRecipes());
   }, []);
 
-  // Reload ingredients when they change (but do NOT recalculate saved recipes)
   useEffect(() => {
     if (ingredientsVersion === 0) return;
     setBaseIngredients(storage.getIngredients());
   }, [ingredientsVersion]);
 
-  // Convierte la cantidad de la receta a la unidad base del ingrediente (g o ml)
   const toBaseQuantity = (quantity: number, unit: Unit): number => {
     if (unit === 'kg') return quantity * 1000;
     if (unit === 'l') return quantity * 1000;
@@ -61,7 +53,6 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     return baseIngredient.pricePerUnit * quantityInBase;
   };
 
-  // Descuenta la cantidad usada del stock de ingredientes
   const deductStock = (recipeIngredients: RecipeIngredient[]) => {
     const currentIngredients = storage.getIngredients();
     const updated = currentIngredients.map(ing => {
@@ -86,14 +77,20 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     onStockDeducted?.();
   };
 
-  const calculateRecipeTotals = (recipe: Partial<Recipe>) => {
-    const ingredientsCost = (recipe.ingredients || []).reduce((sum, ing) => sum + ing.cost, 0);
+  const calculateRecipeTotals = (recipe: any) => {
+    const ingredientsCost = (recipe.ingredients || []).reduce((sum: number, ing: any) => sum + ing.cost, 0);
     const extraCostsTotal = recipe.extraCosts
-      ? Object.values(recipe.extraCosts).reduce((sum, cost) => sum + cost, 0)
+      ? Object.values(recipe.extraCosts).reduce((sum: number, cost: any) => sum + (parseFloat(cost) || 0), 0)
       : 0;
     const totalCost = ingredientsCost + extraCostsTotal;
-    const costPerUnit = recipe.unitsProduced ? totalCost / recipe.unitsProduced : 0;
-    return { ingredientsCost, extraCostsTotal, totalCost, costPerUnit };
+    
+    const margin = parseFloat(String(recipe.profitMargin)) || 0;
+    const totalWithProfit = totalCost * (1 + margin / 100);
+
+    const units = parseFloat(String(recipe.unitsProduced)) || 0;
+    const costPerUnit = units ? totalWithProfit / units : 0;
+    
+    return { ingredientsCost, extraCostsTotal, totalCost, totalWithProfit, costPerUnit };
   };
 
   const addIngredientToRecipe = () => {
@@ -121,7 +118,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const removeIngredientFromRecipe = (id: string) => {
     setCurrentRecipe({
       ...currentRecipe,
-      ingredients: currentRecipe.ingredients?.filter(ing => ing.id !== id) || [],
+      ingredients: currentRecipe.ingredients?.filter((ing: RecipeIngredient) => ing.id !== id) || [],
     });
   };
 
@@ -134,8 +131,15 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
       id: crypto.randomUUID(),
       name: currentRecipe.name,
       ingredients: currentRecipe.ingredients,
-      extraCosts: currentRecipe.extraCosts!,
-      unitsProduced: currentRecipe.unitsProduced || 0,
+      extraCosts: {
+        packaging: parseFloat(currentRecipe.extraCosts?.packaging as any) || 0,
+        bags: parseFloat(currentRecipe.extraCosts?.bags as any) || 0,
+        labels: parseFloat(currentRecipe.extraCosts?.labels as any) || 0,
+        shipping: parseFloat(currentRecipe.extraCosts?.shipping as any) || 0,
+        others: parseFloat(currentRecipe.extraCosts?.others as any) || 0,
+      },
+      unitsProduced: parseFloat(currentRecipe.unitsProduced as any) || 0,
+      profitMargin: parseFloat(currentRecipe.profitMargin as any) || 0,
       saleType: currentRecipe.saleType || 'unidad',
       totalCost,
       costPerUnit,
@@ -144,15 +148,14 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     const updated = [...recipes, recipe];
     setRecipes(updated);
     storage.saveRecipes(updated);
-
-    // Descontar stock de ingredientes
     deductStock(currentRecipe.ingredients);
 
     setCurrentRecipe({
       name: '',
       ingredients: [],
-      extraCosts: { packaging: 0, bags: 0, labels: 0, shipping: 0, others: 0 },
-      unitsProduced: 0,
+      extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' } as any,
+      unitsProduced: '',
+      profitMargin: '',
       saleType: 'unidad',
     });
   };
@@ -168,8 +171,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     setCurrentRecipe({
       name: recipe.name,
       ingredients: recipe.ingredients,
-      extraCosts: recipe.extraCosts,
+      extraCosts: { ...recipe.extraCosts },
       unitsProduced: recipe.unitsProduced,
+      profitMargin: recipe.profitMargin || '',
       saleType: recipe.saleType || 'unidad',
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -177,15 +181,21 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
   const updateRecipe = () => {
     if (!currentRecipe.name || !currentRecipe.ingredients?.length || !editingRecipeId) return;
-
     const { totalCost, costPerUnit } = calculateRecipeTotals(currentRecipe);
 
     const recipe: Recipe = {
       id: editingRecipeId,
       name: currentRecipe.name,
       ingredients: currentRecipe.ingredients,
-      extraCosts: currentRecipe.extraCosts!,
-      unitsProduced: currentRecipe.unitsProduced || 0,
+      extraCosts: {
+        packaging: parseFloat(currentRecipe.extraCosts?.packaging as any) || 0,
+        bags: parseFloat(currentRecipe.extraCosts?.bags as any) || 0,
+        labels: parseFloat(currentRecipe.extraCosts?.labels as any) || 0,
+        shipping: parseFloat(currentRecipe.extraCosts?.shipping as any) || 0,
+        others: parseFloat(currentRecipe.extraCosts?.others as any) || 0,
+      },
+      unitsProduced: parseFloat(currentRecipe.unitsProduced as any) || 0,
+      profitMargin: parseFloat(currentRecipe.profitMargin as any) || 0,
       saleType: currentRecipe.saleType || 'unidad',
       totalCost,
       costPerUnit,
@@ -199,8 +209,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     setCurrentRecipe({
       name: '',
       ingredients: [],
-      extraCosts: { packaging: 0, bags: 0, labels: 0, shipping: 0, others: 0 },
-      unitsProduced: 0,
+      extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' } as any,
+      unitsProduced: '',
+      profitMargin: '',
       saleType: 'unidad',
     });
   };
@@ -210,8 +221,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     setCurrentRecipe({
       name: '',
       ingredients: [],
-      extraCosts: { packaging: 0, bags: 0, labels: 0, shipping: 0, others: 0 },
-      unitsProduced: 0,
+      extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' },
+      unitsProduced: '',
+      profitMargin: '',
       saleType: 'unidad',
     });
   };
@@ -236,309 +248,283 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
   const totals = calculateRecipeTotals(currentRecipe);
 
-  const extraCostLabels: Record<string, string> = {
-    packaging: 'Packaging',
-    bags: 'Bolsas',
-    labels: 'Etiquetas',
-    shipping: 'Envio',
-    others: 'Otros',
-  };
+  if (baseIngredients.length === 0 || !isIngredientsLocked) {
+    return (
+      <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 p-8 text-center mt-12">
+        <p className="text-slate-500 dark:text-slate-400">
+          Primero debes agregar ingredientes y bloquear el inventario para poder crear recetas
+        </p>
+      </section>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Crear Nueva Receta</h2>
-        <p className="text-muted-foreground">Calcula el costo de tus preparaciones</p>
-      </div>
-
-      {baseIngredients.length === 0 ? (
-        <Card className="p-8 text-center">
-          <p className="text-muted-foreground">
-            Primero debes agregar ingredientes en la seccion Lista de Ingredientes
-          </p>
-        </Card>
-      ) : !isIngredientsLocked ? (
-        <Card className="p-8 text-center">
-          <p className="text-muted-foreground">
-            Debes presionar Lista terminada en la seccion de ingredientes para poder crear recetas
-          </p>
-        </Card>
-      ) : (
-        <Card className="p-6">
-          <div className="space-y-6">
+    <div className="space-y-12 mt-12">
+      {/* Section 2: Recipe Builder */}
+      <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2 mb-6">
+            <span className="material-symbols-outlined text-[#ee2b6c]">menu_book</span>
+            <h3 className="text-xl font-bold">2. Armador de Receta</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="recipe-name">Nombre de la receta</Label>
-              <Input
-                id="recipe-name"
-                placeholder="Ej: Pizza Margarita"
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Nombre de la Receta</label>
+              <input
+                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                placeholder="Ej: Pastel de Chocolate Especial"
+                type="text"
                 value={currentRecipe.name}
                 onChange={(e) => setCurrentRecipe({ ...currentRecipe, name: e.target.value })}
               />
             </div>
-
-            <div className="space-y-4">
-              <Label>Ingredientes de la receta</Label>
-              
-              <div className="grid gap-4 md:grid-cols-4">
-                <div className="md:col-span-2">
-                  <Label className="text-xs text-muted-foreground">Ingrediente</Label>
-                  <Select
-                    value={newIngredient.baseIngredientId}
-                    onValueChange={(value) => setNewIngredient({ ...newIngredient, baseIngredientId: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar ingrediente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {baseIngredients.map((ing) => (
-                        <SelectItem key={ing.id} value={ing.id}>
-                          {ing.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Cantidad</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="Ej: 200"
-                    value={newIngredient.quantityUsed}
-                    onChange={(e) => setNewIngredient({ ...newIngredient, quantityUsed: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Unidad</Label>
-                  <Select
-                    value={newIngredient.unit}
-                    onValueChange={(value) => setNewIngredient({ ...newIngredient, unit: value as Unit })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="kg">kg</SelectItem>
-                      <SelectItem value="g">g</SelectItem>
-                      <SelectItem value="l">l</SelectItem>
-                      <SelectItem value="ml">ml</SelectItem>
-                      <SelectItem value="unidad">unidad</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <Button onClick={addIngredientToRecipe} className="w-full">
-                <Plus className="mr-2 h-4 w-4" />
-                Agregar Ingrediente
-              </Button>
-
-              {currentRecipe.ingredients && currentRecipe.ingredients.length > 0 && (
-                <div className="space-y-2 mt-4">
-                  {currentRecipe.ingredients.map((ing) => (
-                    <div key={ing.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
-                      <div className="flex-1">
-                        <p className="font-medium">{getIngredientName(ing.baseIngredientId)}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {ing.quantityUsed} {ing.unit} - {formatCurrency(ing.cost)}
-                        </p>
-                      </div>
-                      <Button
-                        onClick={() => removeIngredientFromRecipe(ing.id)}
-                        variant="ghost"
-                        size="icon"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                    <p className="text-sm text-muted-foreground">Subtotal ingredientes</p>
-                    <p className="text-xl font-bold text-primary">{formatCurrency(totals.ingredientsCost)}</p>
-                  </div>
-                </div>
-              )}
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Rendimiento (Porciones)</label>
+              <input
+                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                placeholder="Ej: 12"
+                type="number"
+                value={currentRecipe.unitsProduced ?? ''}
+                onChange={(e) => setCurrentRecipe({ ...currentRecipe, unitsProduced: e.target.value as any })}
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="p-6">
+          <div className="space-y-4">
+            <div className="grid grid-cols-12 gap-4 text-xs font-bold text-slate-500 uppercase px-2">
+              <div className="col-span-5">Ingrediente</div>
+              <div className="col-span-3 text-center">Cantidad Usada</div>
+              <div className="col-span-3 text-right">Costo Calculado</div>
+              <div className="col-span-1"></div>
             </div>
 
-            {currentRecipe.ingredients && currentRecipe.ingredients.length > 0 && (
-              <>
-                <div className="space-y-4">
-                  <Label>Costos adicionales</Label>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {Object.entries(currentRecipe.extraCosts || {}).map(([key, value]) => (
-                      <div key={key} className="space-y-2">
-                        <Label htmlFor={key}>
-                          {extraCostLabels[key] || key}
-                        </Label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                          <Input
-                            id={key}
-                            type="number"
-                            step="0.01"
-                            placeholder="0"
-                            className="pl-7"
-                            value={value || ''}
-                            onChange={(e) => setCurrentRecipe({
-                              ...currentRecipe,
-                              extraCosts: {
-                                ...currentRecipe.extraCosts!,
-                                [key]: parseFloat(e.target.value) || 0,
-                              },
-                            })}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+            {/* Existing recipe ingredients */}
+            {currentRecipe.ingredients?.map((ing) => (
+              <div key={ing.id} className="grid grid-cols-12 gap-4 items-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
+                <div className="col-span-5 text-sm font-medium">
+                  {getIngredientName(ing.baseIngredientId)}
                 </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="units-produced">Cuantas unidades rinde esta receta?</Label>
-                    <Input
-                      id="units-produced"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      placeholder="0"
-                      value={currentRecipe.unitsProduced || ''}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value) || 0;
-                        setCurrentRecipe({
-                          ...currentRecipe,
-                          unitsProduced: Math.min(Math.max(value, 0), 100),
-                        });
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sale-type">Tipo de venta</Label>
-                    <Select
-                      value={currentRecipe.saleType || 'unidad'}
-                      onValueChange={(value) => setCurrentRecipe({
-                        ...currentRecipe,
-                        saleType: value as SaleType,
-                      })}
-                    >
-                      <SelectTrigger id="sale-type">
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="unidad">Por unidad</SelectItem>
-                        <SelectItem value="docena">Por docena (12)</SelectItem>
-                        <SelectItem value="media-docena">Por media docena (6)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="col-span-3 flex items-center justify-center gap-2">
+                  <span className="text-sm">{ing.quantityUsed} {ing.unit}</span>
                 </div>
-
-                <CostSummary
-                  ingredientsCost={totals.ingredientsCost}
-                  extraCostsTotal={totals.extraCostsTotal}
-                  totalCost={totals.totalCost}
-                  costPerUnit={totals.costPerUnit}
-                  unitsProduced={currentRecipe.unitsProduced || 0}
-                />
-
-                <div className="flex gap-2">
-                  {editingRecipeId && (
-                    <Button onClick={cancelEdit} variant="outline" className="flex-1" size="lg">
-                      Cancelar
-                    </Button>
-                  )}
-                  <Button 
-                    onClick={editingRecipeId ? updateRecipe : saveRecipe} 
-                    className="flex-1" 
-                    size="lg"
+                <div className="col-span-3 text-right font-bold text-slate-700 dark:text-slate-300">
+                  {formatCurrency(ing.cost)}
+                </div>
+                <div className="col-span-1 text-center">
+                  <span
+                    onClick={() => removeIngredientFromRecipe(ing.id)}
+                    className="material-symbols-outlined text-slate-300 text-[18px] cursor-pointer hover:text-red-500"
                   >
-                    {editingRecipeId ? 'Actualizar Receta' : 'Guardar Receta'}
-                  </Button>
+                    close
+                  </span>
                 </div>
-              </>
-            )}
-          </div>
-        </Card>
-      )}
+              </div>
+            ))}
 
+            {/* Input for new ingredient */}
+            <div className="grid grid-cols-12 gap-4 items-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
+              <div className="col-span-5">
+                <select
+                  className="w-full rounded-lg border-none bg-transparent text-sm focus:ring-0"
+                  value={newIngredient.baseIngredientId}
+                  onChange={(e) => setNewIngredient({ ...newIngredient, baseIngredientId: e.target.value })}
+                >
+                  <option value="" disabled>Seleccionar...</option>
+                  {baseIngredients.map((ing: BaseIngredient) => (
+                    <option key={ing.id} value={ing.id}>{ing.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-3 flex items-center gap-2">
+                <input
+                  className="w-full text-center rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm py-1"
+                  type="number"
+                  placeholder="250"
+                  value={newIngredient.quantityUsed}
+                  onChange={(e) => setNewIngredient({ ...newIngredient, quantityUsed: e.target.value })}
+                />
+                <select
+                  className="w-16 text-xs rounded-lg border-slate-200 dark:border-slate-700 bg-transparent py-1 pl-1 pr-6"
+                  value={newIngredient.unit}
+                  onChange={(e) => setNewIngredient({ ...newIngredient, unit: e.target.value as Unit })}
+                >
+                  <option value="kg">kg</option>
+                  <option value="g">g</option>
+                  <option value="l">l</option>
+                  <option value="ml">ml</option>
+                  <option value="unidad">ud</option>
+                </select>
+              </div>
+              <div className="col-span-3 text-right font-bold text-slate-700 dark:text-slate-300">
+                {newIngredient.baseIngredientId && newIngredient.quantityUsed ?
+                  formatCurrency(calculateIngredientCost(newIngredient.baseIngredientId, parseFloat(newIngredient.quantityUsed) || 0, newIngredient.unit)) 
+                  : '$0,00'
+                }
+              </div>
+              <div className="col-span-1 text-center">
+                <span onClick={addIngredientToRecipe} className="material-symbols-outlined text-[#ee2b6c] text-[22px] cursor-pointer hover:scale-110">
+                  add_circle
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 3: Additional Costs & Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Additional Costs */}
+        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 p-6 space-y-6">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#ee2b6c]">local_shipping</span>
+            <h3 className="text-xl font-bold">3. Costos Adicionales</h3>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Packaging / Cajas</label>
+              <div className="flex items-center gap-2 w-32">
+                <span className="text-slate-400">$</span>
+                <input
+                  className="w-full text-right rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
+                  placeholder="0" type="number"
+                  value={currentRecipe.extraCosts?.packaging ?? ''}
+                  onChange={(e) => setCurrentRecipe({
+                    ...currentRecipe,
+                    extraCosts: { ...currentRecipe.extraCosts!, packaging: e.target.value as any }
+                  })}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Bolsas / Stickers</label>
+              <div className="flex items-center gap-2 w-32">
+                <span className="text-slate-400">$</span>
+                <input
+                  className="w-full text-right rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
+                  placeholder="0" type="number"
+                  value={currentRecipe.extraCosts?.bags ?? ''}
+                  onChange={(e) => setCurrentRecipe({
+                    ...currentRecipe,
+                    extraCosts: { ...currentRecipe.extraCosts!, bags: e.target.value as any }
+                  })}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Envío / Logística</label>
+              <div className="flex items-center gap-2 w-32">
+                <span className="text-slate-400">$</span>
+                <input
+                  className="w-full text-right rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
+                  placeholder="0" type="number"
+                  value={currentRecipe.extraCosts?.shipping ?? ''}
+                  onChange={(e) => setCurrentRecipe({
+                    ...currentRecipe,
+                    extraCosts: { ...currentRecipe.extraCosts!, shipping: e.target.value as any }
+                  })}
+                />
+              </div>
+            </div>
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-4 flex items-center justify-between gap-4">
+              <div>
+                <label className="text-sm font-bold text-[#ee2b6c] dark:text-[#fc5c91]">Margen de Ganancia (%)</label>
+                <p className="text-xs text-slate-500">Porcentaje extra sobre el costo total</p>
+              </div>
+              <div className="flex items-center gap-2 w-32">
+                <input
+                  className="w-full text-right rounded-lg border-[#ee2b6c]/30 dark:border-[#ee2b6c]/30 bg-[#ee2b6c]/5 dark:bg-[#ee2b6c]/10 text-sm font-bold focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                  placeholder="40" type="number"
+                  value={currentRecipe.profitMargin ?? ''}
+                  onChange={(e) => setCurrentRecipe({
+                    ...currentRecipe,
+                    profitMargin: e.target.value as any
+                  })}
+                />
+                <span className="text-[#ee2b6c] font-bold">%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Total Summary Card */}
+        <section className="rounded-xl bg-[#ee2b6c] text-white p-8 shadow-lg shadow-[#ee2b6c]/20 flex flex-col justify-between">
+          <div className="space-y-4">
+            <h3 className="text-2xl font-black">Resumen Total</h3>
+            <div className="space-y-2 opacity-90 border-b border-white/20 pb-4">
+              <div className="flex justify-between text-sm">
+                <span>Subtotal Ingredientes:</span>
+                <span className="font-bold">{formatCurrency(totals.ingredientsCost)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Costos Adicionales:</span>
+                <span className="font-bold">{formatCurrency(totals.extraCostsTotal)}</span>
+              </div>
+              <div className="flex justify-between text-sm mt-1 mb-2 opacity-80 border-t border-white/10 pt-1">
+                <span>Costo Neto:</span>
+                <span>{formatCurrency(totals.totalCost)}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold pt-2">
+                <span>Total Gral ({(currentRecipe.profitMargin || 0)}% Ganancia):</span>
+                <span>{formatCurrency(totals.totalWithProfit)}</span>
+              </div>
+            </div>
+          </div>
+          <div className="mt-8">
+            <p className="text-xs uppercase font-bold tracking-widest opacity-80 mb-1">Costo por Unidad</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-5xl font-black">{formatCurrency(totals.costPerUnit)}</span>
+              <span className="text-lg opacity-80">/ porción</span>
+            </div>
+          </div>
+          <button
+            onClick={editingRecipeId ? updateRecipe : saveRecipe}
+            className="mt-6 w-full py-4 bg-white text-[#ee2b6c] rounded-xl font-black text-lg shadow-xl hover:scale-[1.02] transition-transform"
+          >
+            {editingRecipeId ? 'ACTUALIZAR RECETA' : 'GUARDAR RECETA'}
+          </button>
+          {editingRecipeId && (
+            <button
+              onClick={cancelEdit}
+              className="mt-2 w-full py-2 bg-transparent border border-white text-white rounded-xl font-bold hover:bg-white/10 transition-colors"
+            >
+              CANCELAR
+            </button>
+          )}
+        </section>
+      </div>
+
+      {/* Recetas Guardadas (Extra para no perder funcionalidad) */}
       {recipes.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-xl font-bold">Recetas Guardadas</h3>
-          {recipes.map((recipe) => (
-            <Card key={recipe.id} className="overflow-hidden">
-              <div
-                className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => toggleRecipeExpanded(recipe.id)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
+        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden mt-12 p-6">
+          <h3 className="text-xl font-bold mb-6">Recetas Guardadas</h3>
+          <div className="space-y-4">
+            {recipes.map(recipe => (
+              <div key={recipe.id} className="border border-slate-100 dark:border-slate-800 rounded-lg p-4">
+                <div 
+                  className="flex items-center justify-between cursor-pointer" 
+                  onClick={() => toggleRecipeExpanded(recipe.id)}
+                >
+                  <div>
                     <h4 className="font-semibold text-lg">{recipe.name}</h4>
-                    <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                      <span>{recipe.ingredients.length} ingredientes</span>
-                      <span>|</span>
-                      <span>{recipe.unitsProduced} {recipe.saleType === 'docena' ? 'docenas' : recipe.saleType === 'media-docena' ? 'medias docenas' : 'unidades'}</span>
-                      <span>|</span>
-                      <span className="font-semibold text-primary">{formatCurrency(recipe.costPerUnit)} por {recipe.saleType === 'docena' ? 'docena' : recipe.saleType === 'media-docena' ? 'media docena' : 'unidad'}</span>
-                    </div>
+                    <p className="text-sm text-slate-500">{formatCurrency(recipe.costPerUnit)} / porción</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        editRecipe(recipe);
-                      }}
-                      variant="ghost"
-                      size="sm"
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteRecipe(recipe.id);
-                      }}
-                      variant="ghost"
-                      size="icon"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                    {expandedRecipes.has(recipe.id) ? (
-                      <ChevronUp className="h-5 w-5" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5" />
-                    )}
+                  <div className="flex gap-2 items-center">
+                    <span 
+                      className="material-symbols-outlined text-slate-400 hover:text-blue-500 cursor-pointer"
+                      onClick={(e) => { e.stopPropagation(); editRecipe(recipe); }}
+                    >edit</span>
+                    <span 
+                      className="material-symbols-outlined text-slate-400 hover:text-red-500 cursor-pointer"
+                      onClick={(e) => { e.stopPropagation(); deleteRecipe(recipe.id); }}
+                    >delete</span>
                   </div>
                 </div>
               </div>
-
-              {expandedRecipes.has(recipe.id) && (
-                <div className="border-t p-4 bg-muted/20">
-                  <div className="space-y-4">
-                    <div>
-                      <h5 className="font-semibold mb-2">Ingredientes</h5>
-                      <div className="space-y-1">
-                        {recipe.ingredients.map((ing) => (
-                          <div key={ing.id} className="flex justify-between text-sm">
-                            <span>{getIngredientName(ing.baseIngredientId)} ({ing.quantityUsed} {ing.unit})</span>
-                            <span className="font-medium">{formatCurrency(ing.cost)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <CostSummary
-                      ingredientsCost={recipe.ingredients.reduce((sum, ing) => sum + ing.cost, 0)}
-                      extraCostsTotal={Object.values(recipe.extraCosts).reduce((sum, cost) => sum + cost, 0)}
-                      totalCost={recipe.totalCost}
-                      costPerUnit={recipe.costPerUnit}
-                      unitsProduced={recipe.unitsProduced}
-                    />
-                  </div>
-                </div>
-              )}
-            </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

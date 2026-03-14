@@ -3,12 +3,6 @@
 import { useState, useEffect } from 'react';
 import { BaseIngredient, Unit } from '@/lib/types';
 import { storage } from '@/lib/storage';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 
 interface IngredientListProps {
   onLockChange?: (isLocked: boolean) => void;
@@ -43,7 +37,6 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
     onLockChange?.(savedLocked);
   }, []);
 
-  // Recargar ingredientes cuando el stock cambia externamente (ej: al guardar una receta)
   useEffect(() => {
     if (ingredientsVersion === 0) return;
     setIngredients(storage.getIngredients());
@@ -55,7 +48,6 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
     onIngredientsChange?.(updated);
   };
 
-  // Convierte cualquier cantidad a gramos o ml segun la unidad
   const toBaseUnit = (quantity: number, unit: Unit): { quantity: number; unit: Unit } => {
     if (unit === 'kg') return { quantity: quantity * 1000, unit: 'g' };
     if (unit === 'l') return { quantity: quantity * 1000, unit: 'ml' };
@@ -124,6 +116,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
       unit: ingredient.unit,
       totalPrice: ingredient.totalPrice.toString(),
     });
+    setIsAdding(true);
   };
 
   const handleDelete = (id: string) => {
@@ -144,161 +137,152 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Lista de Ingredientes</h2>
-          <p className="text-muted-foreground">Gestiona tu inventario base de ingredientes</p>
+    <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-[#ee2b6c]">inventory_2</span>
+          <h3 className="text-xl font-bold">1. Inventario de Ingredientes</h3>
         </div>
-        {!isLocked && !isAdding && !editingId && (
-          <Button onClick={() => setIsAdding(true)} size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Agregar Ingrediente
-          </Button>
-        )}
+      </div>
+      
+      {/* Listado de ingredientes */}
+      <div className="overflow-x-auto bg-white dark:bg-slate-900">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
+              <th className="px-6 py-4">Ingrediente</th>
+              <th className="px-6 py-4">Cantidad</th>
+              <th className="px-6 py-4">Unidad</th>
+              <th className="px-6 py-4">Precio Total</th>
+              <th className="px-6 py-4 w-20"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            {ingredients.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  Agrega ingredientes para registrar en el inventario.
+                </td>
+              </tr>
+            ) : (
+              ingredients.map((ingredient) => (
+                <tr key={ingredient.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors bg-white dark:bg-slate-900">
+                  <td className="px-6 py-4 font-medium">{ingredient.name}</td>
+                  <td className="px-6 py-4">{ingredient.purchasedQuantity}</td>
+                  <td className="px-6 py-4"><span className="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-xs">{ingredient.unit}</span></td>
+                  <td className="px-6 py-4 font-semibold text-[#ee2b6c]">{formatCurrency(ingredient.totalPrice)}</td>
+                  <td className="px-6 py-4 flex gap-2 justify-end">
+                    {!isLocked && (
+                      <>
+                        <button onClick={() => handleEdit(ingredient)} className="text-slate-400 hover:text-blue-500">
+                          <span className="material-symbols-outlined">edit</span>
+                        </button>
+                        <button onClick={() => handleDelete(ingredient.id)} className="text-slate-400 hover:text-red-500">
+                          <span className="material-symbols-outlined">delete</span>
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {(isAdding || editingId) && (
-        <Card className="p-6 border-2 border-primary/20 bg-card">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Agregar / Editar Ingrediente (Visible si se está agregando o no hay candado) */}
+      {!isLocked && (isAdding ? (
+        <div className="p-6 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 grid gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre del ingrediente</Label>
-              <Input
-                id="name"
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Nombre</label>
+              <input
+                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
                 placeholder="Ej: Harina"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="quantity">Cantidad comprada</Label>
-              <Input
-                id="quantity"
-                type="number"
-                step="0.01"
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Cantidad</label>
+              <input
+                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                type="number" step="0.01"
                 placeholder="10"
                 value={formData.purchasedQuantity}
                 onChange={(e) => setFormData({ ...formData, purchasedQuantity: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="unit">Unidad</Label>
-              <Select
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Unidad</label>
+              <select
+                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
                 value={formData.unit}
-                onValueChange={(value) => setFormData({ ...formData, unit: value as Unit })}
+                onChange={(e) => setFormData({ ...formData, unit: e.target.value as Unit })}
               >
-                <SelectTrigger id="unit">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="kg">kg</SelectItem>
-                  <SelectItem value="g">g</SelectItem>
-                  <SelectItem value="l">litros</SelectItem>
-                  <SelectItem value="ml">ml</SelectItem>
-                  <SelectItem value="unidad">unidad</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="l">litros</option>
+                <option value="ml">ml</option>
+                <option value="unidad">unidad</option>
+              </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="price">Precio total ($)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  placeholder="8500"
-                  className="pl-7"
-                  value={formData.totalPrice}
-                  onChange={(e) => setFormData({ ...formData, totalPrice: e.target.value })}
-                />
-              </div>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Total ($)</label>
+              <input
+                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                type="number" step="0.01"
+                placeholder="8500"
+                value={formData.totalPrice}
+                onChange={(e) => setFormData({ ...formData, totalPrice: e.target.value })}
+              />
             </div>
           </div>
-          {!editingId && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Si el ingrediente ya existe, se sumara la cantidad y el precio al registro actual.
-            </p>
-          )}
-          <div className="flex gap-2 mt-4">
-            <Button onClick={handleSave} size="sm">
-              <Check className="mr-2 h-4 w-4" />
-              Guardar
-            </Button>
-            <Button onClick={handleCancel} variant="outline" size="sm">
-              <X className="mr-2 h-4 w-4" />
+          <div className="flex gap-2 justify-end mt-2">
+            <button onClick={handleCancel} className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-bold text-sm shadow-sm hover:opacity-90 transition-opacity dark:bg-slate-700 dark:text-slate-200">
               Cancelar
-            </Button>
+            </button>
+            <button onClick={handleSave} className="px-4 py-2 bg-[#ee2b6c] text-white rounded-lg font-bold text-sm shadow-sm hover:opacity-90 transition-opacity">
+              Guardar
+            </button>
           </div>
-        </Card>
-      )}
+        </div>
+      ) : (
+        <div className="p-4 bg-slate-50/50 dark:bg-slate-800/30">
+          <button onClick={() => setIsAdding(true)} className="flex items-center gap-2 px-4 py-2 bg-[#ee2b6c] text-white rounded-lg font-bold text-sm shadow-sm hover:opacity-90 transition-opacity">
+            <span className="material-symbols-outlined text-[20px]">add</span> Añadir Ingrediente
+          </button>
+        </div>
+      ))}
 
-      <div className="grid gap-4">
-        {ingredients.map((ingredient) => (
-          <Card key={ingredient.id} className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 grid gap-2 md:grid-cols-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Ingrediente</p>
-                  <p className="font-semibold">{ingredient.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Cantidad</p>
-                  <p className="font-semibold">
-                    {ingredient.purchasedQuantity} {ingredient.unit}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Precio total</p>
-                  <p className="font-semibold">{formatCurrency(ingredient.totalPrice)}</p>
-                </div>
-              </div>
-              {!isLocked && (
-                <div className="flex gap-2 ml-4">
-                  <Button
-                    onClick={() => handleEdit(ingredient)}
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={() => handleDelete(ingredient.id)}
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
-          </Card>
-        ))}
-      </div>
-
+      {/* Tarjeta de Resumen y Guardado */}
       {ingredients.length > 0 && (
-        <Card className="p-6 bg-primary/5 border-primary/20">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Inversion total en ingredientes</p>
-              <p className="text-3xl font-bold text-primary">{formatCurrency(totalInvestment)}</p>
-            </div>
-            <div className="flex gap-2">
-              {isLocked ? (
-                <Button onClick={() => handleLockToggle(false)} variant="outline">
-                  <Edit2 className="mr-2 h-4 w-4" />
-                  Editar lista
-                </Button>
-              ) : (
-                <Button onClick={() => handleLockToggle(true)}>
-                  <Check className="mr-2 h-4 w-4" />
-                  Lista terminada
-                </Button>
-              )}
-            </div>
+        <div className="p-6 bg-[#ee2b6c]/5 border-t border-[#ee2b6c]/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Inversión total en ingredientes</p>
+            <p className="text-3xl font-black text-[#ee2b6c]">{formatCurrency(totalInvestment)}</p>
           </div>
-        </Card>
+          <div className="flex gap-2">
+            {isLocked ? (
+              <button 
+                onClick={() => handleLockToggle(false)}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-bold text-sm shadow-sm hover:opacity-90 transition-opacity dark:bg-slate-700 dark:text-slate-200"
+              >
+                <span className="material-symbols-outlined text-[18px]">edit</span>
+                Editar Inventario
+              </button>
+            ) : (
+              <button 
+                onClick={() => handleLockToggle(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-[#ee2b6c] text-white rounded-lg font-bold text-sm shadow-sm hover:opacity-90 transition-opacity hover:scale-[1.02]"
+              >
+                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                Guardar y Habilitar Recetas
+              </button>
+            )}
+          </div>
+        </div>
       )}
-    </div>
+    </section>
   );
 }

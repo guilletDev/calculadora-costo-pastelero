@@ -36,4 +36,5 @@ export interface Recipe {
   saleType: SaleType;
   totalCost: number;
   costPerUnit: number;
+  profitMargin?: number;
 }
