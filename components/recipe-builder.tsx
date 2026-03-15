@@ -122,6 +122,17 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     });
   };
 
+  const resetCurrentRecipe = () => {
+    setCurrentRecipe({
+      name: '',
+      ingredients: [],
+      extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' } as any,
+      unitsProduced: '',
+      profitMargin: '',
+      saleType: 'unidad',
+    });
+  };
+
   const saveRecipe = () => {
     if (!currentRecipe.name || !currentRecipe.ingredients?.length) return;
 
@@ -150,14 +161,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     storage.saveRecipes(updated);
     deductStock(currentRecipe.ingredients);
 
-    setCurrentRecipe({
-      name: '',
-      ingredients: [],
-      extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' } as any,
-      unitsProduced: '',
-      profitMargin: '',
-      saleType: 'unidad',
-    });
+    resetCurrentRecipe();
   };
 
   const deleteRecipe = (id: string) => {
@@ -206,26 +210,12 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     storage.saveRecipes(updated);
 
     setEditingRecipeId(null);
-    setCurrentRecipe({
-      name: '',
-      ingredients: [],
-      extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' } as any,
-      unitsProduced: '',
-      profitMargin: '',
-      saleType: 'unidad',
-    });
+    resetCurrentRecipe();
   };
 
   const cancelEdit = () => {
     setEditingRecipeId(null);
-    setCurrentRecipe({
-      name: '',
-      ingredients: [],
-      extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' },
-      unitsProduced: '',
-      profitMargin: '',
-      saleType: 'unidad',
-    });
+    resetCurrentRecipe();
   };
 
   const toggleRecipeExpanded = (id: string) => {
@@ -248,7 +238,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
   const totals = calculateRecipeTotals(currentRecipe);
 
-  if (baseIngredients.length === 0 || !isIngredientsLocked) {
+  // Si no hay ingredientes en absoluto, mostrar mensaje
+  if (baseIngredients.length === 0) {
     return (
       <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 p-8 text-center mt-12">
         <p className="text-slate-500 dark:text-slate-400">
@@ -258,32 +249,45 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     );
   }
 
+  // Si el inventario NO está bloqueado pero ya hay ingredientes, mostrar igual las secciones
+  // pero con un banner indicando que hay que bloquear primero para guardar
+  const canSave = isIngredientsLocked;
+
   return (
-    <div className="space-y-12 mt-12">
+    <div className="space-y-8 mt-12">
       {/* Section 2: Recipe Builder */}
       <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2 mb-6">
+        <div className="p-5 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2 mb-5">
             <span className="material-symbols-outlined text-[#ee2b6c]">menu_book</span>
             <h3 className="text-xl font-bold">2. Armador de Receta</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
+
+          {!canSave && (
+            <div className="mb-4 px-4 py-3 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 text-sm font-medium flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px]">lock</span>
+              Bloqueá el inventario para poder guardar recetas.
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Nombre de la Receta</label>
               <input
-                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
                 placeholder="Ej: Pastel de Chocolate Especial"
                 type="text"
                 value={currentRecipe.name}
                 onChange={(e) => setCurrentRecipe({ ...currentRecipe, name: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Rendimiento (Porciones)</label>
               <input
-                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
                 placeholder="Ej: 12"
                 type="number"
+                min="0"
                 value={currentRecipe.unitsProduced ?? ''}
                 onChange={(e) => setCurrentRecipe({ ...currentRecipe, unitsProduced: e.target.value as any })}
               />
@@ -291,28 +295,32 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
           </div>
         </div>
         
-        <div className="p-6">
-          <div className="space-y-4">
-            <div className="grid grid-cols-12 gap-4 text-xs font-bold text-slate-500 uppercase px-2">
+        <div className="p-5">
+          <div className="space-y-3">
+            {/* Header - oculto en mobile, visible en desktop */}
+            <div className="hidden sm:grid grid-cols-12 gap-3 text-xs font-bold text-slate-500 uppercase px-2">
               <div className="col-span-5">Ingrediente</div>
-              <div className="col-span-3 text-center">Cantidad Usada</div>
-              <div className="col-span-3 text-right">Costo Calculado</div>
+              <div className="col-span-3 text-center">Cant. Usada</div>
+              <div className="col-span-3 text-right">Costo Calc.</div>
               <div className="col-span-1"></div>
             </div>
 
             {/* Existing recipe ingredients */}
-            {currentRecipe.ingredients?.map((ing) => (
-              <div key={ing.id} className="grid grid-cols-12 gap-4 items-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
-                <div className="col-span-5 text-sm font-medium">
+            {currentRecipe.ingredients?.map((ing: any) => (
+              <div key={ing.id} className="flex flex-col sm:grid sm:grid-cols-12 gap-2 sm:gap-3 items-start sm:items-center bg-slate-50 dark:bg-slate-800/50 p-3 rounded-md">
+                <div className="sm:col-span-5 text-sm font-medium w-full sm:w-auto">
+                  <span className="sm:hidden text-xs text-slate-400 font-normal mr-1">Ingrediente:</span>
                   {getIngredientName(ing.baseIngredientId)}
                 </div>
-                <div className="col-span-3 flex items-center justify-center gap-2">
+                <div className="sm:col-span-3 flex items-center gap-2 w-full sm:w-auto sm:justify-center">
+                  <span className="sm:hidden text-xs text-slate-400">Cantidad:</span>
                   <span className="text-sm">{ing.quantityUsed} {ing.unit}</span>
                 </div>
-                <div className="col-span-3 text-right font-bold text-slate-700 dark:text-slate-300">
-                  {formatCurrency(ing.cost)}
+                <div className="sm:col-span-3 flex items-center gap-2 w-full sm:w-auto sm:justify-end">
+                  <span className="sm:hidden text-xs text-slate-400">Costo:</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-300">{formatCurrency(ing.cost)}</span>
                 </div>
-                <div className="col-span-1 text-center">
+                <div className="sm:col-span-1 sm:text-center self-end sm:self-auto">
                   <span
                     onClick={() => removeIngredientFromRecipe(ing.id)}
                     className="material-symbols-outlined text-slate-300 text-[18px] cursor-pointer hover:text-red-500"
@@ -323,48 +331,72 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               </div>
             ))}
 
-            {/* Input for new ingredient */}
-            <div className="grid grid-cols-12 gap-4 items-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
-              <div className="col-span-5">
+            {/* Input para nuevo ingrediente - Mobile friendly */}
+            <div className="flex flex-col sm:grid sm:grid-cols-12 gap-3 items-start sm:items-center bg-[#ee2b6c]/5 dark:bg-[#ee2b6c]/10 border border-[#ee2b6c]/20 p-3 rounded-md">
+              {/* Selector de ingrediente */}
+              <div className="w-full sm:col-span-5 space-y-1">
+                <label className="sm:hidden text-xs font-bold text-slate-500 uppercase">Ingrediente</label>
                 <select
-                  className="w-full rounded-lg border-none bg-transparent text-sm focus:ring-0"
+                  className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
                   value={newIngredient.baseIngredientId}
                   onChange={(e) => setNewIngredient({ ...newIngredient, baseIngredientId: e.target.value })}
                 >
-                  <option value="" disabled>Seleccionar...</option>
+                  <option value="" disabled>Seleccionar ingrediente...</option>
                   {baseIngredients.map((ing: BaseIngredient) => (
                     <option key={ing.id} value={ing.id}>{ing.name}</option>
                   ))}
                 </select>
               </div>
-              <div className="col-span-3 flex items-center gap-2">
-                <input
-                  className="w-full text-center rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm py-1"
-                  type="number"
-                  placeholder="250"
-                  value={newIngredient.quantityUsed}
-                  onChange={(e) => setNewIngredient({ ...newIngredient, quantityUsed: e.target.value })}
-                />
-                <select
-                  className="w-16 text-xs rounded-lg border-slate-200 dark:border-slate-700 bg-transparent py-1 pl-1 pr-6"
-                  value={newIngredient.unit}
-                  onChange={(e) => setNewIngredient({ ...newIngredient, unit: e.target.value as Unit })}
+
+              {/* Cantidad + Unidad */}
+              <div className="w-full sm:col-span-3 space-y-1">
+                <label className="sm:hidden text-xs font-bold text-slate-500 uppercase">Cantidad Usada</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    className="flex-1 min-w-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                    type="number"
+                    min="0"
+                    placeholder="250"
+                    value={newIngredient.quantityUsed}
+                    onChange={(e) => setNewIngredient({ ...newIngredient, quantityUsed: e.target.value })}
+                  />
+                  <select
+                    className="w-20 shrink-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                    value={newIngredient.unit}
+                    onChange={(e) => setNewIngredient({ ...newIngredient, unit: e.target.value as Unit })}
+                  >
+                    <option value="kg">kg</option>
+                    <option value="g">g</option>
+                    <option value="l">l</option>
+                    <option value="ml">ml</option>
+                    <option value="unidad">ud</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Costo calculado + botón agregar */}
+              <div className="w-full sm:col-span-3 flex items-center justify-between sm:justify-end gap-2">
+                <div className="space-y-0.5">
+                  <span className="sm:hidden text-xs font-bold text-slate-500 uppercase block">Costo Calc.</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-300 text-sm">
+                    {newIngredient.baseIngredientId && newIngredient.quantityUsed ?
+                      formatCurrency(calculateIngredientCost(newIngredient.baseIngredientId, parseFloat(newIngredient.quantityUsed) || 0, newIngredient.unit)) 
+                      : '$0,00'
+                    }
+                  </span>
+                </div>
+                <button
+                  onClick={addIngredientToRecipe}
+                  className="sm:hidden flex items-center gap-1.5 px-4 py-2.5 bg-[#ee2b6c] text-white rounded-md font-bold text-sm hover:opacity-90 transition-opacity"
                 >
-                  <option value="kg">kg</option>
-                  <option value="g">g</option>
-                  <option value="l">l</option>
-                  <option value="ml">ml</option>
-                  <option value="unidad">ud</option>
-                </select>
+                  <span className="material-symbols-outlined text-[18px]">add</span>
+                  Agregar
+                </button>
               </div>
-              <div className="col-span-3 text-right font-bold text-slate-700 dark:text-slate-300">
-                {newIngredient.baseIngredientId && newIngredient.quantityUsed ?
-                  formatCurrency(calculateIngredientCost(newIngredient.baseIngredientId, parseFloat(newIngredient.quantityUsed) || 0, newIngredient.unit)) 
-                  : '$0,00'
-                }
-              </div>
-              <div className="col-span-1 text-center">
-                <span onClick={addIngredientToRecipe} className="material-symbols-outlined text-[#ee2b6c] text-[22px] cursor-pointer hover:scale-110">
+
+              {/* Botón agregar desktop */}
+              <div className="hidden sm:flex sm:col-span-1 justify-center">
+                <span onClick={addIngredientToRecipe} className="material-symbols-outlined text-[#ee2b6c] text-[24px] cursor-pointer hover:scale-110 transition-transform">
                   add_circle
                 </span>
               </div>
@@ -374,82 +406,80 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
       </section>
 
       {/* Section 3: Additional Costs & Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Additional Costs */}
-        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 p-6 space-y-6">
+        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 p-5 space-y-5">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[#ee2b6c]">local_shipping</span>
             <h3 className="text-xl font-bold">3. Costos Adicionales</h3>
           </div>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Packaging / Cajas</label>
-              <div className="flex items-center gap-2 w-32">
-                <span className="text-slate-400">$</span>
-                <input
-                  className="w-full text-right rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
-                  placeholder="0" type="number"
-                  value={currentRecipe.extraCosts?.packaging ?? ''}
-                  onChange={(e) => setCurrentRecipe({
-                    ...currentRecipe,
-                    extraCosts: { ...currentRecipe.extraCosts!, packaging: e.target.value as any }
-                  })}
-                />
+          <div className="space-y-3">
+            {[
+              { key: 'packaging', label: 'Packaging / Cajas' },
+              { key: 'bags', label: 'Bolsas / Stickers' },
+              { key: 'shipping', label: 'Envío / Logística' },
+            ].map(({ key, label }) => (
+              <div key={key} className="flex items-center justify-between gap-4">
+                <label className="text-sm font-medium text-slate-600 dark:text-slate-400">{label}</label>
+                <div className="flex items-center gap-2 w-36">
+                  <span className="text-slate-400">$</span>
+                  <input
+                    className="w-full text-right rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                    placeholder="0" type="number" min="0"
+                    value={(currentRecipe.extraCosts as any)?.[key] ?? ''}
+                    onChange={(e) => setCurrentRecipe({
+                      ...currentRecipe,
+                      extraCosts: { ...currentRecipe.extraCosts!, [key]: e.target.value as any }
+                    })}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Bolsas / Stickers</label>
-              <div className="flex items-center gap-2 w-32">
-                <span className="text-slate-400">$</span>
-                <input
-                  className="w-full text-right rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
-                  placeholder="0" type="number"
-                  value={currentRecipe.extraCosts?.bags ?? ''}
-                  onChange={(e) => setCurrentRecipe({
-                    ...currentRecipe,
-                    extraCosts: { ...currentRecipe.extraCosts!, bags: e.target.value as any }
-                  })}
-                />
+            ))}
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-4 space-y-3">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <label className="text-sm font-bold text-[#ee2b6c] dark:text-[#fc5c91]">Margen de Ganancia (%)</label>
+                  <p className="text-xs text-slate-500">Porcentaje extra sobre el costo total</p>
+                </div>
+                <div className="flex items-center gap-2 w-36">
+                  <input
+                    className="w-full text-right rounded-md border border-[#ee2b6c]/30 dark:border-[#ee2b6c]/30 bg-[#ee2b6c]/5 dark:bg-[#ee2b6c]/10 text-sm font-bold px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                    placeholder="Ej: 40"
+                    type="number"
+                    min="0"
+                    max="500"
+                    value={currentRecipe.profitMargin ?? ''}
+                    onChange={(e) => setCurrentRecipe({
+                      ...currentRecipe,
+                      profitMargin: e.target.value as any
+                    })}
+                  />
+                  <span className="text-[#ee2b6c] font-bold">%</span>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <label className="text-sm font-medium text-slate-600 dark:text-slate-400">Envío / Logística</label>
-              <div className="flex items-center gap-2 w-32">
-                <span className="text-slate-400">$</span>
-                <input
-                  className="w-full text-right rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"
-                  placeholder="0" type="number"
-                  value={currentRecipe.extraCosts?.shipping ?? ''}
-                  onChange={(e) => setCurrentRecipe({
-                    ...currentRecipe,
-                    extraCosts: { ...currentRecipe.extraCosts!, shipping: e.target.value as any }
-                  })}
-                />
-              </div>
-            </div>
-            <div className="border-t border-slate-200 dark:border-slate-800 pt-4 flex items-center justify-between gap-4">
-              <div>
-                <label className="text-sm font-bold text-[#ee2b6c] dark:text-[#fc5c91]">Margen de Ganancia (%)</label>
-                <p className="text-xs text-slate-500">Porcentaje extra sobre el costo total</p>
-              </div>
-              <div className="flex items-center gap-2 w-32">
-                <input
-                  className="w-full text-right rounded-lg border-[#ee2b6c]/30 dark:border-[#ee2b6c]/30 bg-[#ee2b6c]/5 dark:bg-[#ee2b6c]/10 text-sm font-bold focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
-                  placeholder="40" type="number"
-                  value={currentRecipe.profitMargin ?? ''}
-                  onChange={(e) => setCurrentRecipe({
-                    ...currentRecipe,
-                    profitMargin: e.target.value as any
-                  })}
-                />
-                <span className="text-[#ee2b6c] font-bold">%</span>
+              {/* Chips de selección rápida */}
+              <div className="flex flex-wrap gap-2">
+                {[10, 20, 30, 40].map((pct) => (
+                  <button
+                    key={pct}
+                    type="button"
+                    onClick={() => setCurrentRecipe({ ...currentRecipe, profitMargin: String(pct) as any })}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                      String(currentRecipe.profitMargin) === String(pct)
+                        ? 'bg-[#ee2b6c] text-white shadow-sm'
+                        : 'bg-[#ee2b6c]/10 text-[#ee2b6c] hover:bg-[#ee2b6c]/20'
+                    }`}
+                  >
+                    {pct}%
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         </section>
 
         {/* Total Summary Card */}
-        <section className="rounded-xl bg-[#ee2b6c] text-white p-8 shadow-lg shadow-[#ee2b6c]/20 flex flex-col justify-between">
+        <section className="rounded-xl bg-[#ee2b6c] text-white p-7 shadow-lg shadow-[#ee2b6c]/20 flex flex-col justify-between">
           <div className="space-y-4">
             <h3 className="text-2xl font-black">Resumen Total</h3>
             <div className="space-y-2 opacity-90 border-b border-white/20 pb-4">
@@ -461,33 +491,34 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                 <span>Costos Adicionales:</span>
                 <span className="font-bold">{formatCurrency(totals.extraCostsTotal)}</span>
               </div>
-              <div className="flex justify-between text-sm mt-1 mb-2 opacity-80 border-t border-white/10 pt-1">
+              <div className="flex justify-between text-sm mt-1 opacity-80 border-t border-white/10 pt-1">
                 <span>Costo Neto:</span>
                 <span>{formatCurrency(totals.totalCost)}</span>
               </div>
               <div className="flex justify-between text-lg font-bold pt-2">
-                <span>Total Gral ({(currentRecipe.profitMargin || 0)}% Ganancia):</span>
+                <span>Total ({(currentRecipe.profitMargin || 0)}% Ganancia):</span>
                 <span>{formatCurrency(totals.totalWithProfit)}</span>
               </div>
             </div>
           </div>
-          <div className="mt-8">
+          <div className="mt-6">
             <p className="text-xs uppercase font-bold tracking-widest opacity-80 mb-1">Costo por Unidad</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-5xl font-black">{formatCurrency(totals.costPerUnit)}</span>
+              <span className="text-4xl font-black">{formatCurrency(totals.costPerUnit)}</span>
               <span className="text-lg opacity-80">/ porción</span>
             </div>
           </div>
           <button
             onClick={editingRecipeId ? updateRecipe : saveRecipe}
-            className="mt-6 w-full py-4 bg-white text-[#ee2b6c] rounded-xl font-black text-lg shadow-xl hover:scale-[1.02] transition-transform"
+            disabled={!canSave}
+            className="mt-5 w-full py-3.5 bg-white text-[#ee2b6c] rounded-md font-black text-base shadow-xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             {editingRecipeId ? 'ACTUALIZAR RECETA' : 'GUARDAR RECETA'}
           </button>
           {editingRecipeId && (
             <button
               onClick={cancelEdit}
-              className="mt-2 w-full py-2 bg-transparent border border-white text-white rounded-xl font-bold hover:bg-white/10 transition-colors"
+              className="mt-2 w-full py-2.5 bg-transparent border border-white text-white rounded-md font-bold hover:bg-white/10 transition-colors"
             >
               CANCELAR
             </button>
@@ -495,19 +526,19 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
         </section>
       </div>
 
-      {/* Recetas Guardadas (Extra para no perder funcionalidad) */}
+      {/* Recetas Guardadas */}
       {recipes.length > 0 && (
-        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden mt-12 p-6">
-          <h3 className="text-xl font-bold mb-6">Recetas Guardadas</h3>
-          <div className="space-y-4">
+        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden mt-4 p-5">
+          <h3 className="text-xl font-bold mb-5">Recetas Guardadas</h3>
+          <div className="space-y-3">
             {recipes.map(recipe => (
-              <div key={recipe.id} className="border border-slate-100 dark:border-slate-800 rounded-lg p-4">
+              <div key={recipe.id} className="border border-slate-100 dark:border-slate-800 rounded-md p-4">
                 <div 
                   className="flex items-center justify-between cursor-pointer" 
                   onClick={() => toggleRecipeExpanded(recipe.id)}
                 >
                   <div>
-                    <h4 className="font-semibold text-lg">{recipe.name}</h4>
+                    <h4 className="font-semibold text-base">{recipe.name}</h4>
                     <p className="text-sm text-slate-500">{formatCurrency(recipe.costPerUnit)} / porción</p>
                   </div>
                   <div className="flex gap-2 items-center">

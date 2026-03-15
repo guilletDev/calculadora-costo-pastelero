@@ -1,30 +1,29 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: 'Calculadora de Costos',
+  title: 'Costo Repostero',
   description: 'Calculadora de costos para emprendedores gastronómicos',
-  generator: 'v0.app',
+  generator: 'Costo Repostero',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+  },
+  openGraph: {
+    title: 'Costo Repostero',
+    description: 'Calculadora de costos para emprendedores gastronómicos',
+    url: 'https://costorepostero.app',
+    siteName: 'Costo Repostero',
+    images: [
       {
         url: '/icon.svg',
-        type: 'image/svg+xml',
+        width: 800,
+        height: 800,
+        alt: 'Logo de Costo Repostero',
       },
     ],
-    apple: '/apple-icon.png',
+    locale: 'es_AR',
+    type: 'website',
   },
 }
 
@@ -35,7 +34,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="font-sans antialiased">
+      <head>
+        {/* Preconectar a Google Fonts para cargar más rápido */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Manrope — fuente principal */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+        {/* Material Symbols — display=block evita que se vea el texto del ícono antes de cargar la fuente */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
+          rel="stylesheet"
+        />
+      </head>
+      <body
+        className="antialiased"
+        style={{ fontFamily: "'Manrope', sans-serif" }}
+      >
         {children}
       </body>
     </html>

@@ -192,31 +192,31 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
 
       {/* Agregar / Editar Ingrediente (Visible si se está agregando o no hay candado) */}
       {!isLocked && (isAdding ? (
-        <div className="p-6 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 grid gap-4">
+        <div className="p-5 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 grid gap-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Nombre</label>
               <input
-                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
                 placeholder="Ej: Harina"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Cantidad</label>
               <input
-                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
-                type="number" step="0.01"
+                className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                type="number" step="0.01" min="0"
                 placeholder="10"
                 value={formData.purchasedQuantity}
                 onChange={(e) => setFormData({ ...formData, purchasedQuantity: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Unidad</label>
               <select
-                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
                 value={formData.unit}
                 onChange={(e) => setFormData({ ...formData, unit: e.target.value as Unit })}
               >
@@ -227,11 +227,11 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
                 <option value="unidad">unidad</option>
               </select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Total ($)</label>
               <input
-                className="w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
-                type="number" step="0.01"
+                className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                type="number" step="0.01" min="0"
                 placeholder="8500"
                 value={formData.totalPrice}
                 onChange={(e) => setFormData({ ...formData, totalPrice: e.target.value })}
@@ -239,17 +239,17 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
             </div>
           </div>
           <div className="flex gap-2 justify-end mt-2">
-            <button onClick={handleCancel} className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-bold text-sm shadow-sm hover:opacity-90 transition-opacity dark:bg-slate-700 dark:text-slate-200">
+            <button onClick={handleCancel} className="px-4 py-2.5 bg-slate-200 text-slate-700 rounded-md font-bold text-sm shadow-sm hover:opacity-90 transition-opacity dark:bg-slate-700 dark:text-slate-200">
               Cancelar
             </button>
-            <button onClick={handleSave} className="px-4 py-2 bg-[#ee2b6c] text-white rounded-lg font-bold text-sm shadow-sm hover:opacity-90 transition-opacity">
+            <button onClick={handleSave} className="px-4 py-2.5 bg-[#ee2b6c] text-white rounded-md font-bold text-sm shadow-sm hover:opacity-90 transition-opacity">
               Guardar
             </button>
           </div>
         </div>
       ) : (
         <div className="p-4 bg-slate-50/50 dark:bg-slate-800/30">
-          <button onClick={() => setIsAdding(true)} className="flex items-center gap-2 px-4 py-2 bg-[#ee2b6c] text-white rounded-lg font-bold text-sm shadow-sm hover:opacity-90 transition-opacity">
+          <button onClick={() => setIsAdding(true)} className="flex items-center gap-2 px-4 py-2.5 bg-[#ee2b6c] text-white rounded-md font-bold text-sm shadow-sm hover:opacity-90 transition-opacity">
             <span className="material-symbols-outlined text-[20px]">add</span> Añadir Ingrediente
           </button>
         </div>
