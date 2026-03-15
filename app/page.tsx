@@ -19,7 +19,8 @@ export default function Home() {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .material-symbols-outlined {
           font-family: 'Material Symbols Outlined' !important;
           font-weight: normal;
@@ -132,7 +133,7 @@ export default function Home() {
         </main>
 
         <footer className="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-slate-400 text-sm">
-          <p>© 2024 costo respostero. Hecho para emprendedores pasteleros.</p>
+          <p>© 2026 costo respostero. Hecho para emprendedores pasteleros.</p>
         </footer>
       </div>
     </>
