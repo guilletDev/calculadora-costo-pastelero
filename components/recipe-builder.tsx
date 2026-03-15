@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { BaseIngredient, Recipe, RecipeIngredient, Unit } from '@/lib/types';
 import { storage } from '@/lib/storage';
 
@@ -19,16 +20,20 @@ const QUICK_QUANTITIES = [
 ];
 
 export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion = 0, onStockDeducted }: RecipeBuilderProps) {
+  const router = useRouter();
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [currentRecipe, setCurrentRecipe] = useState<any>({
+
+  const defaultDraft = {
     name: '',
     ingredients: [],
     extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' },
     unitsProduced: '',
     profitMargin: '',
     saleType: 'unidad',
-  });
+  };
+
+  const [currentRecipe, setCurrentRecipe] = useState<any>(defaultDraft);
   const [expandedRecipes, setExpandedRecipes] = useState<Set<string>>(new Set());
   const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
 
@@ -46,10 +51,20 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     unit: 'g' as Unit,
   });
 
+  // Cargar datos iniciales + restaurar borrador
   useEffect(() => {
     setBaseIngredients(storage.getIngredients());
     setRecipes(storage.getRecipes());
+    // Restaurar borrador si existe (solo cuando no estamos editando una receta guardada)
+    const draft = storage.getDraft();
+    if (draft) setCurrentRecipe(draft);
   }, []);
+
+  // Persistir borrador en cada cambio (solo si no estamos en modo edición de receta guardada)
+  useEffect(() => {
+    if (editingRecipeId) return; // No sobreescribir el draft cuando se edita una receta guardada
+    storage.saveDraft(currentRecipe);
+  }, [currentRecipe, editingRecipeId]);
 
   useEffect(() => {
     if (ingredientsVersion === 0) return;
@@ -141,14 +156,16 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   };
 
   const resetCurrentRecipe = () => {
-    setCurrentRecipe({
+    const empty = {
       name: '',
       ingredients: [],
       extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' } as any,
       unitsProduced: '',
       profitMargin: '',
       saleType: 'unidad',
-    });
+    };
+    setCurrentRecipe(empty);
+    storage.clearDraft();
     setBudgetQty('');
   };
 
@@ -177,6 +194,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     storage.saveRecipes(updated);
     deductStock(currentRecipe.ingredients);
     resetCurrentRecipe();
+    router.push('/recetas');
   };
 
   const deleteRecipe = (id: string) => {
