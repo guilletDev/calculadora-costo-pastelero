@@ -13,9 +13,6 @@ export function AppShell() {
     setIngredientsVersion(v => v + 1);
   }, []);
 
-  const handleStockDeducted = useCallback(() => {
-    setIngredientsVersion(v => v + 1);
-  }, []);
 
   return (
     <>
@@ -28,7 +25,6 @@ export function AppShell() {
       <RecipeBuilder
         isIngredientsLocked={isIngredientsLocked}
         ingredientsVersion={ingredientsVersion}
-        onStockDeducted={handleStockDeducted}
       />
     </>
   );

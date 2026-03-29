@@ -37,22 +37,38 @@ export default function RecetaDetailPage() {
 
   const handleDelete = () => {
     if (!recipe) return;
-    toast('¿Eliminar esta receta?', {
-      description: `"${recipe.name}" se eliminará permanentemente.`,
-      action: {
-        label: 'Eliminar',
-        onClick: () => {
-          const updated = storage.getRecipes().filter(r => r.id !== recipe.id);
-          storage.saveRecipes(updated);
-          router.push('/recetas');
-        },
-      },
-      cancel: {
-        label: 'Cancelar',
-        onClick: () => {},
-      },
-      duration: 8000,
-    });
+    toast.custom((t) => (
+      <div className="w-[360px] rounded-xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden" style={{ fontFamily: "'Manrope', sans-serif" }}>
+        <div className="p-4 flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500">
+            <span className="material-symbols-outlined text-[20px]">delete</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-slate-900 dark:text-white">¿Eliminar esta receta?</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">&quot;{recipe.name}&quot; se eliminará permanentemente.</p>
+          </div>
+        </div>
+        <div className="flex border-t border-slate-100 dark:border-slate-800">
+          <button
+            onClick={() => toast.dismiss(t)}
+            className="flex-1 px-4 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => {
+              const updated = storage.getRecipes().filter(r => r.id !== recipe.id);
+              storage.saveRecipes(updated);
+              toast.dismiss(t);
+              router.push('/recetas');
+            }}
+            className="flex-1 px-4 py-2.5 text-sm font-bold text-[#ee2b6c] hover:bg-[#ee2b6c]/5 transition-colors border-l border-slate-100 dark:border-slate-800"
+          >
+            Eliminar
+          </button>
+        </div>
+      </div>
+    ), { duration: 10000 });
   };
 
   if (!recipe) {

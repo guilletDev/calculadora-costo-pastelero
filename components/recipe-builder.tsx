@@ -9,7 +9,6 @@ import { storage } from '@/lib/storage';
 interface RecipeBuilderProps {
   isIngredientsLocked?: boolean;
   ingredientsVersion?: number;
-  onStockDeducted?: () => void;
 }
 
 // Opciones rápidas de presupuesto
@@ -20,7 +19,7 @@ const QUICK_QUANTITIES = [
   { label: '3 doc.', value: 36 },
 ];
 
-export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion = 0, onStockDeducted }: RecipeBuilderProps) {
+export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion = 0 }: RecipeBuilderProps) {
   const router = useRouter();
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -112,22 +111,6 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     return baseIngredient.pricePerUnit * toBaseQuantity(quantityUsed, unit);
   };
 
-  const deductStock = (recipeIngredients: RecipeIngredient[]) => {
-    const currentIngredients = storage.getIngredients();
-    const updated = currentIngredients.map(ing => {
-      const usedItems = recipeIngredients.filter(ri => ri.baseIngredientId === ing.id);
-      if (usedItems.length === 0) return ing;
-      let totalUsedInBase = 0;
-      for (const item of usedItems) totalUsedInBase += toBaseQuantity(item.quantityUsed, item.unit);
-      const newQuantity = Math.max(0, ing.purchasedQuantity - totalUsedInBase);
-      const newTotalPrice = ing.purchasedQuantity > 0 ? (ing.totalPrice / ing.purchasedQuantity) * newQuantity : 0;
-      const newPricePerUnit = newQuantity > 0 ? newTotalPrice / newQuantity : ing.pricePerUnit;
-      return { ...ing, purchasedQuantity: newQuantity, totalPrice: newTotalPrice, pricePerUnit: newPricePerUnit };
-    });
-    storage.saveIngredients(updated);
-    setBaseIngredients(updated);
-    onStockDeducted?.();
-  };
 
   const calculateRecipeTotals = (recipe: any) => {
     const ingredientsCost = (recipe.ingredients || []).reduce((sum: number, ing: any) => sum + ing.cost, 0);
@@ -221,29 +204,44 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     const updated = [...recipes, recipe];
     setRecipes(updated);
     storage.saveRecipes(updated);
-    deductStock(currentRecipe.ingredients);
     resetCurrentRecipe();
     router.push('/recetas');
   };
 
   const deleteRecipe = (id: string) => {
     const recipe = recipes.find(r => r.id === id);
-    toast('¿Eliminar esta receta?', {
-      description: `"${recipe?.name}" se eliminará permanentemente.`,
-      action: {
-        label: 'Eliminar',
-        onClick: () => {
-          const updated = recipes.filter(r => r.id !== id);
-          setRecipes(updated);
-          storage.saveRecipes(updated);
-        },
-      },
-      cancel: {
-        label: 'Cancelar',
-        onClick: () => {},
-      },
-      duration: 8000,
-    });
+    toast.custom((t) => (
+      <div className="w-[360px] rounded-xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden" style={{ fontFamily: "'Manrope', sans-serif" }}>
+        <div className="p-4 flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500">
+            <span className="material-symbols-outlined text-[20px]">delete</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-slate-900 dark:text-white">¿Eliminar esta receta?</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">&quot;{recipe?.name}&quot; se eliminará permanentemente.</p>
+          </div>
+        </div>
+        <div className="flex border-t border-slate-100 dark:border-slate-800">
+          <button
+            onClick={() => toast.dismiss(t)}
+            className="flex-1 px-4 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => {
+              const updated = recipes.filter(r => r.id !== id);
+              setRecipes(updated);
+              storage.saveRecipes(updated);
+              toast.dismiss(t);
+            }}
+            className="flex-1 px-4 py-2.5 text-sm font-bold text-[#ee2b6c] hover:bg-[#ee2b6c]/5 transition-colors border-l border-slate-100 dark:border-slate-800"
+          >
+            Eliminar
+          </button>
+        </div>
+      </div>
+    ), { duration: 10000 });
   };
 
   const editRecipe = (recipe: Recipe) => {
