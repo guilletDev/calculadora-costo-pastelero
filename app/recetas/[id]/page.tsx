@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { Recipe, BaseIngredient } from '@/lib/types';
 import { storage } from '@/lib/storage';
 
@@ -36,10 +37,22 @@ export default function RecetaDetailPage() {
 
   const handleDelete = () => {
     if (!recipe) return;
-    if (!confirm(`¿Eliminar la receta "${recipe.name}"?`)) return;
-    const updated = storage.getRecipes().filter(r => r.id !== recipe.id);
-    storage.saveRecipes(updated);
-    router.push('/recetas');
+    toast('¿Eliminar esta receta?', {
+      description: `"${recipe.name}" se eliminará permanentemente.`,
+      action: {
+        label: 'Eliminar',
+        onClick: () => {
+          const updated = storage.getRecipes().filter(r => r.id !== recipe.id);
+          storage.saveRecipes(updated);
+          router.push('/recetas');
+        },
+      },
+      cancel: {
+        label: 'Cancelar',
+        onClick: () => {},
+      },
+      duration: 8000,
+    });
   };
 
   if (!recipe) {
@@ -79,7 +92,7 @@ export default function RecetaDetailPage() {
         </div>
         <div className="flex gap-2 shrink-0">
           <Link
-            href={`/?edit=${recipe.id}`}
+            href={`/?edit=${recipe.id}#recipe-builder`}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-sm font-bold hover:border-[#ee2b6c] hover:text-[#ee2b6c] transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">edit</span>

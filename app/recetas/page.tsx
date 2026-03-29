@@ -33,7 +33,7 @@ export default function RecetasPage() {
           </p>
         </div>
         <Link
-          href="/"
+          href="/#recipe-builder"
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#ee2b6c] text-white rounded-md font-bold text-sm shadow-sm hover:opacity-90 transition-opacity"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>
@@ -62,7 +62,7 @@ export default function RecetasPage() {
             {search ? 'No encontramos ninguna receta con ese nombre.' : 'Aún no tenés recetas guardadas.'}
           </p>
           {!search && (
-            <Link href="/" className="inline-flex items-center gap-1.5 mt-4 text-sm text-[#ee2b6c] font-bold hover:underline">
+            <Link href="/#recipe-builder" className="inline-flex items-center gap-1.5 mt-4 text-sm text-[#ee2b6c] font-bold hover:underline">
               <span className="material-symbols-outlined text-[16px]">arrow_back</span>
               Ir a la calculadora
             </Link>

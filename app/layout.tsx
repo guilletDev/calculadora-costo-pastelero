@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Navbar } from '@/components/navbar'
+import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
   title: 'Costo Repostero',
@@ -55,6 +56,13 @@ export default function RootLayout({
         <div className="flex-1 flex flex-col">
           {children}
         </div>
+        <Toaster
+          position="top-center"
+          richColors
+          toastOptions={{
+            style: { fontFamily: "'Manrope', sans-serif" },
+          }}
+        />
         <footer className="border-t border-slate-200 dark:border-slate-800 py-6 text-center text-slate-400 text-sm">
           <p>© 2026 costo repostero. Hecho para emprendedores pasteleros.</p>
         </footer>

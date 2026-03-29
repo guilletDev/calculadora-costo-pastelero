@@ -18,6 +18,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
 
   // Estado para edición inline de un ingrediente existente
   const [editInlineData, setEditInlineData] = useState({
+    name: '',
     purchasedQuantity: '',
     unit: 'g' as Unit,
     totalPrice: '',
@@ -65,6 +66,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   const startInlineEdit = (ingredient: BaseIngredient) => {
     setEditingId(ingredient.id);
     setEditInlineData({
+      name: ingredient.name,
       purchasedQuantity: ingredient.purchasedQuantity.toString(),
       unit: ingredient.unit,
       totalPrice: ingredient.totalPrice.toString(),
@@ -76,14 +78,15 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   const saveInlineEdit = (ingredient: BaseIngredient) => {
     const rawQuantity = parseFloat(editInlineData.purchasedQuantity);
     const price = parseFloat(editInlineData.totalPrice);
-    if (!rawQuantity || !price) return;
+    const trimmedName = editInlineData.name.trim();
+    if (!rawQuantity || !price || !trimmedName) return;
 
     const converted = toBaseUnit(rawQuantity, editInlineData.unit);
     const pricePerUnit = price / converted.quantity;
 
     const updated = ingredients.map(ing =>
       ing.id === ingredient.id
-        ? { ...ing, purchasedQuantity: converted.quantity, unit: converted.unit, totalPrice: price, pricePerUnit }
+        ? { ...ing, name: trimmedName, purchasedQuantity: converted.quantity, unit: converted.unit, totalPrice: price, pricePerUnit }
         : ing
     );
     updateIngredients(updated);
@@ -184,10 +187,16 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
               ingredients.map((ingredient) => (
                 editingId === ingredient.id ? (
                   /* ─── FILA EN MODO EDICIÓN INLINE ─── */
-                  <tr key={ingredient.id} className="bg-[#ee2b6c]/3 dark:bg-[#ee2b6c]/10">
-                    <td className="px-5 py-3 font-medium text-sm text-slate-700 dark:text-slate-300">
-                      {ingredient.name}
-                      <span className="block text-xs text-slate-400 font-normal">editando...</span>
+                  <tr key={ingredient.id} className="bg-[#ee2b6c]/5 dark:bg-[#ee2b6c]/10">
+                    <td className="px-5 py-3">
+                      <input
+                        className="w-full rounded-md border border-[#ee2b6c]/40 bg-white dark:bg-slate-800 text-sm font-medium px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                        type="text"
+                        autoFocus
+                        value={editInlineData.name}
+                        onChange={(e) => setEditInlineData({ ...editInlineData, name: e.target.value })}
+                        placeholder="Nombre"
+                      />
                     </td>
                     <td className="px-5 py-3">
                       <input

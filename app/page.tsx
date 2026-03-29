@@ -1,8 +1,17 @@
 'use client';
 
+import { Suspense, useEffect } from 'react';
 import { AppShell } from '@/components/app-shell';
 
 export default function Home() {
+  useEffect(() => {
+    if (window.location.hash === '#recipe-builder') {
+      setTimeout(() => {
+        document.getElementById('recipe-builder')?.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+    }
+  }, []);
+
   return (
     <main className="mx-auto w-full max-w-[1000px] flex-1 px-5 py-8 space-y-10">
       {/* Hero Section */}
@@ -15,7 +24,9 @@ export default function Home() {
         </p>
       </section>
 
-      <AppShell />
+      <Suspense>
+        <AppShell />
+      </Suspense>
     </main>
   );
 }

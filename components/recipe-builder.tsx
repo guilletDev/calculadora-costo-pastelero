@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import { BaseIngredient, Recipe, RecipeIngredient, Unit } from '@/lib/types';
 import { storage } from '@/lib/storage';
 
@@ -51,14 +52,42 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     unit: 'g' as Unit,
   });
 
+  const searchParams = useSearchParams();
+
   // Cargar datos iniciales + restaurar borrador
   useEffect(() => {
-    setBaseIngredients(storage.getIngredients());
-    setRecipes(storage.getRecipes());
+    const ingredients = storage.getIngredients();
+    const savedRecipes = storage.getRecipes();
+    setBaseIngredients(ingredients);
+    setRecipes(savedRecipes);
+
+    // Si viene ?edit=<id>, cargar esa receta para edición
+    const editId = searchParams.get('edit');
+    if (editId) {
+      const recipeToEdit = savedRecipes.find(r => r.id === editId);
+      if (recipeToEdit) {
+        setEditingRecipeId(recipeToEdit.id);
+        setCurrentRecipe({
+          name: recipeToEdit.name,
+          ingredients: recipeToEdit.ingredients,
+          extraCosts: { ...recipeToEdit.extraCosts },
+          unitsProduced: recipeToEdit.unitsProduced,
+          profitMargin: recipeToEdit.profitMargin || '',
+          saleType: recipeToEdit.saleType || 'unidad',
+        });
+        setBudgetQty('');
+        // Scroll al armador de receta
+        setTimeout(() => {
+          document.getElementById('recipe-builder')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+        return;
+      }
+    }
+
     // Restaurar borrador si existe (solo cuando no estamos editando una receta guardada)
     const draft = storage.getDraft();
     if (draft) setCurrentRecipe(draft);
-  }, []);
+  }, [searchParams]);
 
   // Persistir borrador en cada cambio (solo si no estamos en modo edición de receta guardada)
   useEffect(() => {
@@ -198,9 +227,23 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   };
 
   const deleteRecipe = (id: string) => {
-    const updated = recipes.filter(r => r.id !== id);
-    setRecipes(updated);
-    storage.saveRecipes(updated);
+    const recipe = recipes.find(r => r.id === id);
+    toast('¿Eliminar esta receta?', {
+      description: `"${recipe?.name}" se eliminará permanentemente.`,
+      action: {
+        label: 'Eliminar',
+        onClick: () => {
+          const updated = recipes.filter(r => r.id !== id);
+          setRecipes(updated);
+          storage.saveRecipes(updated);
+        },
+      },
+      cancel: {
+        label: 'Cancelar',
+        onClick: () => {},
+      },
+      duration: 8000,
+    });
   };
 
   const editRecipe = (recipe: Recipe) => {
@@ -214,7 +257,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
       saleType: recipe.saleType || 'unidad',
     });
     setBudgetQty('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      document.getElementById('recipe-builder')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const updateRecipe = () => {
@@ -278,7 +323,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const canSave = isIngredientsLocked;
 
   return (
-    <div className="space-y-8 mt-12">
+    <div id="recipe-builder" className="space-y-8 mt-12">
 
       {/* ── PASO 2: Armador de Receta ── */}
       <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -387,7 +432,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                     <span className="text-sm">{ing.quantityUsed} {ing.unit}</span>
                     <button
                       onClick={() => startEditIngredient(ing)}
-                      className="opacity-0 group-hover:opacity-100 sm:opacity-100 p-0.5 text-slate-300 hover:text-blue-500 transition-all"
+                      className="p-0.5 text-slate-300 hover:text-blue-500 transition-all"
                       title="Editar cantidad"
                     >
                       <span className="material-symbols-outlined text-[15px]">edit</span>
@@ -409,12 +454,21 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
             {/* Input para nuevo ingrediente */}
             <div className="flex flex-col sm:grid sm:grid-cols-12 gap-3 items-start sm:items-center bg-[#ee2b6c]/5 dark:bg-[#ee2b6c]/10 border border-[#ee2b6c]/20 p-3 rounded-md">
-              <div className="w-full sm:col-span-4 space-y-1">
-                <label className="sm:hidden text-xs font-bold text-slate-500 uppercase">Ingrediente</label>
+              {/* Selector de ingrediente */}
+              <div className="w-full sm:col-span-4">
+                <label className="sm:hidden text-xs font-bold text-slate-500 uppercase block mb-1">Ingrediente</label>
                 <select
                   className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
                   value={newIngredient.baseIngredientId}
-                  onChange={(e) => setNewIngredient({ ...newIngredient, baseIngredientId: e.target.value })}
+                  onChange={(e) => {
+                    const selectedId = e.target.value;
+                    const base = baseIngredients.find(ing => ing.id === selectedId);
+                    setNewIngredient({
+                      ...newIngredient,
+                      baseIngredientId: selectedId,
+                      unit: base?.unit || 'g',
+                    });
+                  }}
                 >
                   <option value="" disabled>Seleccionar ingrediente...</option>
                   {baseIngredients.map((ing: BaseIngredient) => (
@@ -423,17 +477,19 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                 </select>
               </div>
 
-              <div className="w-full sm:col-span-4 space-y-1">
-                <label className="sm:hidden text-xs font-bold text-slate-500 uppercase">Cantidad Usada</label>
-                <div className="flex items-center gap-2">
+              {/* Cantidad + Unidad en mobile: apilados, en desktop: en fila */}
+              <div className="w-full sm:col-span-4">
+                <label className="sm:hidden text-xs font-bold text-slate-500 uppercase block mb-1">Cantidad Usada</label>
+                {/* Mobile: dos campos en columnas fijas */}
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2">
                   <input
-                    className="flex-1 min-w-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                    className="col-span-1 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
                     type="number" min="0" placeholder="250"
                     value={newIngredient.quantityUsed}
                     onChange={(e) => setNewIngredient({ ...newIngredient, quantityUsed: e.target.value })}
                   />
                   <select
-                    className="w-24 shrink-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                    className="col-span-1 w-full sm:w-24 sm:shrink-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
                     value={newIngredient.unit}
                     onChange={(e) => setNewIngredient({ ...newIngredient, unit: e.target.value as Unit })}
                   >
@@ -446,9 +502,10 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                 </div>
               </div>
 
+              {/* Costo calculado + botón agregar (mobile) */}
               <div className="w-full sm:col-span-3 flex items-center justify-between sm:justify-end gap-2">
-                <div className="space-y-0.5">
-                  <span className="sm:hidden text-xs font-bold text-slate-500 uppercase block">Costo Calc.</span>
+                <div>
+                  <span className="sm:hidden text-xs font-bold text-slate-500 uppercase block mb-0.5">Costo Calc.</span>
                   <span className="font-bold text-slate-700 dark:text-slate-300 text-sm">
                     {newIngredient.baseIngredientId && newIngredient.quantityUsed
                       ? formatCurrency(calculateIngredientCost(newIngredient.baseIngredientId, parseFloat(newIngredient.quantityUsed) || 0, newIngredient.unit))
@@ -465,6 +522,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                 </button>
               </div>
 
+              {/* Botón agregar (desktop) */}
               <div className="hidden sm:flex sm:col-span-1 justify-center">
                 <span onClick={addIngredientToRecipe} className="material-symbols-outlined text-[#ee2b6c] text-[24px] cursor-pointer hover:scale-110 transition-transform">
                   add_circle

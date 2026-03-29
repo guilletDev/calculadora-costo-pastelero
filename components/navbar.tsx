@@ -21,6 +21,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: '/', label: 'Calculadora', icon: 'calculate' },
+    { href: '/inventario', label: 'Inventario', icon: 'inventory_2' },
     { href: '/recetas', label: 'Recetas', icon: 'menu_book' },
   ];
 
