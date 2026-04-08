@@ -88,6 +88,10 @@ export default function RecetaDetailPage() {
     (recipe.extraCosts.shipping || 0) +
     (recipe.extraCosts.others || 0);
 
+  const salePricePerUnit = recipe.costPerUnit;
+  const totalSale = salePricePerUnit * recipe.unitsProduced;
+  const netProfit = totalSale - recipe.totalCost;
+
   return (
     <main className="mx-auto w-full max-w-[900px] flex-1 px-5 py-8 space-y-8">
 
@@ -146,6 +150,38 @@ export default function RecetaDetailPage() {
           </div>
         ))}
       </div>
+
+      {/* Precio de venta y ganancia */}
+      <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+          <span className="material-symbols-outlined text-[#ee2b6c]">payments</span>
+          <h3 className="font-bold text-base">Precio de Venta y Ganancia</h3>
+        </div>
+        <div className="p-4 sm:p-5">
+          {/* Primera fila: Porciones y Precio x Porción */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 sm:p-4 text-center">
+              <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Porciones</p>
+              <p className="text-lg sm:text-2xl font-black text-slate-700 dark:text-slate-200">{recipe.unitsProduced}</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 sm:p-4 text-center">
+              <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Precio x Porción</p>
+              <p className="text-lg sm:text-2xl font-black text-slate-700 dark:text-slate-200">{formatCurrency(salePricePerUnit)}</p>
+            </div>
+          </div>
+          {/* Segunda fila: Total Venta y Ganancia Neta */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-3 sm:mt-4">
+            <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 sm:p-4 text-center">
+              <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Total Venta</p>
+              <p className="text-lg sm:text-2xl font-black text-slate-700 dark:text-slate-200">{formatCurrency(totalSale)}</p>
+            </div>
+            <div className={`rounded-lg p-3 sm:p-4 text-center ${netProfit > 0 ? 'bg-emerald-500 shadow-md shadow-emerald-500/20' : 'bg-slate-50 dark:bg-slate-800/50'}`}>
+              <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wide mb-1 ${netProfit > 0 ? 'text-white/70' : 'text-slate-400'}`}>Ganancia Neta</p>
+              <p className={`text-lg sm:text-2xl font-black ${netProfit > 0 ? 'text-white' : 'text-slate-700 dark:text-slate-200'}`}>{formatCurrency(netProfit)}</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Ingredientes */}

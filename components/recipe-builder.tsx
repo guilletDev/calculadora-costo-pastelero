@@ -34,7 +34,6 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   };
 
   const [currentRecipe, setCurrentRecipe] = useState<any>(defaultDraft);
-  const [expandedRecipes, setExpandedRecipes] = useState<Set<string>>(new Set());
   const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
 
   // Estado para edición inline de cantidad de un ingrediente en la receta
@@ -292,12 +291,6 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     resetCurrentRecipe();
   };
 
-  const toggleRecipeExpanded = (id: string) => {
-    const newExpanded = new Set(expandedRecipes);
-    if (newExpanded.has(id)) newExpanded.delete(id);
-    else newExpanded.add(id);
-    setExpandedRecipes(newExpanded);
-  };
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
@@ -721,37 +714,6 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
         </div>
       </section>
 
-      {/* ── Recetas Guardadas ── */}
-      {recipes.length > 0 && (
-        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden mt-4 p-5">
-          <h3 className="text-xl font-bold mb-5">Recetas Guardadas</h3>
-          <div className="space-y-3">
-            {recipes.map(recipe => (
-              <div key={recipe.id} className="border border-slate-100 dark:border-slate-800 rounded-md p-4">
-                <div
-                  className="flex items-center justify-between cursor-pointer"
-                  onClick={() => toggleRecipeExpanded(recipe.id)}
-                >
-                  <div>
-                    <h4 className="font-semibold text-base">{recipe.name}</h4>
-                    <p className="text-sm text-slate-500">{formatCurrency(recipe.costPerUnit)} / porción</p>
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <span
-                      className="material-symbols-outlined text-slate-400 hover:text-blue-500 cursor-pointer"
-                      onClick={(e) => { e.stopPropagation(); editRecipe(recipe); }}
-                    >edit</span>
-                    <span
-                      className="material-symbols-outlined text-slate-400 hover:text-red-500 cursor-pointer"
-                      onClick={(e) => { e.stopPropagation(); deleteRecipe(recipe.id); }}
-                    >delete</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }
