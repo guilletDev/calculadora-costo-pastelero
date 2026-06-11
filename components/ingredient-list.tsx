@@ -1,8 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { BaseIngredient, Unit } from '@/lib/types';
 import { storage } from '@/lib/storage';
+import {
+  fetchIngredients,
+  createIngredient,
+  updateIngredient,
+  deleteIngredient,
+  upsertIngredient,
+} from '@/lib/ingredients-db';
 
 interface IngredientListProps {
   onLockChange?: (isLocked: boolean) => void;
@@ -15,6 +23,8 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   const [isLocked, setIsLocked] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Estado para edición inline de un ingrediente existente
   const [editInlineData, setEditInlineData] = useState({
@@ -37,24 +47,41 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
     totalPrice: '',
   });
 
+  // Cargar ingredientes desde Supabase
+  const loadIngredients = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const data = await fetchIngredients();
+      setIngredients(data);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al cargar ingredientes';
+      toast.error(message);
+      console.error('[loadIngredients]', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const savedIngredients = storage.getIngredients();
+    loadIngredients();
     const savedLocked = storage.getIsLocked();
-    setIngredients(savedIngredients);
     setIsLocked(savedLocked);
     onLockChange?.(savedLocked);
   }, []);
 
+  // Auto-desbloquear si no hay ingredientes (ej: al migrar a DB vacía con localStorage bloqueado)
+  useEffect(() => {
+    if (!isLoading && ingredients.length === 0 && isLocked) {
+      setIsLocked(false);
+      storage.saveIsLocked(false);
+      onLockChange?.(false);
+    }
+  }, [isLoading, ingredients.length, isLocked, onLockChange]);
+
   useEffect(() => {
     if (ingredientsVersion === 0) return;
-    setIngredients(storage.getIngredients());
+    loadIngredients();
   }, [ingredientsVersion]);
-
-  const updateIngredients = (updated: BaseIngredient[]) => {
-    setIngredients(updated);
-    storage.saveIngredients(updated);
-    onIngredientsChange?.(updated);
-  };
 
   const toBaseUnit = (quantity: number, unit: Unit): { quantity: number; unit: Unit } => {
     if (unit === 'kg') return { quantity: quantity * 1000, unit: 'g' };
@@ -75,7 +102,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
     setIsAdding(false);
   };
 
-  const saveInlineEdit = (ingredient: BaseIngredient) => {
+  const saveInlineEdit = async (ingredient: BaseIngredient) => {
     const rawQuantity = parseFloat(editInlineData.purchasedQuantity);
     const price = parseFloat(editInlineData.totalPrice);
     const trimmedName = editInlineData.name.trim();
@@ -84,13 +111,24 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
     const converted = toBaseUnit(rawQuantity, editInlineData.unit);
     const pricePerUnit = price / converted.quantity;
 
-    const updated = ingredients.map(ing =>
-      ing.id === ingredient.id
-        ? { ...ing, name: trimmedName, purchasedQuantity: converted.quantity, unit: converted.unit, totalPrice: price, pricePerUnit }
-        : ing
-    );
-    updateIngredients(updated);
-    setEditingId(null);
+    setIsSaving(true);
+    try {
+      const updated = await updateIngredient(ingredient.id, {
+        name: trimmedName,
+        purchasedQuantity: converted.quantity,
+        unit: converted.unit,
+        totalPrice: price,
+        pricePerUnit,
+      });
+      setIngredients(prev => prev.map(ing => ing.id === ingredient.id ? updated : ing));
+      onIngredientsChange?.(ingredients.map(ing => ing.id === ingredient.id ? updated : ing));
+      setEditingId(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al guardar';
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const cancelInlineEdit = () => {
@@ -98,50 +136,61 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   };
 
   // Guardar ingrediente nuevo
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name || !formData.purchasedQuantity || !formData.totalPrice) return;
 
-    const normalizedName = formData.name.toLowerCase().trim();
     const rawQuantity = parseFloat(formData.purchasedQuantity);
     const price = parseFloat(formData.totalPrice);
     const converted = toBaseUnit(rawQuantity, formData.unit);
+    const pricePerUnit = price / converted.quantity;
 
-    const existingIndex = ingredients.findIndex(
-      ing => ing.name.toLowerCase().trim() === normalizedName
-    );
-
-    if (existingIndex !== -1) {
-      const existing = ingredients[existingIndex];
-      const newTotalQuantity = existing.purchasedQuantity + converted.quantity;
-      const newTotalPrice = existing.totalPrice + price;
-      const newPricePerUnit = newTotalPrice / newTotalQuantity;
-
-      const updated = ingredients.map((ing, idx) =>
-        idx === existingIndex
-          ? { ...ing, purchasedQuantity: newTotalQuantity, totalPrice: newTotalPrice, pricePerUnit: newPricePerUnit }
-          : ing
+    setIsSaving(true);
+    try {
+      const { ingredient: savedIngredient, isNew } = await upsertIngredient(
+        {
+          name: formData.name,
+          purchasedQuantity: converted.quantity,
+          unit: converted.unit,
+          totalPrice: price,
+          pricePerUnit,
+        },
+        ingredients
       );
-      updateIngredients(updated);
-    } else {
-      const pricePerUnit = price / converted.quantity;
-      const newIngredient: BaseIngredient = {
-        id: crypto.randomUUID(),
-        name: formData.name,
-        purchasedQuantity: converted.quantity,
-        unit: converted.unit,
-        totalPrice: price,
-        pricePerUnit,
-      };
-      updateIngredients([...ingredients, newIngredient]);
-    }
 
-    setFormData({ name: '', purchasedQuantity: '', unit: 'kg', totalPrice: '' });
-    setIsAdding(false);
+      if (isNew) {
+        setIngredients(prev => [...prev, savedIngredient]);
+      } else {
+        setIngredients(prev => prev.map(ing => ing.id === savedIngredient.id ? savedIngredient : ing));
+      }
+      onIngredientsChange?.(
+        isNew
+          ? [...ingredients, savedIngredient]
+          : ingredients.map(ing => ing.id === savedIngredient.id ? savedIngredient : ing)
+      );
+
+      setFormData({ name: '', purchasedQuantity: '', unit: 'kg', totalPrice: '' });
+      setIsAdding(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al guardar';
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    const updated = ingredients.filter(ing => ing.id !== id);
-    updateIngredients(updated);
+  const handleDelete = async (id: string) => {
+    setIsSaving(true);
+    try {
+      await deleteIngredient(id);
+      const updated = ingredients.filter(ing => ing.id !== id);
+      setIngredients(updated);
+      onIngredientsChange?.(updated);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar';
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -166,127 +215,138 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
       
       {/* Listado de ingredientes */}
       <div className="overflow-x-auto bg-white dark:bg-slate-900">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
-              <th className="px-5 py-3">Ingrediente</th>
-              <th className="px-5 py-3">Cantidad</th>
-              <th className="px-5 py-3">Unidad</th>
-              <th className="px-5 py-3">Precio Total</th>
-              <th className="px-5 py-3 w-24"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-            {ingredients.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-slate-500">
-                  Agrega ingredientes para registrar en el inventario.
-                </td>
+        {isLoading ? (
+          <div className="px-5 py-12 text-center">
+            <div className="inline-flex items-center gap-2 text-slate-400">
+              <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
+              <span className="text-sm font-medium">Cargando ingredientes...</span>
+            </div>
+          </div>
+        ) : (
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
+                <th className="px-5 py-3">Ingrediente</th>
+                <th className="px-5 py-3">Cantidad</th>
+                <th className="px-5 py-3">Unidad</th>
+                <th className="px-5 py-3">Precio Total</th>
+                <th className="px-5 py-3 w-24"></th>
               </tr>
-            ) : (
-              ingredients.map((ingredient) => (
-                editingId === ingredient.id ? (
-                  /* ─── FILA EN MODO EDICIÓN INLINE ─── */
-                  <tr key={ingredient.id} className="bg-[#ee2b6c]/5 dark:bg-[#ee2b6c]/10">
-                    <td className="px-5 py-3">
-                      <input
-                        className="w-full rounded-md border border-[#ee2b6c]/40 bg-white dark:bg-slate-800 text-sm font-medium px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
-                        type="text"
-                        autoFocus
-                        value={editInlineData.name}
-                        onChange={(e) => setEditInlineData({ ...editInlineData, name: e.target.value })}
-                        placeholder="Nombre"
-                      />
-                    </td>
-                    <td className="px-5 py-3">
-                      <input
-                        className="w-24 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
-                        type="number" min="0" step="0.01"
-                        value={editInlineData.purchasedQuantity}
-                        onChange={(e) => setEditInlineData({ ...editInlineData, purchasedQuantity: e.target.value })}
-                      />
-                    </td>
-                    <td className="px-5 py-3">
-                      <select
-                        className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
-                        value={editInlineData.unit}
-                        onChange={(e) => setEditInlineData({ ...editInlineData, unit: e.target.value as Unit })}
-                      >
-                        <option value="kg">kg</option>
-                        <option value="g">g</option>
-                        <option value="l">litros</option>
-                        <option value="ml">ml</option>
-                        <option value="unidad">unidad</option>
-                      </select>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-1">
-                        <span className="text-slate-400 text-sm">$</span>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {ingredients.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-8 text-center text-slate-500">
+                    Agrega ingredientes para registrar en el inventario.
+                  </td>
+                </tr>
+              ) : (
+                ingredients.map((ingredient) => (
+                  editingId === ingredient.id ? (
+                    /* ─── FILA EN MODO EDICIÓN INLINE ─── */
+                    <tr key={ingredient.id} className="bg-[#ee2b6c]/5 dark:bg-[#ee2b6c]/10">
+                      <td className="px-5 py-3">
                         <input
-                          className="w-28 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
-                          type="number" min="0" step="0.01"
-                          value={editInlineData.totalPrice}
-                          onChange={(e) => setEditInlineData({ ...editInlineData, totalPrice: e.target.value })}
+                          className="w-full rounded-md border border-[#ee2b6c]/40 bg-white dark:bg-slate-800 text-sm font-medium px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                          type="text"
+                          autoFocus
+                          value={editInlineData.name}
+                          onChange={(e) => setEditInlineData({ ...editInlineData, name: e.target.value })}
+                          placeholder="Nombre"
                         />
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex gap-1.5 items-center justify-end">
-                        <button
-                          onClick={() => saveInlineEdit(ingredient)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 bg-[#ee2b6c] text-white rounded-md text-xs font-bold hover:opacity-90 transition-opacity"
+                      </td>
+                      <td className="px-5 py-3">
+                        <input
+                          className="w-24 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                          type="number" min="0" step="0.01"
+                          value={editInlineData.purchasedQuantity}
+                          onChange={(e) => setEditInlineData({ ...editInlineData, purchasedQuantity: e.target.value })}
+                        />
+                      </td>
+                      <td className="px-5 py-3">
+                        <select
+                          className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                          value={editInlineData.unit}
+                          onChange={(e) => setEditInlineData({ ...editInlineData, unit: e.target.value as Unit })}
                         >
-                          <span className="material-symbols-outlined text-[14px]">check</span>
-                          OK
-                        </button>
-                        <button
-                          onClick={cancelInlineEdit}
-                          className="p-1.5 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">close</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  /* ─── FILA NORMAL ─── */
-                  <tr key={ingredient.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors bg-white dark:bg-slate-900">
-                    <td className="px-5 py-4 font-medium">{ingredient.name}</td>
-                    <td className="px-5 py-4 text-slate-600 dark:text-slate-400">{ingredient.purchasedQuantity}</td>
-                    <td className="px-5 py-4">
-                      <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-xs font-medium">{ingredient.unit}</span>
-                    </td>
-                    <td className="px-5 py-4 font-semibold text-[#ee2b6c]">{formatCurrency(ingredient.totalPrice)}</td>
-                    <td className="px-5 py-4">
-                      {!isLocked && (
-                        <div className="flex gap-1.5 justify-end">
+                          <option value="kg">kg</option>
+                          <option value="g">g</option>
+                          <option value="l">litros</option>
+                          <option value="ml">ml</option>
+                          <option value="unidad">unidad</option>
+                        </select>
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-1">
+                          <span className="text-slate-400 text-sm">$</span>
+                          <input
+                            className="w-28 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                            type="number" min="0" step="0.01"
+                            value={editInlineData.totalPrice}
+                            onChange={(e) => setEditInlineData({ ...editInlineData, totalPrice: e.target.value })}
+                          />
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex gap-1.5 items-center justify-end">
                           <button
-                            onClick={() => startInlineEdit(ingredient)}
-                            className="p-1.5 text-slate-400 hover:text-blue-500 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                            title="Editar"
+                            onClick={() => saveInlineEdit(ingredient)}
+                            disabled={isSaving}
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-[#ee2b6c] text-white rounded-md text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
                           >
-                            <span className="material-symbols-outlined text-[18px]">edit</span>
+                            <span className="material-symbols-outlined text-[14px]">check</span>
+                            OK
                           </button>
                           <button
-                            onClick={() => handleDelete(ingredient.id)}
-                            className="p-1.5 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                            title="Eliminar"
+                            onClick={cancelInlineEdit}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                           >
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                            <span className="material-symbols-outlined text-[18px]">close</span>
                           </button>
                         </div>
-                      )}
-                    </td>
-                  </tr>
-                )
-              ))
-            )}
-          </tbody>
-        </table>
+                      </td>
+                    </tr>
+                  ) : (
+                    /* ─── FILA NORMAL ─── */
+                    <tr key={ingredient.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors bg-white dark:bg-slate-900">
+                      <td className="px-5 py-4 font-medium">{ingredient.name}</td>
+                      <td className="px-5 py-4 text-slate-600 dark:text-slate-400">{ingredient.purchasedQuantity}</td>
+                      <td className="px-5 py-4">
+                        <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-xs font-medium">{ingredient.unit}</span>
+                      </td>
+                      <td className="px-5 py-4 font-semibold text-[#ee2b6c]">{formatCurrency(ingredient.totalPrice)}</td>
+                      <td className="px-5 py-4">
+                        {!isLocked && (
+                          <div className="flex gap-1.5 justify-end">
+                            <button
+                              onClick={() => startInlineEdit(ingredient)}
+                              className="p-1.5 text-slate-400 hover:text-blue-500 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                              title="Editar"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">edit</span>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(ingredient.id)}
+                              disabled={isSaving}
+                              className="p-1.5 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                              title="Eliminar"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Formulario para añadir ingrediente nuevo */}
-      {!isLocked && (isAdding ? (
+      {!isLocked && !isLoading && (isAdding ? (
         <div className="p-5 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 grid gap-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-1.5">
@@ -337,8 +397,12 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
             <button onClick={handleCancel} className="px-4 py-2.5 bg-slate-200 text-slate-700 rounded-md font-bold text-sm shadow-sm hover:opacity-90 transition-opacity dark:bg-slate-700 dark:text-slate-200">
               Cancelar
             </button>
-            <button onClick={handleSave} className="px-4 py-2.5 bg-[#ee2b6c] text-white rounded-md font-bold text-sm shadow-sm hover:opacity-90 transition-opacity">
-              Guardar
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="px-4 py-2.5 bg-[#ee2b6c] text-white rounded-md font-bold text-sm shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {isSaving ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         </div>
@@ -351,7 +415,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
       ))}
 
       {/* Tarjeta de Resumen y Guardado */}
-      {ingredients.length > 0 && (
+      {ingredients.length > 0 && !isLoading && (
         <div className="p-5 bg-[#ee2b6c]/5 border-t border-[#ee2b6c]/20 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Inversión total en ingredientes</p>

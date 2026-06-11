@@ -2,15 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { Recipe } from '@/lib/types';
-import { storage } from '@/lib/storage';
+import { fetchRecipes } from '@/lib/recipes-db';
 
 export default function RecetasPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [search, setSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setRecipes(storage.getRecipes());
+    async function loadRecipes() {
+      try {
+        setIsLoading(true);
+        const data = await fetchRecipes();
+        setRecipes(data);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Error al cargar recetas');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadRecipes();
   }, []);
 
   const formatCurrency = (amount: number) =>
@@ -55,7 +68,12 @@ export default function RecetasPage() {
       )}
 
       {/* Lista de recetas */}
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <div className="py-16 text-center text-slate-400 flex flex-col items-center gap-2">
+          <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
+          <p>Cargando recetas...</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 p-16 text-center">
           <span className="material-symbols-outlined text-[48px] text-slate-300 dark:text-slate-600 block mb-3">menu_book</span>
           <p className="text-slate-500 dark:text-slate-400 font-medium">

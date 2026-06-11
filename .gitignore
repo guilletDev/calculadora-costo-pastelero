@@ -9,3 +9,8 @@ node_modules/
 .env*.local
 .DS_Store
 next-env.d.ts
+.env.local
+.env.local.example
+
+
+

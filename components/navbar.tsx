@@ -2,11 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
+import { usePathname, useRouter } from 'next/navigation';
+import { createClient } from '@/utils/supabase/client';
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
 
   // Cerrar menú al hacer click fuera
   useEffect(() => {
@@ -21,7 +29,6 @@ export function Navbar() {
 
   const navLinks = [
     { href: '/', label: 'Calculadora', icon: 'calculate' },
-    { href: '/inventario', label: 'Inventario', icon: 'inventory_2' },
     { href: '/recetas', label: 'Recetas', icon: 'menu_book' },
   ];
 
@@ -87,11 +94,15 @@ export function Navbar() {
             ))}
           </nav>
 
-          {/* Derecha: avatar + hamburger */}
+          {/* Derecha: logout + hamburger */}
           <div className="flex items-center gap-2.5 shrink-0">
-            <div className="h-9 w-9 rounded-full bg-[#ee2b6c]/10 flex items-center justify-center text-[#ee2b6c] cursor-pointer border border-[#ee2b6c]/20 shrink-0">
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>person</span>
-            </div>
+            <button
+              onClick={handleLogout}
+              title="Cerrar sesión"
+              className="h-9 w-9 rounded-full bg-[#ee2b6c]/10 flex items-center justify-center text-[#ee2b6c] cursor-pointer border border-[#ee2b6c]/20 shrink-0 hover:bg-[#ee2b6c]/20 transition-colors"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>logout</span>
+            </button>
             {/* Botón hamburguesa — solo mobile */}
             <button
               className="md:hidden flex items-center justify-center h-9 w-9 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 overflow-hidden"
@@ -128,6 +139,13 @@ export function Navbar() {
                   {label}
                 </Link>
               ))}
+              <button
+                onClick={() => { setMenuOpen(false); handleLogout(); }}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-md font-semibold text-sm transition-colors text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#ee2b6c]"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>logout</span>
+                Cerrar sesión
+              </button>
             </div>
           </div>
         )}

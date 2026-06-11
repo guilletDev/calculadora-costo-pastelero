@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import { Navbar } from '@/components/navbar'
+import { LayoutShell } from '@/components/layout-shell'
 import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
@@ -52,10 +52,9 @@ export default function RootLayout({
         className="antialiased min-h-screen flex flex-col bg-[#f8f6f6] dark:bg-[#221016] text-slate-900 dark:text-slate-100"
         style={{ fontFamily: "'Manrope', sans-serif" }}
       >
-        <Navbar />
-        <div className="flex-1 flex flex-col">
+        <LayoutShell>
           {children}
-        </div>
+        </LayoutShell>
         <Toaster
           position="top-center"
           richColors
@@ -63,9 +62,6 @@ export default function RootLayout({
             style: { fontFamily: "'Manrope', sans-serif" },
           }}
         />
-        <footer className="border-t border-slate-200 dark:border-slate-800 py-6 text-center text-slate-400 text-sm">
-          <p>© 2026 costo repostero. Hecho para emprendedores pasteleros.</p>
-        </footer>
       </body>
     </html>
   )

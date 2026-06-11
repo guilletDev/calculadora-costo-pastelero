@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Recipe, BaseIngredient } from '@/lib/types';
-import { storage } from '@/lib/storage';
+import { fetchIngredients } from '@/lib/ingredients-db';
+import { fetchRecipeById, deleteRecipe } from '@/lib/recipes-db';
 
 const QUICK_QUANTITIES = [
   { label: '½ doc.', value: 6 },
@@ -21,13 +22,26 @@ export default function RecetaDetailPage() {
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [budgetQty, setBudgetQty] = useState('');
 
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
-    const recipes = storage.getRecipes();
-    const found = recipes.find(r => r.id === params.id);
-    if (!found) { router.push('/recetas'); return; }
-    setRecipe(found);
-    setBaseIngredients(storage.getIngredients());
-  }, [params.id]);
+    async function loadData() {
+      try {
+        const id = Array.isArray(params.id) ? params.id[0] : params.id;
+        const [found, ingredients] = await Promise.all([
+          fetchRecipeById(id),
+          fetchIngredients(),
+        ]);
+        if (!found) { router.push('/recetas'); return; }
+        setRecipe(found);
+        setBaseIngredients(ingredients);
+      } catch (err) {
+        toast.error('Error al cargar datos');
+        router.push('/recetas');
+      }
+    }
+    loadData();
+  }, [params.id, router]);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
@@ -56,15 +70,22 @@ export default function RecetaDetailPage() {
             Cancelar
           </button>
           <button
-            onClick={() => {
-              const updated = storage.getRecipes().filter(r => r.id !== recipe.id);
-              storage.saveRecipes(updated);
-              toast.dismiss(t);
-              router.push('/recetas');
+            onClick={async () => {
+              setIsDeleting(true);
+              try {
+                await deleteRecipe(recipe.id);
+                toast.dismiss(t);
+                toast.success('Receta eliminada');
+                router.push('/recetas');
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : 'Error al eliminar');
+                setIsDeleting(false);
+              }
             }}
-            className="flex-1 px-4 py-2.5 text-sm font-bold text-[#ee2b6c] hover:bg-[#ee2b6c]/5 transition-colors border-l border-slate-100 dark:border-slate-800"
+            disabled={isDeleting}
+            className="flex-1 px-4 py-2.5 text-sm font-bold text-[#ee2b6c] hover:bg-[#ee2b6c]/5 transition-colors border-l border-slate-100 dark:border-slate-800 disabled:opacity-50"
           >
-            Eliminar
+            {isDeleting ? 'Eliminando...' : 'Eliminar'}
           </button>
         </div>
       </div>

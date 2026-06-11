@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { BaseIngredient, Recipe, RecipeIngredient, Unit } from '@/lib/types';
 import { storage } from '@/lib/storage';
+import { fetchIngredients } from '@/lib/ingredients-db';
+import { fetchRecipes, upsertRecipe, deleteRecipe as dbDeleteRecipe } from '@/lib/recipes-db';
 
 interface RecipeBuilderProps {
   isIngredientsLocked?: boolean;
@@ -44,6 +46,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   // Estado presupuesto
   const [budgetQty, setBudgetQty] = useState('');
 
+  // Estado para la carga y guardado a la DB
+  const [isSaving, setIsSaving] = useState(false);
+
   const [newIngredient, setNewIngredient] = useState({
     baseIngredientId: '',
     quantityUsed: '',
@@ -54,37 +59,45 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
   // Cargar datos iniciales + restaurar borrador
   useEffect(() => {
-    const ingredients = storage.getIngredients();
-    const savedRecipes = storage.getRecipes();
-    setBaseIngredients(ingredients);
-    setRecipes(savedRecipes);
+    const loadData = async () => {
+      try {
+        const [ingredients, dbRecipes] = await Promise.all([
+          fetchIngredients(),
+          fetchRecipes(),
+        ]);
+        setBaseIngredients(ingredients);
+        setRecipes(dbRecipes);
 
-    // Si viene ?edit=<id>, cargar esa receta para edición
-    const editId = searchParams.get('edit');
-    if (editId) {
-      const recipeToEdit = savedRecipes.find(r => r.id === editId);
-      if (recipeToEdit) {
-        setEditingRecipeId(recipeToEdit.id);
-        setCurrentRecipe({
-          name: recipeToEdit.name,
-          ingredients: recipeToEdit.ingredients,
-          extraCosts: { ...recipeToEdit.extraCosts },
-          unitsProduced: recipeToEdit.unitsProduced,
-          profitMargin: recipeToEdit.profitMargin || '',
-          saleType: recipeToEdit.saleType || 'unidad',
-        });
-        setBudgetQty('');
-        // Scroll al armador de receta
-        setTimeout(() => {
-          document.getElementById('recipe-builder')?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-        return;
+        // Si viene ?edit=<id>, cargar esa receta para edición
+        const editId = searchParams.get('edit');
+        if (editId) {
+          const recipeToEdit = dbRecipes.find(r => r.id === editId);
+          if (recipeToEdit) {
+            setEditingRecipeId(recipeToEdit.id);
+            setCurrentRecipe({
+              name: recipeToEdit.name,
+              ingredients: recipeToEdit.ingredients,
+              extraCosts: { ...recipeToEdit.extraCosts },
+              unitsProduced: recipeToEdit.unitsProduced,
+              profitMargin: recipeToEdit.profitMargin || '',
+              saleType: recipeToEdit.saleType || 'unidad',
+            });
+            setBudgetQty('');
+            setTimeout(() => {
+              document.getElementById('recipe-builder')?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+            return;
+          }
+        }
+      } catch (err) {
+        toast.error('Error al cargar datos iniciales');
       }
-    }
 
-    // Restaurar borrador si existe (solo cuando no estamos editando una receta guardada)
-    const draft = storage.getDraft();
-    if (draft) setCurrentRecipe(draft);
+      // Restaurar borrador si existe
+      const draft = storage.getDraft();
+      if (draft) setCurrentRecipe(draft);
+    };
+    loadData();
   }, [searchParams]);
 
   // Persistir borrador en cada cambio (solo si no estamos en modo edición de receta guardada)
@@ -95,7 +108,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
   useEffect(() => {
     if (ingredientsVersion === 0) return;
-    setBaseIngredients(storage.getIngredients());
+    fetchIngredients().then(setBaseIngredients).catch(() => {});
   }, [ingredientsVersion]);
 
   const toBaseQuantity = (quantity: number, unit: Unit): number => {
@@ -180,31 +193,39 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     setBudgetQty('');
   };
 
-  const saveRecipe = () => {
+  const saveRecipe = async () => {
     if (!currentRecipe.name || !currentRecipe.ingredients?.length) return;
     const { totalCost, costPerUnit } = calculateRecipeTotals(currentRecipe);
-    const recipe: Recipe = {
-      id: crypto.randomUUID(),
-      name: currentRecipe.name,
-      ingredients: currentRecipe.ingredients,
-      extraCosts: {
-        packaging: parseFloat(currentRecipe.extraCosts?.packaging as any) || 0,
-        bags: parseFloat(currentRecipe.extraCosts?.bags as any) || 0,
-        labels: parseFloat(currentRecipe.extraCosts?.labels as any) || 0,
-        shipping: parseFloat(currentRecipe.extraCosts?.shipping as any) || 0,
-        others: parseFloat(currentRecipe.extraCosts?.others as any) || 0,
-      },
-      unitsProduced: parseFloat(currentRecipe.unitsProduced as any) || 0,
-      profitMargin: parseFloat(currentRecipe.profitMargin as any) || 0,
-      saleType: currentRecipe.saleType || 'unidad',
-      totalCost,
-      costPerUnit,
-    };
-    const updated = [...recipes, recipe];
-    setRecipes(updated);
-    storage.saveRecipes(updated);
-    resetCurrentRecipe();
-    router.push('/recetas');
+    
+    setIsSaving(true);
+    try {
+      const draftToSave = {
+        name: currentRecipe.name,
+        ingredients: currentRecipe.ingredients,
+        extraCosts: {
+          packaging: parseFloat(currentRecipe.extraCosts?.packaging as any) || 0,
+          bags: parseFloat(currentRecipe.extraCosts?.bags as any) || 0,
+          labels: parseFloat(currentRecipe.extraCosts?.labels as any) || 0,
+          shipping: parseFloat(currentRecipe.extraCosts?.shipping as any) || 0,
+          others: parseFloat(currentRecipe.extraCosts?.others as any) || 0,
+        },
+        unitsProduced: parseFloat(currentRecipe.unitsProduced as any) || 0,
+        profitMargin: parseFloat(currentRecipe.profitMargin as any) || 0,
+        saleType: currentRecipe.saleType || 'unidad',
+        totalCost,
+        costPerUnit,
+      };
+
+      const savedRecipe = await upsertRecipe(draftToSave);
+      setRecipes([...recipes, savedRecipe]);
+      resetCurrentRecipe();
+      toast.success('Receta guardada exitosamente');
+      router.push('/recetas');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al guardar receta');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const deleteRecipe = (id: string) => {
@@ -228,15 +249,23 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
             Cancelar
           </button>
           <button
-            onClick={() => {
-              const updated = recipes.filter(r => r.id !== id);
-              setRecipes(updated);
-              storage.saveRecipes(updated);
-              toast.dismiss(t);
+            onClick={async () => {
+              setIsSaving(true);
+              try {
+                await dbDeleteRecipe(id);
+                setRecipes(recipes.filter(r => r.id !== id));
+                toast.dismiss(t);
+                toast.success('Receta eliminada');
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : 'Error al eliminar');
+              } finally {
+                setIsSaving(false);
+              }
             }}
-            className="flex-1 px-4 py-2.5 text-sm font-bold text-[#ee2b6c] hover:bg-[#ee2b6c]/5 transition-colors border-l border-slate-100 dark:border-slate-800"
+            disabled={isSaving}
+            className="flex-1 px-4 py-2.5 text-sm font-bold text-[#ee2b6c] hover:bg-[#ee2b6c]/5 transition-colors border-l border-slate-100 dark:border-slate-800 disabled:opacity-50"
           >
-            Eliminar
+            {isSaving ? 'Eliminando...' : 'Eliminar'}
           </button>
         </div>
       </div>
@@ -259,31 +288,39 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     }, 100);
   };
 
-  const updateRecipe = () => {
+  const updateRecipe = async () => {
     if (!currentRecipe.name || !currentRecipe.ingredients?.length || !editingRecipeId) return;
     const { totalCost, costPerUnit } = calculateRecipeTotals(currentRecipe);
-    const recipe: Recipe = {
-      id: editingRecipeId,
-      name: currentRecipe.name,
-      ingredients: currentRecipe.ingredients,
-      extraCosts: {
-        packaging: parseFloat(currentRecipe.extraCosts?.packaging as any) || 0,
-        bags: parseFloat(currentRecipe.extraCosts?.bags as any) || 0,
-        labels: parseFloat(currentRecipe.extraCosts?.labels as any) || 0,
-        shipping: parseFloat(currentRecipe.extraCosts?.shipping as any) || 0,
-        others: parseFloat(currentRecipe.extraCosts?.others as any) || 0,
-      },
-      unitsProduced: parseFloat(currentRecipe.unitsProduced as any) || 0,
-      profitMargin: parseFloat(currentRecipe.profitMargin as any) || 0,
-      saleType: currentRecipe.saleType || 'unidad',
-      totalCost,
-      costPerUnit,
-    };
-    const updated = recipes.map(r => r.id === editingRecipeId ? recipe : r);
-    setRecipes(updated);
-    storage.saveRecipes(updated);
-    setEditingRecipeId(null);
-    resetCurrentRecipe();
+    
+    setIsSaving(true);
+    try {
+      const draftToUpdate = {
+        name: currentRecipe.name,
+        ingredients: currentRecipe.ingredients,
+        extraCosts: {
+          packaging: parseFloat(currentRecipe.extraCosts?.packaging as any) || 0,
+          bags: parseFloat(currentRecipe.extraCosts?.bags as any) || 0,
+          labels: parseFloat(currentRecipe.extraCosts?.labels as any) || 0,
+          shipping: parseFloat(currentRecipe.extraCosts?.shipping as any) || 0,
+          others: parseFloat(currentRecipe.extraCosts?.others as any) || 0,
+        },
+        unitsProduced: parseFloat(currentRecipe.unitsProduced as any) || 0,
+        profitMargin: parseFloat(currentRecipe.profitMargin as any) || 0,
+        saleType: currentRecipe.saleType || 'unidad',
+        totalCost,
+        costPerUnit,
+      };
+
+      const savedRecipe = await upsertRecipe(draftToUpdate, editingRecipeId);
+      setRecipes(recipes.map(r => r.id === editingRecipeId ? savedRecipe : r));
+      setEditingRecipeId(null);
+      resetCurrentRecipe();
+      toast.success('Receta actualizada exitosamente');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al actualizar receta');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const cancelEdit = () => {
@@ -623,10 +660,10 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
           </div>
           <button
             onClick={editingRecipeId ? updateRecipe : saveRecipe}
-            disabled={!canSave}
+            disabled={!canSave || isSaving}
             className="mt-5 w-full py-3.5 bg-white text-[#ee2b6c] rounded-md font-black text-base shadow-xl hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            {editingRecipeId ? 'ACTUALIZAR RECETA' : 'GUARDAR RECETA'}
+            {isSaving ? 'GUARDANDO...' : (editingRecipeId ? 'ACTUALIZAR RECETA' : 'GUARDAR RECETA')}
           </button>
           {editingRecipeId && (
             <button
