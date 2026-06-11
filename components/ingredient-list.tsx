@@ -47,12 +47,15 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
     totalPrice: '',
   });
 
-  // Cargar ingredientes desde Supabase
+  // Cargar ingredientes desde Supabase (ordenados A-Z por nombre)
   const loadIngredients = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await fetchIngredients();
-      setIngredients(data);
+      const sorted = [...data].sort((a, b) =>
+        a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+      );
+      setIngredients(sorted);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cargar ingredientes';
       toast.error(message);
@@ -120,8 +123,10 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
         totalPrice: price,
         pricePerUnit,
       });
-      setIngredients(prev => prev.map(ing => ing.id === ingredient.id ? updated : ing));
-      onIngredientsChange?.(ingredients.map(ing => ing.id === ingredient.id ? updated : ing));
+      const next = ingredients.map(ing => ing.id === ingredient.id ? updated : ing);
+      const sorted = [...next].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+      setIngredients(sorted);
+      onIngredientsChange?.(sorted);
       setEditingId(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al guardar';
@@ -157,16 +162,12 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
         ingredients
       );
 
-      if (isNew) {
-        setIngredients(prev => [...prev, savedIngredient]);
-      } else {
-        setIngredients(prev => prev.map(ing => ing.id === savedIngredient.id ? savedIngredient : ing));
-      }
-      onIngredientsChange?.(
-        isNew
-          ? [...ingredients, savedIngredient]
-          : ingredients.map(ing => ing.id === savedIngredient.id ? savedIngredient : ing)
-      );
+      const raw = isNew
+        ? [...ingredients, savedIngredient]
+        : ingredients.map(ing => ing.id === savedIngredient.id ? savedIngredient : ing);
+      const sorted = [...raw].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+      setIngredients(sorted);
+      onIngredientsChange?.(sorted);
 
       setFormData({ name: '', purchasedQuantity: '', unit: 'kg', totalPrice: '' });
       setIsAdding(false);

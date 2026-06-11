@@ -57,6 +57,25 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
   const searchParams = useSearchParams();
 
+  // ── Auto-scroll al montar (manejo de anchor link #recipe-builder) ──
+  useEffect(() => {
+    const scrollToBuilder = () => {
+      if (window.location.hash === '#recipe-builder') {
+        // Un ligero timeout permite que Next.js asiente el DOM primero
+        setTimeout(() => {
+          document.getElementById('recipe-builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+      }
+    };
+    
+    // Ejecutar al montar el componente (caso: navegación directa con hash)
+    scrollToBuilder();
+
+    // Escuchar si el hash cambia mientras el componente ya está montado
+    window.addEventListener('hashchange', scrollToBuilder);
+    return () => window.removeEventListener('hashchange', scrollToBuilder);
+  }, [searchParams]); // Depender de searchParams ayuda a re-evaluar si la URL cambia
+
   // Cargar datos iniciales + restaurar borrador
   useEffect(() => {
     const loadData = async () => {
@@ -65,7 +84,10 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
           fetchIngredients(),
           fetchRecipes(),
         ]);
-        setBaseIngredients(ingredients);
+        const sortedIngredients = [...ingredients].sort((a, b) =>
+          a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+        );
+        setBaseIngredients(sortedIngredients);
         setRecipes(dbRecipes);
 
         // Si viene ?edit=<id>, cargar esa receta para edición
@@ -108,7 +130,14 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
   useEffect(() => {
     if (ingredientsVersion === 0) return;
-    fetchIngredients().then(setBaseIngredients).catch(() => {});
+    fetchIngredients()
+      .then(data => {
+        const sorted = [...data].sort((a, b) =>
+          a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+        );
+        setBaseIngredients(sorted);
+      })
+      .catch(() => {});
   }, [ingredientsVersion]);
 
   const toBaseQuantity = (quantity: number, unit: Unit): number => {
