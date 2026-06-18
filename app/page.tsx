@@ -42,22 +42,7 @@ export default function LandingPage() {
           </div>
           <div className="relative">
             <div className="relative w-full aspect-[4/3] rounded-2xl bg-surface-container-low p-2 ambient-shadow border border-outline-variant/10 overflow-hidden transform rotate-2 hover:rotate-0 transition-transform duration-500">
-              <img alt="App Screenshot" className="w-full h-full object-cover rounded-xl shadow-inner" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALb47CDQXq2EG1CvI6wodyvrmN8ReCgD8HZl2qxG8aSKt7sf7C5zh0pklDQzvMntOSKVgUeZoXvWOM5XGvAEZg3coZrVBVdkNZGqGfElRxqdqKFoW6dD-BNToI1EVuk6cosnyHEw_HJKEXxJdFe4qHWgbv-qZ8nJXPozU9cscgXmCHOsyZYiAw_1lv8Sr6e5LEa7KiFnFkRxgg-bxCGGD7vygaib--GRC8_K8zse9bRSj4Fcp1o1ykhmuji0HYiR8KR-s01lIP0byb" />
-              {/* Floating Element 1 */}
-              <div className="absolute -bottom-6 -left-6 bg-surface-container-lowest p-4 rounded-xl ambient-shadow border border-outline-variant/10 flex items-center gap-4 animate-bounce" style={{ animationDuration: '3s' }}>
-                <div className="w-12 h-12 bg-primary-container/20 rounded-full flex items-center justify-center">
-                  <span className="material-symbols-outlined text-primary">monitoring</span>
-                </div>
-                <div>
-                  <p className="text-xs font-body text-on-surface-variant uppercase tracking-wider">Margen Neto</p>
-                  <p className="font-headline font-bold text-xl text-on-surface">45.2%</p>
-                </div>
-              </div>
-              {/* Floating Element 2 */}
-              <div className="absolute -top-6 -right-6 bg-surface-container-lowest p-4 rounded-xl ambient-shadow border border-outline-variant/10 flex items-center gap-3 animate-pulse" style={{ animationDuration: '4s' }}>
-                <span className="material-symbols-outlined text-secondary">check_circle</span>
-                <p className="font-headline font-semibold text-sm text-on-surface">Costo actualizado</p>
-              </div>
+              <img alt="App Screenshot" className="w-full h-full object-cover rounded-xl shadow-inner" src="/costo-calculadora-imagen.webp" />
             </div>
           </div>
         </div>
@@ -103,7 +88,7 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="order-2 lg:order-1">
               <div className="relative w-full aspect-square rounded-3xl bg-surface-container-low p-4 ambient-shadow border border-outline-variant/10">
-                <img alt="App Dashboard" className="w-full h-full object-cover rounded-2xl shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyAD6wM_GZoV1Rm9PZvZytSqpa4kZQP2yoJuyj0Q5a2By3-S7mavWiHdN-9SC71qk9tLJWHyW98dHHQT3CpZ3E0Tq68SFpuncwEUUAaqka-NOhYehcGLW7sxGHMqebbPNLhCkvXDpSuQPyRlDx_CK8tt6KKW_NvZfGagJYOpTdKr0eXSHpQQ-_rsV36n7d5mEV9fug1ikS69ns3Gb0Tl2tasIsbQWPWVgEcqXUMneS9a368yqZltZx-_IlHaGsvDyJF8i74b98NiR8" />
+                <img alt="App Dashboard" className="w-full h-full object-cover rounded-2xl shadow-sm" src="/calculadora-costos-imagen.webp" />
               </div>
             </div>
             <div className="order-1 lg:order-2">
@@ -385,18 +370,16 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 w-full">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6 px-12 py-10 w-full max-w-7xl mx-auto">
-          <div>
-            <TransitionLink href="/" className="flex items-center gap-2.5 shrink-0 mb-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ee2b6c] text-white shrink-0">
-                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>bakery_dining</span>
-              </div>
-              <span className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white whitespace-nowrap">
-                costo repostero
-              </span>
-            </TransitionLink>
+          <div className="text-center md:text-left">
             <p className="text-sm text-slate-500">© 2026 CostoRepostero. El arte de costear con precisión.</p>
           </div>
-          <div className="flex gap-6">
+          <p className="text-xs text-slate-400 text-center">
+            Desarrollado by{' '}
+            <a href="https://www.xora.com.ar/" target="_blank" rel="noopener noreferrer" className="text-[#ee2b6c] hover:underline">
+              XORA WEB
+            </a>
+          </p>
+          <div className="flex flex-wrap justify-center gap-6">
             <a className="text-sm text-slate-400 hover:text-[#ee2b6c] transition-colors" href="#">Privacidad</a>
             <a className="text-sm text-slate-400 hover:text-[#ee2b6c] transition-colors" href="#">Términos</a>
             <a className="text-sm text-slate-400 hover:text-[#ee2b6c] transition-colors" href="#">Contacto</a>
