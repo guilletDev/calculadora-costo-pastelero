@@ -113,6 +113,54 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Landing Page Colors (from inicio-stitch) */
+  --color-surface-container: #e6e8ea;
+  --color-on-tertiary-container: #3a1483;
+  --color-on-secondary-container: #82214e;
+  --color-secondary-container: #ffc1d5;
+  --color-on-primary-container: #4d0016;
+  --color-surface-tint: #b80040;
+  --color-error-dim: #9f0519;
+  --color-surface-dim: #d1d5d7;
+  --color-on-primary-fixed-variant: #5f001d;
+  --color-error-container: #fb5151;
+  --color-surface-container-highest: #dadddf;
+  --color-on-secondary: #ffeff2;
+  --color-primary-fixed-dim: #ff5676;
+  --color-tertiary-container: #bca2ff;
+  --color-surface-container-low: #eff1f2;
+  --color-surface: #f5f6f7;
+  --color-on-background: #2c2f30;
+  --color-secondary-dim: #8c2957;
+  --color-surface-bright: #f5f6f7;
+  --color-on-tertiary-fixed: #1e0053;
+  --color-on-error-container: #570008;
+  --color-inverse-on-surface: #9b9d9e;
+  --color-inverse-primary: #ff4f73;
+  --color-primary-container: #ff7389;
+  --color-on-secondary-fixed: #68083b;
+  --color-primary-dim: #a20037;
+  --color-secondary-fixed: #ffc1d5;
+  --color-on-surface-variant: #595c5d;
+  --color-on-secondary-fixed-variant: #8e2a58;
+  --color-surface-container-high: #e0e3e4;
+  --color-secondary-fixed-dim: #ffacc9;
+  --color-primary-fixed: #ff7389;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-primary: #ffefef;
+  --color-on-surface: #2c2f30;
+  --color-tertiary-fixed: #bca2ff;
+  --color-tertiary-fixed-dim: #b091ff;
+  --color-surface-variant: #dadddf;
+  --color-on-error: #ffefee;
+  --color-tertiary-dim: #5a3ba3;
+  --color-on-primary-fixed: #000000;
+  --color-inverse-surface: #0c0f10;
+  --color-outline: #757778;
+  --color-on-tertiary-fixed-variant: #43208c;
+  --color-on-tertiary: #f8f0ff;
+  --color-outline-variant: #abadae;
 }
 
 @layer base {
@@ -121,5 +169,31 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .font-headline {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .font-display {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .font-body {
+    font-family: 'Inter', sans-serif;
+  }
+  .font-label {
+    font-family: 'Inter', sans-serif;
+  }
+  .gradient-text {
+    background: linear-gradient(135deg, #b80040, #ff7389);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .gradient-bg {
+    background: linear-gradient(135deg, #b80040, #ff7389);
+  }
+  .ambient-shadow {
+    box-shadow: 0 12px 32px rgba(44, 47, 48, 0.06);
   }
 }

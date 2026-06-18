@@ -6,8 +6,9 @@ import { Navbar } from '@/components/navbar';
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = pathname === '/login' || pathname.startsWith('/auth/');
+  const isLandingPage = pathname === '/';
 
-  if (isAuthPage) {
+  if (isAuthPage || isLandingPage) {
     return <>{children}</>;
   }
 

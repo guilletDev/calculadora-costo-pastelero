@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 
 export default function LoginPage() {
@@ -14,11 +15,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-[#f8f6f6] dark:bg-[#221016]">
-      <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-xl dark:bg-[#1a0c10] border border-[#ee2b6c]/10 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-[#ee2b6c] text-white">
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-[#f8f6f6] dark:bg-[#221016]">
+      <div className="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 shadow-xl dark:bg-[#1a0c10] border border-[#ee2b6c]/10 text-center">
+        <Link href="/" className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-[#ee2b6c] text-white hover:opacity-90 transition-opacity">
           <span className="material-symbols-outlined" style={{ fontSize: 32 }}>bakery_dining</span>
-        </div>
+        </Link>
         
         <div className="space-y-2">
           <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -53,6 +54,15 @@ export default function LoginPage() {
           </svg>
           Continuar con Google
         </button>
+        <div className="pt-2">
+          <Link
+            href="/"
+            className="text-xs text-slate-400 hover:text-[#ee2b6c] transition-colors inline-flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[14px]">arrow_back</span>
+            Volver al inicio
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -153,6 +153,12 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   };
 
 
+  const normalizeIngredient = (quantity: number, unit: Unit): { quantity: number; unit: Unit } => {
+    if (unit === 'kg') return { quantity: quantity * 1000, unit: 'g' };
+    if (unit === 'l') return { quantity: quantity * 1000, unit: 'ml' };
+    return { quantity, unit };
+  };
+
   const calculateRecipeTotals = (recipe: any) => {
     const ingredientsCost = (recipe.ingredients || []).reduce((sum: number, ing: any) => sum + ing.cost, 0);
     const extraCostsTotal = recipe.extraCosts
@@ -170,11 +176,12 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     if (!newIngredient.baseIngredientId || !newIngredient.quantityUsed) return;
     const quantityUsed = parseFloat(newIngredient.quantityUsed);
     const cost = calculateIngredientCost(newIngredient.baseIngredientId, quantityUsed, newIngredient.unit);
+    const normalized = normalizeIngredient(quantityUsed, newIngredient.unit);
     const recipeIngredient: RecipeIngredient = {
       id: crypto.randomUUID(),
       baseIngredientId: newIngredient.baseIngredientId,
-      quantityUsed,
-      unit: newIngredient.unit,
+      quantityUsed: normalized.quantity,
+      unit: normalized.unit,
       cost,
     };
     setCurrentRecipe({ ...currentRecipe, ingredients: [...(currentRecipe.ingredients || []), recipeIngredient] });
@@ -199,10 +206,11 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const saveEditIngredient = (ingId: string) => {
     const qty = parseFloat(editingQuantity);
     if (!qty || qty <= 0) return;
+    const normalized = normalizeIngredient(qty, editingUnit);
     const updatedIngredients = (currentRecipe.ingredients || []).map((ing: RecipeIngredient) => {
       if (ing.id !== ingId) return ing;
-      const cost = calculateIngredientCost(ing.baseIngredientId, qty, editingUnit);
-      return { ...ing, quantityUsed: qty, unit: editingUnit, cost };
+      const cost = calculateIngredientCost(ing.baseIngredientId, normalized.quantity, normalized.unit);
+      return { ...ing, quantityUsed: normalized.quantity, unit: normalized.unit, cost };
     });
     setCurrentRecipe({ ...currentRecipe, ingredients: updatedIngredients });
     setEditingIngredientId(null);
@@ -366,6 +374,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
   const totals = calculateRecipeTotals(currentRecipe);
   const budgetTotal = totals.costPerUnit * (parseFloat(budgetQty) || 0);
+  const units = parseFloat(String(currentRecipe.unitsProduced)) || 0;
+  const costPerUnitWithoutMargin = units > 0 ? totals.totalCost / units : 0;
+  const budgetNetProfit = budgetTotal - (costPerUnitWithoutMargin * (parseFloat(budgetQty) || 0));
 
   if (baseIngredients.length === 0) {
     return (
@@ -681,7 +692,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
             </div>
           </div>
           <div className="mt-6">
-            <p className="text-xs uppercase font-bold tracking-widest opacity-80 mb-1">Costo por Unidad</p>
+            <p className="text-xs uppercase font-bold tracking-widest opacity-80 mb-1">Precio de Venta</p>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-black">{formatCurrency(totals.costPerUnit)}</span>
               <span className="text-lg opacity-80">/ porción</span>
@@ -756,18 +767,22 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
           {/* Resultado */}
           {(parseFloat(budgetQty) > 0 && totals.costPerUnit > 0) ? (
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-md p-4 text-center">
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Cantidad</p>
                 <p className="text-2xl font-black text-slate-700 dark:text-slate-200">{parseFloat(budgetQty)} <span className="text-base font-semibold text-slate-400">und.</span></p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-md p-4 text-center">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Costo por unidad</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Precio por unidad</p>
                 <p className="text-2xl font-black text-slate-700 dark:text-slate-200">{formatCurrency(totals.costPerUnit)}</p>
               </div>
               <div className="bg-[#ee2b6c] rounded-md p-4 text-center shadow-md shadow-[#ee2b6c]/20">
                 <p className="text-xs font-bold text-white/80 uppercase tracking-wide mb-1">Total del Pedido</p>
                 <p className="text-2xl font-black text-white">{formatCurrency(budgetTotal)}</p>
+              </div>
+              <div className={`rounded-md p-4 text-center ${budgetNetProfit > 0 ? 'bg-emerald-500 shadow-md shadow-emerald-500/20' : 'bg-slate-50 dark:bg-slate-800/50'}`}>
+                <p className={`text-xs font-bold uppercase tracking-wide mb-1 ${budgetNetProfit > 0 ? 'text-white/70' : 'text-slate-500 dark:text-slate-400'}`}>Ganancia Neta</p>
+                <p className={`text-2xl font-black ${budgetNetProfit > 0 ? 'text-white' : 'text-slate-700 dark:text-slate-200'}`}>{formatCurrency(budgetNetProfit)}</p>
               </div>
             </div>
           ) : (

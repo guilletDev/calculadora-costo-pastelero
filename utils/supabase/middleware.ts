@@ -36,7 +36,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protect private routes
-  const isPrivateRoute = request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/recetas') || request.nextUrl.pathname.startsWith('/calculadora')
+  const isPrivateRoute = request.nextUrl.pathname.startsWith('/recetas') || request.nextUrl.pathname.startsWith('/calculadora')
   
   if (!user && isPrivateRoute) {
     // no user, potentially respond by redirecting the user to the login page
@@ -48,7 +48,7 @@ export async function updateSession(request: NextRequest) {
   // Si el usuario está logueado e intenta acceder al login, lo redirigimos a la app
   if (user && request.nextUrl.pathname === '/login') {
     const url = request.nextUrl.clone()
-    url.pathname = '/'
+    url.pathname = '/calculadora'
     return NextResponse.redirect(url)
   }
 

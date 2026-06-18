@@ -101,6 +101,8 @@ export default function RecetaDetailPage() {
   }
 
   const budgetTotal = recipe.costPerUnit * (parseFloat(budgetQty) || 0);
+  const costPerUnitWithoutMargin = recipe.unitsProduced > 0 ? recipe.totalCost / recipe.unitsProduced : 0;
+  const budgetNetProfit = budgetTotal - (costPerUnitWithoutMargin * (parseFloat(budgetQty) || 0));
 
   const extraCostsTotal =
     (recipe.extraCosts.packaging || 0) +
@@ -133,7 +135,7 @@ export default function RecetaDetailPage() {
         </div>
         <div className="flex gap-2 shrink-0">
           <Link
-            href={`/?edit=${recipe.id}#recipe-builder`}
+            href={`/calculadora?edit=${recipe.id}#recipe-builder`}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-sm font-bold hover:border-[#ee2b6c] hover:text-[#ee2b6c] transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -299,7 +301,7 @@ export default function RecetaDetailPage() {
           </div>
 
           {parseFloat(budgetQty) > 0 ? (
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-md p-4 text-center">
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Cantidad</p>
                 <p className="text-2xl font-black text-slate-700 dark:text-slate-200">
@@ -307,12 +309,16 @@ export default function RecetaDetailPage() {
                 </p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-md p-4 text-center">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Costo por unidad</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Precio por unidad</p>
                 <p className="text-2xl font-black text-slate-700 dark:text-slate-200">{formatCurrency(recipe.costPerUnit)}</p>
               </div>
               <div className="bg-[#ee2b6c] rounded-md p-4 text-center shadow-md shadow-[#ee2b6c]/20">
                 <p className="text-xs font-bold text-white/80 uppercase tracking-wide mb-1">Total del Pedido</p>
                 <p className="text-2xl font-black text-white">{formatCurrency(budgetTotal)}</p>
+              </div>
+              <div className={`rounded-md p-4 text-center ${budgetNetProfit > 0 ? 'bg-emerald-500 shadow-md shadow-emerald-500/20' : 'bg-slate-50 dark:bg-slate-800/50'}`}>
+                <p className={`text-xs font-bold uppercase tracking-wide mb-1 ${budgetNetProfit > 0 ? 'text-white/70' : 'text-slate-500 dark:text-slate-400'}`}>Ganancia Neta</p>
+                <p className={`text-2xl font-black ${budgetNetProfit > 0 ? 'text-white' : 'text-slate-700 dark:text-slate-200'}`}>{formatCurrency(budgetNetProfit)}</p>
               </div>
             </div>
           ) : (

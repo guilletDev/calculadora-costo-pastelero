@@ -132,13 +132,26 @@ export async function upsertRecipe(recipeDraft: Omit<Recipe, 'id'>, id?: string)
 
   // Insert ingredients
   if (recipeDraft.ingredients.length > 0) {
-    const ingredientsToInsert = recipeDraft.ingredients.map(ing => ({
-      recipe_id: recipeId,
-      ingredient_id: ing.baseIngredientId,
-      quantity_used: ing.quantityUsed,
-      unit: ing.unit,
-      cost: ing.cost,
-    }));
+    const ingredientsToInsert = recipeDraft.ingredients.map(ing => {
+      let quantityUsed = ing.quantityUsed;
+      let unit = ing.unit;
+
+      if (unit === 'kg') {
+        quantityUsed *= 1000;
+        unit = 'g';
+      } else if (unit === 'l') {
+        quantityUsed *= 1000;
+        unit = 'ml';
+      }
+
+      return {
+        recipe_id: recipeId,
+        ingredient_id: ing.baseIngredientId,
+        quantity_used: quantityUsed,
+        unit,
+        cost: ing.cost,
+      };
+    });
 
     const { error: insertIngError } = await supabase
       .from('recipe_ingredients')

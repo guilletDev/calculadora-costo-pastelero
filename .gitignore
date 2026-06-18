@@ -13,4 +13,6 @@ next-env.d.ts
 .env.local.example
 
 
+#stitch
+inicio-stitch.html
 

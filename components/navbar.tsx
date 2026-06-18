@@ -104,8 +104,8 @@ export function Navbar() {
   };
 
   const navLinks = [
-    { href: '/',        label: 'Calculadora', icon: 'calculate' },
-    { href: '/recetas', label: 'Recetas',      icon: 'menu_book' },
+    { href: '/calculadora', label: 'Calculadora', icon: 'calculate' },
+    { href: '/recetas',     label: 'Recetas',      icon: 'menu_book' },
   ];
 
   const isActive = (href: string) =>
@@ -164,7 +164,7 @@ export function Navbar() {
         <div className="mx-auto flex w-full max-w-[1000px] items-center justify-between px-5 py-3">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0">
+          <Link href="/calculadora" className="flex items-center gap-2.5 shrink-0">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ee2b6c] text-white shrink-0">
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>bakery_dining</span>
             </div>
