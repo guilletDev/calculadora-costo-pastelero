@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { TransitionLink } from '@/components/transition-link';
 import { createClient } from '@/utils/supabase/client';
 import { UserProfile } from '@/components/user-profile';
 import {
@@ -164,19 +164,19 @@ export function Navbar() {
         <div className="mx-auto flex w-full max-w-[1000px] items-center justify-between px-5 py-3">
 
           {/* Logo */}
-          <Link href="/calculadora" className="flex items-center gap-2.5 shrink-0">
+          <TransitionLink href="/calculadora" className="flex items-center gap-2.5 shrink-0">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ee2b6c] text-white shrink-0">
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>bakery_dining</span>
             </div>
             <span className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white whitespace-nowrap">
               costo repostero
             </span>
-          </Link>
+          </TransitionLink>
 
           {/* ── Desktop: nav central + dropdown de perfil ──────────────────── */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map(({ href, label }) => (
-              <Link
+              <TransitionLink
                 key={href}
                 href={href}
                 className={`text-sm font-semibold transition-colors ${
@@ -186,7 +186,7 @@ export function Navbar() {
                 }`}
               >
                 {label}
-              </Link>
+              </TransitionLink>
             ))}
           </nav>
 
@@ -272,7 +272,7 @@ export function Navbar() {
           >
             <nav className="px-4 py-3 flex flex-col gap-1">
               {navLinks.map(({ href, label, icon }) => (
-                <Link
+                <TransitionLink
                   key={href}
                   href={href}
                   className={`flex items-center gap-3 px-3 py-3 rounded-lg font-semibold text-sm transition-colors ${
@@ -284,7 +284,7 @@ export function Navbar() {
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{icon}</span>
                   {label}
-                </Link>
+                </TransitionLink>
               ))}
             </nav>
           </div>

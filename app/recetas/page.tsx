@@ -115,7 +115,7 @@ export default function RecetasPage() {
                     <p className="text-base font-black text-slate-700 dark:text-slate-200">{recipe.unitsProduced}</p>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-md px-3 py-2.5">
-                    <p className="text-xs text-slate-400 font-medium">Margen</p>
+                    <p className="text-xs text-slate-400 font-medium">Ganancia</p>
                     <p className="text-base font-black text-slate-700 dark:text-slate-200">{recipe.profitMargin ?? 0}%</p>
                   </div>
                 </div>
@@ -123,11 +123,11 @@ export default function RecetasPage() {
                 {/* Costo por unidad */}
                 <div className="border-t border-slate-100 dark:border-slate-800 pt-4 flex items-end justify-between">
                   <div>
-                    <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Costo / porción</p>
+                    <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Precio venta</p>
                     <p className="text-xl font-black text-[#ee2b6c]">{formatCurrency(recipe.costPerUnit)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Total receta</p>
+                    <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Precio de costo</p>
                     <p className="text-sm font-bold text-slate-600 dark:text-slate-400">{formatCurrency(recipe.totalCost)}</p>
                   </div>
                 </div>

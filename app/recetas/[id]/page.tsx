@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Recipe, BaseIngredient } from '@/lib/types';
 import { fetchIngredients } from '@/lib/ingredients-db';
 import { fetchRecipeById, deleteRecipe } from '@/lib/recipes-db';
+import { TransitionLink } from '@/components/transition-link';
+import { navigateWithTransition } from '@/lib/view-transition';
 
 const QUICK_QUANTITIES = [
   { label: '½ doc.', value: 6 },
@@ -28,16 +29,17 @@ export default function RecetaDetailPage() {
     async function loadData() {
       try {
         const id = Array.isArray(params.id) ? params.id[0] : params.id;
+        if (!id) { navigateWithTransition(router, '/recetas'); return; }
         const [found, ingredients] = await Promise.all([
           fetchRecipeById(id),
           fetchIngredients(),
         ]);
-        if (!found) { router.push('/recetas'); return; }
+        if (!found) { navigateWithTransition(router, '/recetas'); return; }
         setRecipe(found);
         setBaseIngredients(ingredients);
       } catch (err) {
         toast.error('Error al cargar datos');
-        router.push('/recetas');
+        navigateWithTransition(router, '/recetas');
       }
     }
     loadData();
@@ -76,7 +78,7 @@ export default function RecetaDetailPage() {
                 await deleteRecipe(recipe.id);
                 toast.dismiss(t);
                 toast.success('Receta eliminada');
-                router.push('/recetas');
+                navigateWithTransition(router, '/recetas');
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : 'Error al eliminar');
                 setIsDeleting(false);
@@ -120,7 +122,7 @@ export default function RecetaDetailPage() {
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-slate-400">
-        <Link href="/recetas" className="hover:text-[#ee2b6c] transition-colors">Recetas</Link>
+        <TransitionLink href="/recetas" className="hover:text-[#ee2b6c] transition-colors">Recetas</TransitionLink>
         <span className="material-symbols-outlined text-[16px]">chevron_right</span>
         <span className="text-slate-700 dark:text-slate-300 font-medium truncate">{recipe.name}</span>
       </div>
@@ -130,17 +132,17 @@ export default function RecetaDetailPage() {
         <div>
           <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{recipe.name}</h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-            {recipe.unitsProduced} porciones · {recipe.profitMargin ?? 0}% de margen de ganancia
+            {recipe.unitsProduced} porciones · {recipe.profitMargin ?? 0}% de ganancia
           </p>
         </div>
         <div className="flex gap-2 shrink-0">
-          <Link
+          <TransitionLink
             href={`/calculadora?edit=${recipe.id}#recipe-builder`}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-sm font-bold hover:border-[#ee2b6c] hover:text-[#ee2b6c] transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">edit</span>
             Editar
-          </Link>
+          </TransitionLink>
           <button
             onClick={handleDelete}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md border border-red-200 text-red-400 text-sm font-bold hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -156,8 +158,8 @@ export default function RecetaDetailPage() {
         {[
           { label: 'Costo Ingredientes', value: formatCurrency(recipe.totalCost - extraCostsTotal), icon: 'egg' },
           { label: 'Costos Adicionales', value: formatCurrency(extraCostsTotal), icon: 'inventory' },
-          { label: 'Costo Total Neto', value: formatCurrency(recipe.totalCost), icon: 'receipt' },
-          { label: 'Costo por Porción', value: formatCurrency(recipe.costPerUnit), icon: 'cake', highlight: true },
+          { label: 'Precio de Costo', value: formatCurrency(recipe.totalCost), icon: 'receipt' },
+          { label: 'Precio de Venta', value: formatCurrency(recipe.costPerUnit), icon: 'cake', highlight: true },
         ].map(({ label, value, icon, highlight }) => (
           <div
             key={label}

@@ -7,6 +7,7 @@ import { BaseIngredient, Recipe, RecipeIngredient, Unit } from '@/lib/types';
 import { storage } from '@/lib/storage';
 import { fetchIngredients } from '@/lib/ingredients-db';
 import { fetchRecipes, upsertRecipe, deleteRecipe as dbDeleteRecipe } from '@/lib/recipes-db';
+import { navigateWithTransition } from '@/lib/view-transition';
 
 interface RecipeBuilderProps {
   isIngredientsLocked?: boolean;
@@ -257,7 +258,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
       setRecipes([...recipes, savedRecipe]);
       resetCurrentRecipe();
       toast.success('Receta guardada exitosamente');
-      router.push('/recetas');
+      navigateWithTransition(router, '/recetas');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al guardar receta');
     } finally {
@@ -682,7 +683,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                 <span className="font-bold">{formatCurrency(totals.extraCostsTotal)}</span>
               </div>
               <div className="flex justify-between text-sm mt-1 opacity-80 border-t border-white/10 pt-1">
-                <span>Costo Neto:</span>
+                <span>Precio de Costo:</span>
                 <span>{formatCurrency(totals.totalCost)}</span>
               </div>
               <div className="flex justify-between text-lg font-bold pt-2">

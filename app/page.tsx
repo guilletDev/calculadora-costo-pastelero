@@ -1,9 +1,9 @@
 import { LandingNavbar } from '@/components/landing-navbar';
-import Link from 'next/link';
+import { TransitionLink } from '@/components/transition-link';
 
 export default function LandingPage() {
   return (
-    <div className="bg-surface text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container font-body">
+    <div className="bg-surface text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container font-body page-enter">
       <LandingNavbar />
       
       {/* HERO SECTION */}
@@ -22,10 +22,10 @@ export default function LandingPage() {
               de los excel complicados y tomá el control de tus números.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/login" className="gradient-bg text-on-primary font-headline text-base font-semibold py-4 px-8 rounded-xl hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all duration-300 ambient-shadow flex items-center justify-center gap-2 group">
+              <TransitionLink href="/login" className="gradient-bg text-on-primary font-headline text-base font-semibold py-4 px-8 rounded-xl hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all duration-300 ambient-shadow flex items-center justify-center gap-2 group">
                 Empezar gratis
                 <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform duration-300">arrow_forward</span>
-              </Link>
+              </TransitionLink>
               <button className="bg-surface-container-lowest border border-outline-variant/20 text-on-surface font-headline text-base font-semibold py-4 px-8 rounded-xl hover:shadow-lg hover:-translate-y-1 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 group">
                 <span className="material-symbols-outlined text-primary group-hover:scale-110 transition-transform duration-300">play_circle</span>
                 Ver cómo funciona
@@ -153,7 +153,7 @@ export default function LandingPage() {
       </section>
 
       {/* HOW IT WORKS TIMELINE */}
-      <section className="py-24 bg-surface-container-lowest" id="como-funciona">
+      <section className="py-24 bg-surface-container-lowest scroll-mt-20" id="como-funciona">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-3xl mx-auto mb-20">
             <h2 className="font-headline text-3xl md:text-4xl font-bold text-on-surface mb-4">Más simple que hacer un bizcochuelo</h2>
@@ -201,7 +201,7 @@ export default function LandingPage() {
       </section>
 
       {/* BENEFITS GRID */}
-      <section className="py-24 bg-surface relative" id="beneficios">
+      <section className="py-24 bg-surface relative scroll-mt-20" id="beneficios">
         <div className="max-w-7xl mx-auto px-6">
           <div className="mb-16">
             <h2 className="font-headline text-3xl md:text-4xl font-bold text-on-surface mb-4">Todo lo que necesitás, en un solo lugar</h2>
@@ -253,7 +253,7 @@ export default function LandingPage() {
       </section>
 
       {/* TESTIMONIALS */}
-      <section className="py-24 bg-surface-container-lowest relative overflow-hidden" id="testimonios">
+      <section className="py-24 bg-surface-container-lowest relative overflow-hidden scroll-mt-20" id="testimonios">
         <div className="absolute right-0 top-0 w-64 h-64 bg-secondary-container/20 rounded-full blur-3xl pointer-events-none"></div>
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="text-center mb-16">
@@ -316,7 +316,7 @@ export default function LandingPage() {
       </section>
 
       {/* Preguntas */}
-      <section className="py-24 bg-surface" id="preguntas">
+      <section className="py-24 bg-surface scroll-mt-20" id="preguntas">
         <div className="max-w-3xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="font-headline text-3xl font-bold text-on-surface mb-4">Preguntas Frecuentes</h2>
@@ -327,8 +327,10 @@ export default function LandingPage() {
                 ¿Es realmente gratis?
                 <span className="material-symbols-outlined text-primary group-open:rotate-180 transition-transform">keyboard_arrow_down</span>
               </summary>
-              <div className="px-6 pb-6 pt-0 font-body text-on-surface-variant">
-                Sí, tenemos un plan 100% gratuito que te permite cargar ingredientes y armar recetas básicas para que pruebes la herramienta. También ofrecemos planes premium con funciones avanzadas para negocios en crecimiento.
+              <div className="overflow-hidden max-h-0 group-open:max-h-[500px] transition-[max-height] duration-300 ease-out">
+                <div className="px-6 pb-6 pt-0 font-body text-on-surface-variant">
+                  Sí, tenemos un plan 100% gratuito que te permite cargar ingredientes y armar recetas básicas para que pruebes la herramienta. También ofrecemos planes premium con funciones avanzadas para negocios en crecimiento.
+                </div>
               </div>
             </details>
             <details className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 [&_summary::-webkit-details-marker]:hidden group">
@@ -336,8 +338,10 @@ export default function LandingPage() {
                 ¿Puedo usarlo desde el celular?
                 <span className="material-symbols-outlined text-primary group-open:rotate-180 transition-transform">keyboard_arrow_down</span>
               </summary>
-              <div className="px-6 pb-6 pt-0 font-body text-on-surface-variant">
-                ¡Totalmente! CostoRepostero está diseñado para funcionar perfecto en la pantalla de tu teléfono para que puedas chequear costos mientras estás en la cocina o comprando insumos.
+              <div className="overflow-hidden max-h-0 group-open:max-h-[500px] transition-[max-height] duration-300 ease-out">
+                <div className="px-6 pb-6 pt-0 font-body text-on-surface-variant">
+                  ¡Totalmente! CostoRepostero está diseñado para funcionar perfecto en la pantalla de tu teléfono para que puedas chequear costos mientras estás en la cocina o comprando insumos.
+                </div>
               </div>
             </details>
             <details className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 [&_summary::-webkit-details-marker]:hidden group">
@@ -345,8 +349,10 @@ export default function LandingPage() {
                 ¿Mis recetas y datos están seguros?
                 <span className="material-symbols-outlined text-primary group-open:rotate-180 transition-transform">keyboard_arrow_down</span>
               </summary>
-              <div className="px-6 pb-6 pt-0 font-body text-on-surface-variant">
-                La privacidad de tus recetas es nuestra prioridad. Tus datos se guardan de forma segura en la nube y solo vos tenés acceso a ellos. Nunca compartiremos tus fórmulas secretas.
+              <div className="overflow-hidden max-h-0 group-open:max-h-[500px] transition-[max-height] duration-300 ease-out">
+                <div className="px-6 pb-6 pt-0 font-body text-on-surface-variant">
+                  La privacidad de tus recetas es nuestra prioridad. Tus datos se guardan de forma segura en la nube y solo vos tenés acceso a ellos. Nunca compartiremos tus fórmulas secretas.
+                </div>
               </div>
             </details>
             <details className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 [&_summary::-webkit-details-marker]:hidden group">
@@ -354,8 +360,10 @@ export default function LandingPage() {
                 ¿Necesito saber de contabilidad?
                 <span className="material-symbols-outlined text-primary group-open:rotate-180 transition-transform">keyboard_arrow_down</span>
               </summary>
-              <div className="px-6 pb-6 pt-0 font-body text-on-surface-variant">
-                Para nada. Diseñamos la plataforma para que sea intuitiva y hable el &quot;idioma pastelero&quot;. Si sabes seguir una receta, sabes usar CostoRepostero.
+              <div className="overflow-hidden max-h-0 group-open:max-h-[500px] transition-[max-height] duration-300 ease-out">
+                <div className="px-6 pb-6 pt-0 font-body text-on-surface-variant">
+                  Para nada. Diseñamos la plataforma para que sea intuitiva y hable el &quot;idioma pastelero&quot;. Si sabes seguir una receta, sabes usar CostoRepostero.
+                </div>
               </div>
             </details>
           </div>
@@ -368,9 +376,9 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
           <h2 className="font-headline text-4xl md:text-5xl font-extrabold text-on-surface mb-6">Empezá a cobrar lo que tu trabajo realmente vale</h2>
           <p className="font-body text-xl text-on-surface-variant mb-10">Únete a cientos de pasteleros que ya transformaron su pasión en un negocio rentable.</p>
-          <Link href="/login" className="inline-block gradient-bg text-on-primary font-headline text-lg font-bold py-5 px-10 rounded-xl hover:shadow-xl hover:-translate-y-1 active:translate-y-0 transition-all duration-300 ambient-shadow">
+          <TransitionLink href="/login" className="inline-block gradient-bg text-on-primary font-headline text-lg font-bold py-5 px-10 rounded-xl hover:shadow-xl hover:-translate-y-1 active:translate-y-0 transition-all duration-300 ambient-shadow">
             Crear cuenta gratis ahora
-          </Link>
+          </TransitionLink>
         </div>
       </section>
 
@@ -378,14 +386,14 @@ export default function LandingPage() {
       <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 w-full">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6 px-12 py-10 w-full max-w-7xl mx-auto">
           <div>
-            <Link href="/" className="flex items-center gap-2.5 shrink-0 mb-2">
+            <TransitionLink href="/" className="flex items-center gap-2.5 shrink-0 mb-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ee2b6c] text-white shrink-0">
                 <span className="material-symbols-outlined" style={{ fontSize: 20 }}>bakery_dining</span>
               </div>
               <span className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white whitespace-nowrap">
                 costo repostero
               </span>
-            </Link>
+            </TransitionLink>
             <p className="text-sm text-slate-500">© 2026 CostoRepostero. El arte de costear con precisión.</p>
           </div>
           <div className="flex gap-6">
