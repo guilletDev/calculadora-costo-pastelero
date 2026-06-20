@@ -19,6 +19,7 @@ function rowToRecipe(
     ingredients: ingredientRows.map(ingRow => ({
       id: ingRow.id,
       baseIngredientId: ingRow.ingredient_id,
+      ingredientName: ingRow.ingredient_name,
       quantityUsed: ingRow.quantity_used,
       unit: ingRow.unit as Unit,
       cost: ingRow.cost,
@@ -147,6 +148,7 @@ export async function upsertRecipe(recipeDraft: Omit<Recipe, 'id'>, id?: string)
       return {
         recipe_id: recipeId,
         ingredient_id: ing.baseIngredientId,
+        ingredient_name: ing.ingredientName,
         quantity_used: quantityUsed,
         unit,
         cost: ing.cost,

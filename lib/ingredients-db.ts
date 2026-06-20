@@ -84,13 +84,7 @@ export async function deleteIngredient(id: string): Promise<void> {
     .delete()
     .eq('id', id);
 
-  if (error) {
-    // Si es RESTRICT (ingrediente usado en recetas)
-    if (error.code === '23503') {
-      throw new Error('Este ingrediente está siendo usado en una o más recetas. Eliminalo de las recetas primero.');
-    }
-    throw new Error(`Error al eliminar ingrediente: ${error.message}`);
-  }
+  if (error) throw new Error(`Error al eliminar ingrediente: ${error.message}`);
 }
 
 export async function upsertIngredient(

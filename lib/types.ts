@@ -11,7 +11,8 @@ export interface BaseIngredient {
 
 export interface RecipeIngredient {
   id: string;
-  baseIngredientId: string;
+  baseIngredientId: string | null;
+  ingredientName: string;
   quantityUsed: number;
   unit: Unit;
   cost: number;

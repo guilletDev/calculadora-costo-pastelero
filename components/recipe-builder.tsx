@@ -147,9 +147,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     return quantity;
   };
 
-  const calculateIngredientCost = (baseIngredientId: string, quantityUsed: number, unit: Unit): number => {
+  const calculateIngredientCost = (baseIngredientId: string | null, quantityUsed: number, unit: Unit, existingCost?: number): number => {
     const baseIngredient = baseIngredients.find(ing => ing.id === baseIngredientId);
-    if (!baseIngredient) return 0;
+    if (!baseIngredient) return existingCost ?? 0;
     return baseIngredient.pricePerUnit * toBaseQuantity(quantityUsed, unit);
   };
 
@@ -178,9 +178,11 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     const quantityUsed = parseFloat(newIngredient.quantityUsed);
     const cost = calculateIngredientCost(newIngredient.baseIngredientId, quantityUsed, newIngredient.unit);
     const normalized = normalizeIngredient(quantityUsed, newIngredient.unit);
+    const base = baseIngredients.find(i => i.id === newIngredient.baseIngredientId);
     const recipeIngredient: RecipeIngredient = {
       id: crypto.randomUUID(),
       baseIngredientId: newIngredient.baseIngredientId,
+      ingredientName: base?.name ?? 'Desconocido',
       quantityUsed: normalized.quantity,
       unit: normalized.unit,
       cost,
@@ -210,7 +212,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     const normalized = normalizeIngredient(qty, editingUnit);
     const updatedIngredients = (currentRecipe.ingredients || []).map((ing: RecipeIngredient) => {
       if (ing.id !== ingId) return ing;
-      const cost = calculateIngredientCost(ing.baseIngredientId, normalized.quantity, normalized.unit);
+      const cost = calculateIngredientCost(ing.baseIngredientId, normalized.quantity, normalized.unit, ing.cost);
       return { ...ing, quantityUsed: normalized.quantity, unit: normalized.unit, cost };
     });
     setCurrentRecipe({ ...currentRecipe, ingredients: updatedIngredients });
@@ -370,8 +372,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
 
-  const getIngredientName = (baseIngredientId: string) =>
-    baseIngredients.find(ing => ing.id === baseIngredientId)?.name || 'Desconocido';
+  const getIngredientName = (ing: RecipeIngredient) =>
+    baseIngredients.find(i => i.id === ing.baseIngredientId)?.name || ing.ingredientName;
 
   const totals = calculateRecipeTotals(currentRecipe);
   const budgetTotal = totals.costPerUnit * (parseFloat(budgetQty) || 0);
@@ -450,7 +452,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                 /* ── Fila edición inline de cantidad ── */
                 <div key={ing.id} className="flex flex-col sm:grid sm:grid-cols-12 gap-2 sm:gap-3 items-start sm:items-center bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 p-3 rounded-md">
                   <div className="sm:col-span-4 text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {getIngredientName(ing.baseIngredientId)}
+                    {getIngredientName(ing)}
                     <span className="block text-xs text-blue-500 font-normal">editando cantidad...</span>
                   </div>
                   <div className="sm:col-span-4 w-full">
@@ -494,7 +496,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                 <div key={ing.id} className="flex flex-col sm:grid sm:grid-cols-12 gap-2 sm:gap-3 items-start sm:items-center bg-slate-50 dark:bg-slate-800/50 p-3 rounded-md group">
                   <div className="sm:col-span-4 text-sm font-medium w-full sm:w-auto">
                     <span className="sm:hidden text-xs text-slate-400 font-normal mr-1">Ingrediente:</span>
-                    {getIngredientName(ing.baseIngredientId)}
+                    {getIngredientName(ing)}
                   </div>
                   <div className="sm:col-span-4 flex items-center gap-2 w-full sm:w-auto sm:justify-center">
                     <span className="sm:hidden text-xs text-slate-400">Cantidad:</span>

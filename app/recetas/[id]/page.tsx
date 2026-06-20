@@ -48,8 +48,8 @@ export default function RecetaDetailPage() {
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
 
-  const getIngredientName = (id: string) =>
-    baseIngredients.find(i => i.id === id)?.name ?? 'Ingrediente';
+  const getIngredientName = (ing: Recipe['ingredients'][number]) =>
+    baseIngredients.find(i => i.id === ing.baseIngredientId)?.name ?? ing.ingredientName;
 
   const handleDelete = () => {
     if (!recipe) return;
@@ -219,7 +219,7 @@ export default function RecetaDetailPage() {
             {recipe.ingredients.map((ing) => (
               <div key={ing.id} className="flex items-center justify-between px-5 py-3">
                 <div>
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{getIngredientName(ing.baseIngredientId)}</p>
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{getIngredientName(ing)}</p>
                   <p className="text-xs text-slate-400">{ing.quantityUsed} {ing.unit}</p>
                 </div>
                 <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{formatCurrency(ing.cost)}</p>

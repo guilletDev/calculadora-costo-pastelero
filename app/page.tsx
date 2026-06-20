@@ -373,13 +373,13 @@ export default function LandingPage() {
           <div className="text-center md:text-left">
             <p className="text-sm text-slate-500">© 2026 CostoRepostero. El arte de costear con precisión.</p>
           </div>
-          <p className="text-xs text-slate-400 text-center">
+          <p className="text-xs text-slate-400 text-center order-3 md:order-2">
             Desarrollado by{' '}
             <a href="https://www.xora.com.ar/" target="_blank" rel="noopener noreferrer" className="text-[#ee2b6c] hover:underline">
               XORA WEB
             </a>
           </p>
-          <div className="flex flex-wrap justify-center gap-6">
+          <div className="flex flex-wrap justify-center gap-6 order-2 md:order-3">
             <a className="text-sm text-slate-400 hover:text-[#ee2b6c] transition-colors" href="#">Privacidad</a>
             <a className="text-sm text-slate-400 hover:text-[#ee2b6c] transition-colors" href="#">Términos</a>
             <a className="text-sm text-slate-400 hover:text-[#ee2b6c] transition-colors" href="#">Contacto</a>

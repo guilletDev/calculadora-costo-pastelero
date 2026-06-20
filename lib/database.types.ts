@@ -36,7 +36,8 @@ export interface RecipeRow {
 export interface RecipeIngredientRow {
   id: string;
   recipe_id: string;
-  ingredient_id: string;
+  ingredient_id: string | null;
+  ingredient_name: string;
   quantity_used: number;
   unit: string;
   cost: number;
