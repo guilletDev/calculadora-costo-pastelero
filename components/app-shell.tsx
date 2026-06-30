@@ -15,7 +15,7 @@ export function AppShell() {
 
 
   return (
-    <>
+    <div className="space-y-8" id="calculator-content-flow">
       <IngredientList
         onLockChange={setIsIngredientsLocked}
         onIngredientsChange={handleIngredientsChange}
@@ -26,6 +26,6 @@ export function AppShell() {
         isIngredientsLocked={isIngredientsLocked}
         ingredientsVersion={ingredientsVersion}
       />
-    </>
+    </div>
   );
 }

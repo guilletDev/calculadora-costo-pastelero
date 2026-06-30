@@ -206,49 +206,45 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   };
 
   return (
-    <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-      <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-[#ee2b6c]">inventory_2</span>
-          <h3 className="text-xl font-bold">1. Inventario de Ingredientes</h3>
-        </div>
+    <article className="bg-white rounded-[24px] border border-gray-100 overflow-hidden card-animate delay-100" style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.04)' }}>
+      <div className="p-8 border-b border-gray-100 flex items-center gap-3">
+        <span className="material-symbols-outlined text-[#b80049] text-[28px]">inventory_2</span>
+        <h2 className="font-semibold text-[24px] leading-[1.3] text-[#151c27]" style={{ fontFamily: "'Manrope', sans-serif" }}>1. Inventario de Ingredientes</h2>
       </div>
-      
-      {/* Listado de ingredientes */}
-      <div className="overflow-x-auto bg-white dark:bg-slate-900">
+
+      <div className="overflow-x-auto custom-scrollbar">
         {isLoading ? (
-          <div className="px-5 py-12 text-center">
-            <div className="inline-flex items-center gap-2 text-slate-400">
+          <div className="p-8 text-center">
+            <div className="inline-flex items-center gap-2 text-[#5f5e5e]">
               <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
               <span className="text-sm font-medium">Cargando ingredientes...</span>
             </div>
           </div>
         ) : (
-          <table className="w-full text-left">
+          <table className="w-full min-w-[600px] text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
-                <th className="px-5 py-3">Ingrediente</th>
-                <th className="px-5 py-3">Cantidad</th>
-                <th className="px-5 py-3">Unidad</th>
-                <th className="px-5 py-3">Precio Total</th>
-                <th className="px-5 py-3 w-24"></th>
+              <tr className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase border-b-2 border-[#e2e8f8]">
+                <th className="pb-4 pt-8 pl-8 font-semibold">INGREDIENTE</th>
+                <th className="pb-4 pt-8 font-semibold">CANTIDAD</th>
+                <th className="pb-4 pt-8 font-semibold">UNIDAD</th>
+                <th className="pb-4 pt-8 font-semibold text-right pr-8">PRECIO TOTAL</th>
+                {!isLocked && <th className="pb-4 pt-8 w-24"></th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="text-[16px] leading-[1.5] text-[#151c27] divide-y divide-gray-50">
               {ingredients.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-8 text-center text-slate-500">
+                  <td colSpan={!isLocked ? 5 : 4} className="p-8 text-center text-[#5f5e5e] text-[16px]">
                     Agrega ingredientes para registrar en el inventario.
                   </td>
                 </tr>
               ) : (
                 ingredients.map((ingredient) => (
                   editingId === ingredient.id ? (
-                    /* ─── FILA EN MODO EDICIÓN INLINE ─── */
-                    <tr key={ingredient.id} className="bg-[#ee2b6c]/5 dark:bg-[#ee2b6c]/10">
-                      <td className="px-5 py-3">
+                    <tr key={ingredient.id} className="interactive-row bg-[#ffd9de]/10">
+                      <td className="pl-8 py-3">
                         <input
-                          className="w-full rounded-md border border-[#ee2b6c]/40 bg-white dark:bg-slate-800 text-sm font-medium px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                          className="interactive-input w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-[#151c27] text-sm"
                           type="text"
                           autoFocus
                           value={editInlineData.name}
@@ -256,17 +252,17 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
                           placeholder="Nombre"
                         />
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="py-3">
                         <input
-                          className="w-24 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                          className="interactive-input w-24 px-3 py-2 rounded-lg border border-gray-200 bg-white text-[#151c27] text-sm"
                           type="number" min="0" step="0.01"
                           value={editInlineData.purchasedQuantity}
                           onChange={(e) => setEditInlineData({ ...editInlineData, purchasedQuantity: e.target.value })}
                         />
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="py-3">
                         <select
-                          className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                          className="interactive-input rounded-lg border border-gray-200 bg-white text-[#151c27] text-sm px-2 py-2"
                           value={editInlineData.unit}
                           onChange={(e) => setEditInlineData({ ...editInlineData, unit: e.target.value as Unit })}
                         >
@@ -277,30 +273,30 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
                           <option value="unidad">unidad</option>
                         </select>
                       </td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-1">
-                          <span className="text-slate-400 text-sm">$</span>
+                      <td className="py-3 pr-8">
+                        <div className="flex items-center gap-1 justify-end">
+                          <span className="text-[#5f5e5e] text-sm">$</span>
                           <input
-                            className="w-28 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
+                            className="interactive-input w-28 px-3 py-2 rounded-lg border border-gray-200 bg-white text-[#151c27] text-sm text-right"
                             type="number" min="0" step="0.01"
                             value={editInlineData.totalPrice}
                             onChange={(e) => setEditInlineData({ ...editInlineData, totalPrice: e.target.value })}
                           />
                         </div>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="py-3 pr-8">
                         <div className="flex gap-1.5 items-center justify-end">
                           <button
                             onClick={() => saveInlineEdit(ingredient)}
                             disabled={isSaving}
-                            className="flex items-center gap-1 px-2.5 py-1.5 bg-[#ee2b6c] text-white rounded-md text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                            className="interactive-btn flex items-center gap-1 px-3 py-1.5 bg-[#b80049] text-white rounded-lg text-xs font-bold"
                           >
                             <span className="material-symbols-outlined text-[14px]">check</span>
                             OK
                           </button>
                           <button
                             onClick={cancelInlineEdit}
-                            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            className="interactive-btn p-1.5 text-[#5f5e5e] hover:text-[#151c27] rounded-lg hover:bg-[#f0f3ff]"
                           >
                             <span className="material-symbols-outlined text-[18px]">close</span>
                           </button>
@@ -308,20 +304,21 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
                       </td>
                     </tr>
                   ) : (
-                    /* ─── FILA NORMAL ─── */
-                    <tr key={ingredient.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors bg-white dark:bg-slate-900">
-                      <td className="px-5 py-4 font-medium">{ingredient.name}</td>
-                      <td className="px-5 py-4 text-slate-600 dark:text-slate-400">{ingredient.purchasedQuantity}</td>
-                      <td className="px-5 py-4">
-                        <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-xs font-medium">{ingredient.unit}</span>
+                    <tr key={ingredient.id} className="interactive-row">
+                      <td className="pl-8 py-4 font-medium">{ingredient.name}</td>
+                      <td className="py-4">{ingredient.purchasedQuantity}</td>
+                      <td className="py-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#dce2f3] text-[#5b3f43]">
+                          {ingredient.unit}
+                        </span>
                       </td>
-                      <td className="px-5 py-4 font-semibold text-[#ee2b6c]">{formatCurrency(ingredient.totalPrice)}</td>
-                      <td className="px-5 py-4">
-                        {!isLocked && (
+                      <td className="py-4 text-right text-[#b80049] text-[20px] leading-[1.2] font-medium pr-8">{formatCurrency(ingredient.totalPrice)}</td>
+                      {!isLocked && (
+                        <td className="py-4 pr-8">
                           <div className="flex gap-1.5 justify-end">
                             <button
                               onClick={() => startInlineEdit(ingredient)}
-                              className="p-1.5 text-slate-400 hover:text-blue-500 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                              className="interactive-btn p-1.5 text-[#5f5e5e] hover:text-[#b80049] rounded-lg hover:bg-[#f0f3ff]"
                               title="Editar"
                             >
                               <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -329,14 +326,14 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
                             <button
                               onClick={() => handleDelete(ingredient.id)}
                               disabled={isSaving}
-                              className="p-1.5 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                              className="interactive-btn p-1.5 text-[#5f5e5e] hover:text-[#ba1a1a] rounded-lg hover:bg-[#ffdad6]/30 disabled:opacity-50"
                               title="Eliminar"
                             >
                               <span className="material-symbols-outlined text-[18px]">delete</span>
                             </button>
                           </div>
-                        )}
-                      </td>
+                        </td>
+                      )}
                     </tr>
                   )
                 ))
@@ -348,21 +345,21 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
 
       {/* Formulario para añadir ingrediente nuevo */}
       {!isLocked && !isLoading && (isAdding ? (
-        <div className="p-5 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 grid gap-4">
+        <div className="p-8 border-t border-gray-100 bg-[#f0f3ff]">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Nombre</label>
+              <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Nombre</label>
               <input
-                className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
                 placeholder="Ej: Harina"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Cantidad</label>
+              <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Cantidad</label>
               <input
-                className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
                 type="number" step="0.01" min="0"
                 placeholder="10"
                 value={formData.purchasedQuantity}
@@ -370,9 +367,9 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Unidad</label>
+              <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Unidad</label>
               <select
-                className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-[#151c27]"
                 value={formData.unit}
                 onChange={(e) => setFormData({ ...formData, unit: e.target.value as Unit })}
               >
@@ -384,9 +381,9 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Total ($)</label>
+              <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Total ($)</label>
               <input
-                className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c] focus:border-[#ee2b6c]"
+                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
                 type="number" step="0.01" min="0"
                 placeholder="8500"
                 value={formData.totalPrice}
@@ -394,22 +391,22 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
               />
             </div>
           </div>
-          <div className="flex gap-2 justify-end mt-2">
-            <button onClick={handleCancel} className="px-4 py-2.5 bg-slate-200 text-slate-700 rounded-md font-bold text-sm shadow-sm hover:opacity-90 transition-opacity dark:bg-slate-700 dark:text-slate-200">
+          <div className="flex gap-2 justify-end mt-4">
+            <button onClick={handleCancel} className="interactive-btn px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200">
               Cancelar
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="px-4 py-2.5 bg-[#ee2b6c] text-white rounded-md font-bold text-sm shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="interactive-btn px-6 py-3 bg-[#b80049] text-white rounded-full text-[16px] font-medium disabled:opacity-50"
             >
               {isSaving ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         </div>
       ) : (
-        <div className="p-4 bg-slate-50/50 dark:bg-slate-800/30">
-          <button onClick={() => setIsAdding(true)} className="flex items-center gap-2 px-4 py-2.5 bg-[#ee2b6c] text-white rounded-md font-bold text-sm shadow-sm hover:opacity-90 transition-opacity">
+        <div className="p-8 border-t border-gray-100">
+          <button onClick={() => setIsAdding(true)} className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200">
             <span className="material-symbols-outlined text-[20px]">add</span> Añadir Ingrediente
           </button>
         </div>
@@ -417,32 +414,32 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
 
       {/* Tarjeta de Resumen y Guardado */}
       {ingredients.length > 0 && !isLoading && (
-        <div className="p-5 bg-[#ee2b6c]/5 border-t border-[#ee2b6c]/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-[#ffd9de]/20 p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 rounded-b-[24px]">
           <div>
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Inversión total en ingredientes</p>
-            <p className="text-3xl font-black text-[#ee2b6c]">{formatCurrency(totalInvestment)}</p>
+            <p className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase mb-1">Inversión total en ingredientes</p>
+            <p className="font-bold text-[28px] md:text-[32px] leading-[1.2] tracking-[-0.01em] text-[#b80049]" style={{ fontFamily: "'Manrope', sans-serif" }}>{formatCurrency(totalInvestment)}</p>
           </div>
           <div className="flex gap-2">
             {isLocked ? (
-              <button 
+              <button
                 onClick={() => handleLockToggle(false)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-200 text-slate-700 rounded-md font-bold text-sm shadow-sm hover:opacity-90 transition-opacity dark:bg-slate-700 dark:text-slate-200"
+                className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200"
               >
-                <span className="material-symbols-outlined text-[18px]">edit</span>
+                <span className="material-symbols-outlined text-[20px]">edit</span>
                 Editar Inventario
               </button>
             ) : (
-              <button 
+              <button
                 onClick={() => handleLockToggle(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-[#ee2b6c] text-white rounded-md font-bold text-sm shadow-sm hover:opacity-90 transition-opacity hover:scale-[1.02]"
+                className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#b80049] text-white rounded-full text-[16px] font-medium"
               >
-                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                <span className="material-symbols-outlined text-[20px]">check_circle</span>
                 Guardar y Habilitar Recetas
               </button>
             )}
           </div>
         </div>
       )}
-    </section>
+    </article>
   );
 }
