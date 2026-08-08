@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CostoRepostero - Merengue Italiano</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-surface": "#2a313d",
+                        "background": "#f9f9ff",
+                        "surface": "#f9f9ff",
+                        "on-primary-fixed-variant": "#900038",
+                        "on-tertiary-container": "#fcfdfe",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "on-primary-fixed": "#400014",
+                        "tertiary-fixed": "#e1e3e4",
+                        "outline": "#8f6f73",
+                        "outline-variant": "#e4bdc2",
+                        "surface-container": "#e7eefe",
+                        "on-tertiary-fixed-variant": "#454748",
+                        "error": "#ba1a1a",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#5f5e5e",
+                        "on-secondary-fixed-variant": "#474746",
+                        "primary-fixed-dim": "#ffb2be",
+                        "secondary-container": "#e2dfde",
+                        "primary-container": "#e2165f",
+                        "on-primary-container": "#fffbff",
+                        "primary": "#b80049",
+                        "tertiary": "#5a5c5d",
+                        "surface-container-high": "#e2e8f8",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-tertiary-fixed": "#191c1d",
+                        "surface-container-low": "#f0f3ff",
+                        "inverse-on-surface": "#ebf1ff",
+                        "surface-variant": "#dce2f3",
+                        "surface-container-highest": "#dce2f3",
+                        "surface-tint": "#bc004b",
+                        "surface-bright": "#f9f9ff",
+                        "tertiary-fixed-dim": "#c5c7c8",
+                        "tertiary-container": "#737576",
+                        "inverse-primary": "#ffb2be",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-background": "#151c27",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#ffd9de",
+                        "secondary-fixed": "#e5e2e1",
+                        "on-surface": "#151c27",
+                        "on-secondary-container": "#636262",
+                        "surface-dim": "#d3daea",
+                        "on-surface-variant": "#5b3f43",
+                        "on-primary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "32": "32px",
+                        "24": "24px"
+                    },
+                    "spacing": {
+                        "container-padding": "24px",
+                        "max-width": "1200px",
+                        "section-gap": "80px",
+                        "grid-margin": "auto",
+                        "base": "8px",
+                        "element-gap": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "numeric-data": ["Inter"],
+                        "headline-lg": ["Manrope"],
+                        "display": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-sm": ["14px", { "lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "numeric-data": ["20px", { "lineHeight": "1.2", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen flex flex-col antialiased">
+<!-- TopNavBar -->
+<header class="w-full top-0 sticky z-50 bg-surface shadow-sm transition-all duration-300">
+<div class="flex justify-between items-center px-container-padding py-4 max-w-max-width mx-grid-margin">
+<div class="flex items-center gap-8">
+<div class="font-headline-md text-headline-md font-bold text-primary">CostoRepostero</div>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="text-secondary font-medium hover:text-primary-container transition-colors duration-200 active:scale-95 transition-transform" href="#">Calculadora</a>
+<a class="text-secondary font-medium hover:text-primary-container transition-colors duration-200 active:scale-95 transition-transform" href="#">Inventario</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 active:scale-95 transition-transform" href="#">Recetas</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface hover:text-primary-container transition-colors duration-200 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant shadow-sm flex-shrink-0">
+<img alt="User profile avatar" class="w-full h-full object-cover" data-alt="A detailed headshot of a professional artisanal baker in a modern minimal kitchen setting, well-lit with soft natural light, conveying precision and expertise, wearing a subtle white apron. The color palette is neutral with soft white and light gray tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8mCNjRYSzLCSmZuHwtnUzS6xcjvWQ8GthKxXNILtEY3XkPTNpqcEK0j1J4uK_ig5wcTrNaTpi0u8l6dQ3ET8hrxS2Cp1sqyMNidYFP1axmgBCKAbjLvXof1yUNn8XfeLAv27GIC60T-o3sIyS-ugvEaipGKgqF1SLAAEyI3UWe6f010D20LkghiIN-92wDo68n-YLxSceDnHcz8IMjpcspx8K1YApPWGiOr98ZZKI566Tc0_f8zWz"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow px-container-padding py-10 max-w-max-width mx-grid-margin w-full">
+<!-- Breadcrumbs & Header Actions -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+<div>
+<nav class="flex items-center text-secondary font-label-sm text-label-sm mb-4">
+<a class="hover:text-primary transition-colors" href="#">Recetas</a>
+<span class="material-symbols-outlined mx-2 text-[16px]">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Dulces</a>
+<span class="material-symbols-outlined mx-2 text-[16px]">chevron_right</span>
+<span class="text-primary">Merengue Italiano</span>
+</nav>
+<h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2">Merengue Italiano</h1>
+<p class="font-body-lg text-body-lg text-secondary">24 porciones · 30% de ganancia</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-6 py-3 border border-outline-variant rounded-xl text-on-surface hover:bg-surface-container-low transition-colors font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+                    Editar
+                </button>
+<button class="flex items-center gap-2 px-6 py-3 border border-outline-variant rounded-xl text-error hover:bg-error-container hover:border-error-container transition-colors font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+                    Eliminar
+                </button>
+</div>
+</div>
+<!-- Summary Cards (4 cols) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+<!-- Ingredientes -->
+<div class="bg-surface-container-lowest rounded-24 p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-outline-variant flex flex-col justify-between">
+<div class="flex items-center justify-between mb-4">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Ingredientes</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">grocery</span>
+</div>
+</div>
+<div class="font-numeric-data text-[28px] leading-tight text-on-surface mb-1">$450.00</div>
+<div class="font-body-sm text-[13px] text-secondary">Costo total materia prima</div>
+</div>
+<!-- Adicionales -->
+<div class="bg-surface-container-lowest rounded-24 p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-outline-variant flex flex-col justify-between">
+<div class="flex items-center justify-between mb-4">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Adicionales</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+</div>
+</div>
+<div class="font-numeric-data text-[28px] leading-tight text-on-surface mb-1">$120.00</div>
+<div class="font-body-sm text-[13px] text-secondary">Energía, empaque, mano de obra</div>
+</div>
+<!-- Costo Total -->
+<div class="bg-surface-container-lowest rounded-24 p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-outline-variant flex flex-col justify-between">
+<div class="flex items-center justify-between mb-4">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Costo</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">calculate</span>
+</div>
+</div>
+<div class="font-numeric-data text-[28px] leading-tight text-on-surface mb-1">$570.00</div>
+<div class="font-body-sm text-[13px] text-secondary">Costo de producción total</div>
+</div>
+<!-- Venta Sugerida -->
+<div class="bg-primary rounded-24 p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)] flex flex-col justify-between text-on-primary">
+<div class="flex items-center justify-between mb-4">
+<span class="font-label-sm text-label-sm text-primary-fixed-dim uppercase tracking-widest">Venta Total</span>
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">sell</span>
+</div>
+</div>
+<div class="font-numeric-data text-[28px] leading-tight mb-1">$741.00</div>
+<div class="font-body-sm text-[13px] text-primary-fixed">Con 30% de margen</div>
+</div>
+</div>
+<!-- Rendimiento & Precios Section (2 cols) -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+<!-- Rendimiento Físico -->
+<div class="bg-surface-container-lowest rounded-32 p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-outline-variant">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">scale</span>
+                    Rendimiento Físico
+                </h3>
+<div class="grid grid-cols-2 gap-6">
+<div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/50">
+<div class="font-label-sm text-label-sm text-secondary mb-2">Cantidad Total</div>
+<div class="font-numeric-data text-[32px] text-on-surface">1000<span class="text-[20px] text-secondary ml-1">g</span></div>
+</div>
+<div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/50">
+<div class="font-label-sm text-label-sm text-secondary mb-2">Costo Base / 100g</div>
+<div class="font-numeric-data text-[32px] text-on-surface">$57.00</div>
+</div>
+</div>
+</div>
+<!-- Precio de Venta y Ganancia -->
+<div class="bg-surface-container-lowest rounded-32 p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-primary/20">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">trending_up</span>
+                    Precio de Venta y Ganancia
+                </h3>
+<div class="grid grid-cols-2 gap-x-6 gap-y-4 mb-6">
+<div>
+<div class="font-label-sm text-label-sm text-secondary mb-1">Porciones</div>
+<div class="font-numeric-data text-[24px] text-on-surface">24</div>
+</div>
+<div>
+<div class="font-label-sm text-label-sm text-secondary mb-1">Precio x Unidad</div>
+<div class="font-numeric-data text-[24px] text-on-surface">$30.87</div>
+</div>
+</div>
+<div class="border-t border-outline-variant pt-4 mt-2 grid grid-cols-2 gap-6">
+<div>
+<div class="font-label-sm text-label-sm text-secondary mb-1">Ingreso Estimado</div>
+<div class="font-numeric-data text-[24px] text-on-surface">$741.00</div>
+</div>
+<div>
+<div class="font-label-sm text-label-sm text-primary mb-1">Ganancia Pura (30%)</div>
+<div class="font-numeric-data text-[24px] text-primary font-bold">+$171.00</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Details Grid: Ingredientes & Adicionales -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+<!-- Lista de Ingredientes -->
+<div class="bg-surface-container-lowest rounded-32 p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-outline-variant">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-md text-headline-md text-on-surface">Ingredientes</h3>
+<span class="font-numeric-data text-numeric-data text-secondary">$450.00</span>
+</div>
+<div class="space-y-4">
+<!-- Item -->
+<div class="flex justify-between items-center py-3 border-b border-outline-variant/50 last:border-0">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-medium text-on-surface">Azúcar Blanca</span>
+<span class="font-label-sm text-label-sm text-secondary font-normal mt-1">500g</span>
+</div>
+<div class="font-numeric-data text-[18px] text-on-surface">$150.00</div>
+</div>
+<!-- Item -->
+<div class="flex justify-between items-center py-3 border-b border-outline-variant/50 last:border-0">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-medium text-on-surface">Claras de Huevo</span>
+<span class="font-label-sm text-label-sm text-secondary font-normal mt-1">250g (Aprox 8 claras)</span>
+</div>
+<div class="font-numeric-data text-[18px] text-on-surface">$220.00</div>
+</div>
+<!-- Item -->
+<div class="flex justify-between items-center py-3 border-b border-outline-variant/50 last:border-0">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-medium text-on-surface">Agua</span>
+<span class="font-label-sm text-label-sm text-secondary font-normal mt-1">125ml</span>
+</div>
+<div class="font-numeric-data text-[18px] text-on-surface">$5.00</div>
+</div>
+<!-- Item -->
+<div class="flex justify-between items-center py-3 border-b border-outline-variant/50 last:border-0">
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-medium text-on-surface">Esencia de Vainilla</span>
+<span class="font-label-sm text-label-sm text-secondary font-normal mt-1">10ml</span>
+</div>
+<div class="font-numeric-data text-[18px] text-on-surface">$75.00</div>
+</div>
+</div>
+</div>
+<!-- Costos Adicionales -->
+<div class="bg-surface-container-lowest rounded-32 p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-outline-variant">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-md text-headline-md text-on-surface">Costos Adicionales</h3>
+<span class="font-numeric-data text-numeric-data text-secondary">$120.00</span>
+</div>
+<div class="space-y-4">
+<!-- Item -->
+<div class="flex justify-between items-center py-3 border-b border-outline-variant/50 last:border-0">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[20px]">timer</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-medium text-on-surface">Mano de Obra</span>
+<span class="font-label-sm text-label-sm text-secondary font-normal mt-1">30 min</span>
+</div>
+</div>
+<div class="font-numeric-data text-[18px] text-on-surface">$80.00</div>
+</div>
+<!-- Item -->
+<div class="flex justify-between items-center py-3 border-b border-outline-variant/50 last:border-0">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[20px]">local_fire_department</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-medium text-on-surface">Gas / Energía</span>
+<span class="font-label-sm text-label-sm text-secondary font-normal mt-1">Almíbar</span>
+</div>
+</div>
+<div class="font-numeric-data text-[18px] text-on-surface">$25.00</div>
+</div>
+<!-- Item -->
+<div class="flex justify-between items-center py-3 border-b border-outline-variant/50 last:border-0">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[20px]">water_drop</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-medium text-on-surface">Limpieza y Otros</span>
+<span class="font-label-sm text-label-sm text-secondary font-normal mt-1">Fijo</span>
+</div>
+</div>
+<div class="font-numeric-data text-[18px] text-on-surface">$15.00</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Presupuesto para Pedido -->
+<div class="bg-surface-container-low rounded-32 p-8 lg:p-12 shadow-sm border border-outline-variant/30 flex flex-col lg:flex-row items-center justify-between gap-8 relative overflow-hidden">
+<!-- Decorative accent -->
+<div class="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
+<div class="max-w-xl z-10">
+<h3 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-3">Escalar para Pedido</h3>
+<p class="font-body-lg text-body-lg text-secondary mb-6">Calcula las cantidades exactas y el nuevo costo total basado en esta receta para un pedido específico.</p>
+<div class="flex items-center gap-4">
+<div class="relative w-48">
+<label class="block font-label-sm text-label-sm text-secondary mb-2 absolute -top-3 left-3 bg-surface-container-low px-1">Multiplicador</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 font-numeric-data text-numeric-data text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm" min="1" type="number" value="2"/>
+</div>
+<button class="bg-primary text-on-primary font-label-sm text-label-sm px-8 py-3 rounded-xl hover:bg-surface-tint transition-colors shadow-sm whitespace-nowrap">
+                        Calcular Presupuesto
+                    </button>
+</div>
+</div>
+<div class="z-10 w-full lg:w-auto bg-surface-container-lowest p-6 rounded-24 border border-outline-variant shadow-sm min-w-[300px]">
+<div class="font-label-sm text-label-sm text-secondary mb-4 text-center">Proyección x2</div>
+<div class="flex justify-between items-end mb-2">
+<span class="font-body-md text-secondary">Rendimiento:</span>
+<span class="font-numeric-data text-[20px] text-on-surface">2000g</span>
+</div>
+<div class="flex justify-between items-end mb-4">
+<span class="font-body-md text-secondary">Porciones:</span>
+<span class="font-numeric-data text-[20px] text-on-surface">48</span>
+</div>
+<div class="border-t border-outline-variant pt-4 mt-2">
+<div class="flex justify-between items-end">
+<span class="font-label-sm text-label-sm text-on-surface">Costo Total:</span>
+<span class="font-numeric-data text-[28px] text-primary font-bold">$1,140.00</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-section-gap bg-surface-container-low border-t border-outline-variant mt-auto">
+<div class="flex flex-col md:flex-row justify-between items-center px-container-padding max-w-max-width mx-grid-margin gap-element-gap">
+<div class="font-headline-md text-headline-md font-bold text-primary">CostoRepostero</div>
+<div class="font-label-sm text-label-sm text-secondary">© 2024 CostoRepostero. Precision for Artisans.</div>
+<div class="flex gap-6 font-label-sm text-label-sm">
+<a class="text-secondary hover:text-primary transition-colors cursor-pointer" href="#">Instagram</a>
+<a class="text-secondary hover:text-primary transition-colors cursor-pointer" href="#">Facebook</a>
+<a class="text-secondary hover:text-primary transition-colors cursor-pointer" href="#">LinkedIn</a>
+<a class="text-secondary hover:text-primary transition-colors cursor-pointer" href="#">Terms</a>
+<a class="text-secondary hover:text-primary transition-colors cursor-pointer" href="#">Privacy</a>
+</div>
+</div>
+</footer>
+</body></html>

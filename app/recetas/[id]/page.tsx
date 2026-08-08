@@ -124,36 +124,36 @@ export default function RecetaDetailPage() {
   const hasPorciones = recipe.unitsProduced > 0;
 
   return (
-    <main className="mx-auto w-full max-w-[900px] flex-1 px-5 py-8 space-y-8">
+    <main className="mx-auto w-full max-w-[900px] flex-1 px-5 py-10 space-y-8">
 
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-400">
-        <TransitionLink href="/recetas" className="hover:text-[#ee2b6c] transition-colors">Recetas</TransitionLink>
+      <div className="flex items-center gap-2 font-stitch-label-sm text-stitch-label-sm text-stitch-secondary">
+        <TransitionLink href="/recetas" className="hover:text-stitch-primary transition-colors">Recetas</TransitionLink>
         <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-        <span className="text-slate-700 dark:text-slate-300 font-medium truncate">{recipe.name}</span>
+        <span className="text-stitch-on-surface font-medium truncate">{recipe.name}</span>
       </div>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{recipe.name}</h2>
+          <h2 className="font-stitch-headline-lg text-stitch-headline-lg-mobile md:text-stitch-headline-lg text-stitch-on-surface">{recipe.name}</h2>
             {hasPorciones && (
-              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+              <p className="font-stitch-body-lg text-stitch-body-lg text-stitch-secondary mt-1">
                 {recipe.unitsProduced} porciones · {recipe.profitMargin ?? 0}% de ganancia
               </p>
             )}
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex gap-3">
           <TransitionLink
             href={`/calculadora?edit=${recipe.id}#recipe-builder`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-sm font-bold hover:border-[#ee2b6c] hover:text-[#ee2b6c] transition-colors"
+            className="flex items-center gap-2 px-6 py-3 border border-stitch-outline-variant rounded-xl text-stitch-on-surface hover:bg-stitch-surface-container-low transition-colors font-stitch-label-sm text-stitch-label-sm"
           >
             <span className="material-symbols-outlined text-[18px]">edit</span>
             Editar
           </TransitionLink>
           <button
             onClick={handleDelete}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md border border-red-200 text-red-400 text-sm font-bold hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            className="flex items-center gap-2 px-6 py-3 border border-stitch-outline-variant rounded-xl text-stitch-error hover:bg-stitch-error-container hover:border-stitch-error-container transition-colors font-stitch-label-sm text-stitch-label-sm"
           >
             <span className="material-symbols-outlined text-[18px]">delete</span>
             Eliminar
@@ -163,31 +163,43 @@ export default function RecetaDetailPage() {
 
       {/* Resumen de costos */}
       {(hasPorciones || hasOutput) && (
-        <div className={`grid gap-4 ${hasPorciones ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-1'}`}>
+        <div className={`grid gap-6 ${hasPorciones ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1'}`}>
           {hasPorciones && (
             <>
               {[
                 { label: 'Costo Ingredientes', value: formatCurrency(recipe.totalCost - extraCostsTotal), icon: 'egg' },
                 { label: 'Costos Adicionales', value: formatCurrency(extraCostsTotal), icon: 'inventory' },
               ].map(({ label, value, icon }) => (
-                <div key={label} className="rounded-xl p-4 border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                  <span className="material-symbols-outlined text-[20px] text-[#ee2b6c]">{icon}</span>
-                  <p className="text-xs font-bold mt-2 uppercase tracking-wide text-slate-400">{label}</p>
-                  <p className="text-xl font-black mt-0.5 text-slate-800 dark:text-white">{value}</p>
+                <div key={label} className="bg-stitch-surface-container-lowest rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary uppercase tracking-widest">{label}</span>
+                    <div className="w-8 h-8 rounded-full bg-stitch-surface-container-low flex items-center justify-center text-stitch-primary">
+                      <span className="material-symbols-outlined text-[18px]">{icon}</span>
+                    </div>
+                  </div>
+                  <div className="font-stitch-numeric-data text-[28px] leading-tight text-stitch-on-surface">{value}</div>
                 </div>
               ))}
             </>
           )}
-          <div className="rounded-xl p-4 border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-            <span className="material-symbols-outlined text-[20px] text-[#ee2b6c]">receipt</span>
-            <p className="text-xs font-bold mt-2 uppercase tracking-wide text-slate-400">Precio de Costo</p>
-            <p className="text-xl font-black mt-0.5 text-slate-800 dark:text-white">{formatCurrency(recipe.totalCost)}</p>
+          <div className="bg-stitch-surface-container-lowest rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-4">
+              <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary uppercase tracking-widest">Precio de Costo</span>
+              <div className="w-8 h-8 rounded-full bg-stitch-surface-container-low flex items-center justify-center text-stitch-on-surface-variant">
+                <span className="material-symbols-outlined text-[18px]">receipt</span>
+              </div>
+            </div>
+            <div className={`font-stitch-numeric-data leading-tight text-stitch-on-surface ${!hasPorciones && hasOutput ? 'text-[36px]' : 'text-[28px]'}`}>{formatCurrency(recipe.totalCost)}</div>
           </div>
           {hasPorciones && (
-            <div className="rounded-xl p-4 border bg-[#ee2b6c] text-white border-transparent shadow-md shadow-[#ee2b6c]/20">
-              <span className="material-symbols-outlined text-[20px] text-white/80">cake</span>
-              <p className="text-xs font-bold mt-2 uppercase tracking-wide text-white/70">Precio de Venta</p>
-              <p className="text-xl font-black mt-0.5 text-white">{formatCurrency(recipe.costPerUnit)}</p>
+            <div className="bg-stitch-primary rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)] flex flex-col justify-between text-white">
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-primary-fixed-dim uppercase tracking-widest">Precio de Venta</span>
+                <div className="w-8 h-8 rounded-full bg-stitch-primary-fixed flex items-center justify-center text-stitch-primary">
+                  <span className="material-symbols-outlined text-[18px]">cake</span>
+                </div>
+              </div>
+              <div className="font-stitch-numeric-data text-[28px] leading-tight">{formatCurrency(recipe.costPerUnit)}</div>
             </div>
           )}
         </div>
@@ -195,89 +207,80 @@ export default function RecetaDetailPage() {
 
       {/* Precio de venta y ganancia */}
       {hasPorciones && (
-        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
-          <span className="material-symbols-outlined text-[#ee2b6c]">payments</span>
-          <h3 className="font-bold text-base">Precio de Venta y Ganancia</h3>
-        </div>
-        <div className="p-4 sm:p-5">
-          {/* Primera fila: Porciones y Precio x Porción */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 sm:p-4 text-center">
-              <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Porciones</p>
-              <p className="text-lg sm:text-2xl font-black text-slate-700 dark:text-slate-200">{recipe.unitsProduced}</p>
+        <section className="bg-stitch-surface-container-lowest rounded-[32px] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-primary/20">
+          <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface mb-6 flex items-center gap-3">
+            <span className="material-symbols-outlined text-stitch-primary">trending_up</span>
+            Precio de Venta y Ganancia
+          </h3>
+          <div className="grid grid-cols-2 gap-6 mb-6">
+            <div>
+              <div className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-1">Porciones</div>
+              <div className="font-stitch-numeric-data text-[24px] text-stitch-on-surface">{recipe.unitsProduced}</div>
             </div>
-            <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 sm:p-4 text-center">
-              <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Precio x Porción</p>
-              <p className="text-lg sm:text-2xl font-black text-slate-700 dark:text-slate-200">{formatCurrency(salePricePerUnit)}</p>
+            <div>
+              <div className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-1">Precio x Porción</div>
+              <div className="font-stitch-numeric-data text-[24px] text-stitch-on-surface">{formatCurrency(salePricePerUnit)}</div>
             </div>
           </div>
-          {/* Segunda fila: Total Venta y Ganancia Neta */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-3 sm:mt-4">
-            <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 sm:p-4 text-center">
-              <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Total Venta</p>
-              <p className="text-lg sm:text-2xl font-black text-slate-700 dark:text-slate-200">{formatCurrency(totalSale)}</p>
+          <div className="border-t border-stitch-outline-variant pt-4 mt-2 grid grid-cols-2 gap-6">
+            <div>
+              <div className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-1">Total Venta</div>
+              <div className="font-stitch-numeric-data text-[24px] text-stitch-on-surface">{formatCurrency(totalSale)}</div>
             </div>
-            <div className={`rounded-lg p-3 sm:p-4 text-center ${netProfit > 0 ? 'bg-emerald-500 shadow-md shadow-emerald-500/20' : 'bg-slate-50 dark:bg-slate-800/50'}`}>
-              <p className={`text-[10px] sm:text-xs font-bold uppercase tracking-wide mb-1 ${netProfit > 0 ? 'text-white/70' : 'text-slate-400'}`}>Ganancia Neta</p>
-              <p className={`text-lg sm:text-2xl font-black ${netProfit > 0 ? 'text-white' : 'text-slate-700 dark:text-slate-200'}`}>{formatCurrency(netProfit)}</p>
+            <div>
+              <div className="font-stitch-label-sm text-stitch-label-sm text-stitch-primary mb-1">Ganancia Neta</div>
+              <div className={`font-stitch-numeric-data text-[24px] font-bold ${netProfit > 0 ? 'text-emerald-600' : 'text-stitch-on-surface'}`}>{formatCurrency(netProfit)}</div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
       )}
 
       {/* Rendimiento físico */}
       {hasOutput && (
-        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#ee2b6c]">monitoring</span>
-            <h3 className="font-bold text-base">Rendimiento físico</h3>
-          </div>
-          <div className="p-4 sm:p-5 space-y-3">
-            <p className="text-xs text-slate-400">
+        <section className="bg-stitch-surface-container-lowest rounded-[32px] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant">
+          <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface mb-6 flex items-center gap-3">
+            <span className="material-symbols-outlined text-stitch-primary">monitoring</span>
+            Rendimiento físico
+          </h3>
+          <div className="space-y-3">
+            <p className="font-stitch-body-md text-stitch-body-md text-stitch-secondary">
               Esta receta puede utilizarse como componente en Productos.
             </p>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 sm:p-4 text-center">
-                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">
-                  Rendimiento
-                </p>
-                <p className="text-lg sm:text-2xl font-black text-slate-700 dark:text-slate-200">
-                  {recipe.outputQuantity} <span className="text-base font-semibold text-slate-400">{recipe.outputUnit}</span>
-                </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="bg-stitch-surface-container-low rounded-xl p-5 border border-stitch-outline-variant/50">
+                <div className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-2">Rendimiento</div>
+                <div className="font-stitch-numeric-data text-[32px] text-stitch-on-surface">
+                  {recipe.outputQuantity}<span className="text-[20px] text-stitch-secondary ml-1">{recipe.outputUnit}</span>
+                </div>
               </div>
-              <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 sm:p-4 text-center">
-                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">
-                  Costo base para Productos
-                </p>
-                <p className="text-lg sm:text-2xl font-black text-slate-700 dark:text-slate-200">
-                  {formatCurrency(costPerOutputUnit)} <span className="text-base font-semibold text-slate-400">/ {recipe.outputUnit}</span>
-                </p>
+              <div className="bg-stitch-surface-container-low rounded-xl p-5 border border-stitch-outline-variant/50">
+                <div className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-2">Costo base para Productos</div>
+                <div className="font-stitch-numeric-data text-[32px] text-stitch-on-surface whitespace-nowrap">
+                  {formatCurrency(costPerOutputUnit)}<span className="text-[20px] text-stitch-secondary ml-1">/ {recipe.outputUnit}</span>
+                </div>
               </div>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="font-stitch-body-md text-stitch-body-md text-stitch-secondary">
               Productos calculará automáticamente el costo según la cantidad utilizada.
             </p>
           </div>
         </section>
       )}
 
-      <div className={`grid gap-6 ${hasPorciones ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+      <div className={`grid gap-8 ${hasPorciones ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
         {/* Ingredientes */}
-        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#ee2b6c]">menu_book</span>
-            <h3 className="font-bold text-base">Ingredientes</h3>
+        <section className="bg-stitch-surface-container-lowest rounded-[32px] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface">Ingredientes</h3>
           </div>
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="divide-y divide-stitch-outline-variant/50">
             {recipe.ingredients.map((ing) => (
-              <div key={ing.id} className="flex items-center justify-between px-5 py-3">
-                <div>
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{getIngredientName(ing)}</p>
-                  <p className="text-xs text-slate-400">{ing.quantityUsed} {ing.unit}</p>
+              <div key={ing.id} className="flex justify-between items-center py-3">
+                <div className="flex flex-col">
+                  <span className="font-stitch-body-md text-stitch-body-md font-medium text-stitch-on-surface">{getIngredientName(ing)}</span>
+                  <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary font-normal mt-1">{ing.quantityUsed} {ing.unit}</span>
                 </div>
-                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{formatCurrency(ing.cost)}</p>
+                <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{formatCurrency(ing.cost)}</span>
               </div>
             ))}
           </div>
@@ -285,12 +288,14 @@ export default function RecetaDetailPage() {
 
         {/* Costos adicionales */}
         {hasPorciones && (
-          <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#ee2b6c]">local_shipping</span>
-            <h3 className="font-bold text-base">Costos Adicionales</h3>
+          <section className="bg-stitch-surface-container-lowest rounded-[32px] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface">Costos Adicionales</h3>
+            {extraCostsTotal > 0 && (
+              <span className="font-stitch-numeric-data text-stitch-numeric-data text-stitch-secondary">{formatCurrency(extraCostsTotal)}</span>
+            )}
           </div>
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="divide-y divide-stitch-outline-variant/50">
             {[
               { label: 'Packaging / Cajas', value: recipe.extraCosts.packaging },
               { label: 'Bolsas / Stickers', value: recipe.extraCosts.bags },
@@ -300,57 +305,45 @@ export default function RecetaDetailPage() {
             ]
               .filter(item => item.value > 0)
               .map(({ label, value }) => (
-                <div key={label} className="flex items-center justify-between px-5 py-3">
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{label}</p>
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{formatCurrency(value)}</p>
+                <div key={label} className="flex justify-between items-center py-3">
+                  <span className="font-stitch-body-md text-stitch-body-md text-stitch-on-surface">{label}</span>
+                  <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{formatCurrency(value)}</span>
                 </div>
               ))}
             {extraCostsTotal === 0 && (
-              <div className="px-5 py-6 text-center text-sm text-slate-400">Sin costos adicionales registrados.</div>
+              <div className="py-6 text-center font-stitch-body-md text-stitch-secondary">Sin costos adicionales registrados.</div>
             )}
           </div>
-          {extraCostsTotal > 0 && (
-            <div className="px-5 py-3 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex justify-between">
-              <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Total adicionales</span>
-              <span className="text-sm font-black text-[#ee2b6c]">{formatCurrency(extraCostsTotal)}</span>
-            </div>
-          )}
         </section>
         )}
       </div>
 
       {/* Presupuesto para pedido */}
       {hasPorciones && (
-        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
-          <span className="material-symbols-outlined text-[#ee2b6c]">shopping_bag</span>
-          <div>
-            <h3 className="font-bold text-base">Presupuesto para Pedido</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Calculá el costo de un pedido por cantidad</p>
-          </div>
-        </div>
-        <div className="p-5">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-            <div className="w-full sm:w-auto space-y-1.5">
-              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Cantidad de unidades</label>
-              <input
-                className="w-full sm:w-44 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ee2b6c]"
-                type="number" min="1" placeholder="Ej: 30"
-                value={budgetQty}
-                onChange={(e) => setBudgetQty(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 sm:opacity-0 block select-none">Rápido</label>
-              <div className="flex flex-wrap gap-2">
+        <section className="bg-stitch-surface-container-low rounded-[32px] p-8 lg:p-12 shadow-sm border border-stitch-outline-variant/30 relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-stitch-primary/5 to-transparent pointer-events-none hidden lg:block"></div>
+          <div className="relative z-10">
+            <h3 className="font-stitch-headline-lg text-stitch-headline-lg-mobile md:text-stitch-headline-lg text-stitch-on-surface mb-3">Presupuesto para Pedido</h3>
+            <p className="font-stitch-body-lg text-stitch-body-lg text-stitch-secondary mb-6">Calculá el costo de un pedido por cantidad</p>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+              <div className="w-full sm:w-48 space-y-2">
+                <label className="block font-stitch-label-sm text-stitch-label-sm text-stitch-secondary">Cantidad de unidades</label>
+                <input
+                  className="w-full bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-4 py-3 font-stitch-numeric-data text-stitch-numeric-data text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
+                  type="number" min="1" placeholder="Ej: 30"
+                  value={budgetQty}
+                  onChange={(e) => setBudgetQty(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2 pb-0.5">
                 {QUICK_QUANTITIES.map(({ label, value }) => (
                   <button
                     key={value}
                     onClick={() => setBudgetQty(String(value))}
-                    className={`px-3 py-2.5 rounded-md text-xs font-bold transition-all ${
+                    className={`px-4 py-2 rounded-lg font-stitch-label-sm text-stitch-label-sm transition-all ${
                       budgetQty === String(value)
-                        ? 'bg-[#ee2b6c] text-white shadow-sm'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        ? 'bg-stitch-primary text-white shadow-sm'
+                        : 'bg-stitch-surface-container-lowest border border-stitch-outline-variant text-stitch-secondary hover:bg-stitch-surface-container-low'
                     }`}
                   >
                     {label}
@@ -358,36 +351,35 @@ export default function RecetaDetailPage() {
                 ))}
               </div>
             </div>
-          </div>
 
-          {parseFloat(budgetQty) > 0 ? (
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-md p-4 text-center">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Cantidad</p>
-                <p className="text-2xl font-black text-slate-700 dark:text-slate-200">
-                  {parseFloat(budgetQty)} <span className="text-base font-semibold text-slate-400">und.</span>
-                </p>
+            {parseFloat(budgetQty) > 0 ? (
+              <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="bg-stitch-surface-container-lowest rounded-xl p-4 text-center">
+                  <p className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-1">Cantidad</p>
+                  <p className="font-stitch-numeric-data text-xl md:text-[24px] text-stitch-on-surface">
+                    {parseFloat(budgetQty)} <span className="text-stitch-secondary">und.</span>
+                  </p>
+                </div>
+                <div className="bg-stitch-surface-container-lowest rounded-xl p-4 text-center">
+                  <p className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-1">Precio por unidad</p>
+                  <p className="font-stitch-numeric-data text-xl md:text-[24px] text-stitch-on-surface">{formatCurrency(recipe.costPerUnit)}</p>
+                </div>
+                <div className="bg-stitch-primary rounded-xl p-4 text-center shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
+                  <p className="font-stitch-label-sm text-stitch-label-sm text-stitch-primary-fixed-dim mb-1">Total del Pedido</p>
+                  <p className="font-stitch-numeric-data text-xl md:text-[24px] text-white">{formatCurrency(budgetTotal)}</p>
+                </div>
+                <div className="bg-stitch-surface-container-lowest rounded-xl p-4 text-center">
+                  <p className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-1">Ganancia Neta</p>
+                  <p className={`font-stitch-numeric-data text-xl md:text-[24px] font-bold ${budgetNetProfit > 0 ? 'text-emerald-600' : 'text-stitch-on-surface'}`}>{formatCurrency(budgetNetProfit)}</p>
+                </div>
               </div>
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-md p-4 text-center">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Precio por unidad</p>
-                <p className="text-2xl font-black text-slate-700 dark:text-slate-200">{formatCurrency(recipe.costPerUnit)}</p>
+            ) : (
+              <div className="mt-6 bg-stitch-surface-container-lowest rounded-xl p-6 border border-stitch-outline-variant/50 text-center">
+                <p className="font-stitch-body-md text-stitch-secondary">Ingresá una cantidad para calcular el presupuesto del pedido.</p>
               </div>
-              <div className="bg-[#ee2b6c] rounded-md p-4 text-center shadow-md shadow-[#ee2b6c]/20">
-                <p className="text-xs font-bold text-white/80 uppercase tracking-wide mb-1">Total del Pedido</p>
-                <p className="text-2xl font-black text-white">{formatCurrency(budgetTotal)}</p>
-              </div>
-              <div className={`rounded-md p-4 text-center ${budgetNetProfit > 0 ? 'bg-emerald-500 shadow-md shadow-emerald-500/20' : 'bg-slate-50 dark:bg-slate-800/50'}`}>
-                <p className={`text-xs font-bold uppercase tracking-wide mb-1 ${budgetNetProfit > 0 ? 'text-white/70' : 'text-slate-500 dark:text-slate-400'}`}>Ganancia Neta</p>
-                <p className={`text-2xl font-black ${budgetNetProfit > 0 ? 'text-white' : 'text-slate-700 dark:text-slate-200'}`}>{formatCurrency(budgetNetProfit)}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-5 px-4 py-6 rounded-md bg-slate-50 dark:bg-slate-800/30 text-center text-sm text-slate-400">
-              Ingresá una cantidad para calcular el presupuesto del pedido.
-            </div>
-          )}
-        </div>
-      </section>
+            )}
+          </div>
+        </section>
       )}
 
     </main>
