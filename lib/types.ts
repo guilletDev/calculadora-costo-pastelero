@@ -38,4 +38,6 @@ export interface Recipe {
   totalCost: number;
   costPerUnit: number;
   profitMargin?: number;
+  outputQuantity: number | null;
+  outputUnit: Unit | null;
 }

@@ -29,6 +29,8 @@ export interface RecipeRow {
   profit_margin: number;
   total_cost: number;
   cost_per_unit: number;
+  output_quantity: number | null;
+  output_unit: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -104,6 +104,9 @@ export default function RecetaDetailPage() {
 
   const budgetTotal = recipe.costPerUnit * (parseFloat(budgetQty) || 0);
   const costPerUnitWithoutMargin = recipe.unitsProduced > 0 ? recipe.totalCost / recipe.unitsProduced : 0;
+  const costPerOutputUnit = recipe.outputQuantity && recipe.outputQuantity > 0
+    ? recipe.totalCost / recipe.outputQuantity
+    : 0;
   const budgetNetProfit = budgetTotal - (costPerUnitWithoutMargin * (parseFloat(budgetQty) || 0));
 
   const extraCostsTotal =
@@ -116,6 +119,9 @@ export default function RecetaDetailPage() {
   const salePricePerUnit = recipe.costPerUnit;
   const totalSale = salePricePerUnit * recipe.unitsProduced;
   const netProfit = totalSale - recipe.totalCost;
+
+  const hasOutput = !!(recipe.outputQuantity && recipe.outputQuantity > 0 && recipe.outputUnit);
+  const hasPorciones = recipe.unitsProduced > 0;
 
   return (
     <main className="mx-auto w-full max-w-[900px] flex-1 px-5 py-8 space-y-8">
@@ -131,9 +137,11 @@ export default function RecetaDetailPage() {
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{recipe.name}</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-            {recipe.unitsProduced} porciones · {recipe.profitMargin ?? 0}% de ganancia
-          </p>
+            {hasPorciones && (
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+                {recipe.unitsProduced} porciones · {recipe.profitMargin ?? 0}% de ganancia
+              </p>
+            )}
         </div>
         <div className="flex gap-2 shrink-0">
           <TransitionLink
@@ -154,30 +162,40 @@ export default function RecetaDetailPage() {
       </div>
 
       {/* Resumen de costos */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: 'Costo Ingredientes', value: formatCurrency(recipe.totalCost - extraCostsTotal), icon: 'egg' },
-          { label: 'Costos Adicionales', value: formatCurrency(extraCostsTotal), icon: 'inventory' },
-          { label: 'Precio de Costo', value: formatCurrency(recipe.totalCost), icon: 'receipt' },
-          { label: 'Precio de Venta', value: formatCurrency(recipe.costPerUnit), icon: 'cake', highlight: true },
-        ].map(({ label, value, icon, highlight }) => (
-          <div
-            key={label}
-            className={`rounded-xl p-4 border ${
-              highlight
-                ? 'bg-[#ee2b6c] text-white border-transparent shadow-md shadow-[#ee2b6c]/20'
-                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
-            }`}
-          >
-            <span className={`material-symbols-outlined text-[20px] ${highlight ? 'text-white/80' : 'text-[#ee2b6c]'}`}>{icon}</span>
-            <p className={`text-xs font-bold mt-2 uppercase tracking-wide ${highlight ? 'text-white/70' : 'text-slate-400'}`}>{label}</p>
-            <p className={`text-xl font-black mt-0.5 ${highlight ? 'text-white' : 'text-slate-800 dark:text-white'}`}>{value}</p>
+      {(hasPorciones || hasOutput) && (
+        <div className={`grid gap-4 ${hasPorciones ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-1'}`}>
+          {hasPorciones && (
+            <>
+              {[
+                { label: 'Costo Ingredientes', value: formatCurrency(recipe.totalCost - extraCostsTotal), icon: 'egg' },
+                { label: 'Costos Adicionales', value: formatCurrency(extraCostsTotal), icon: 'inventory' },
+              ].map(({ label, value, icon }) => (
+                <div key={label} className="rounded-xl p-4 border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                  <span className="material-symbols-outlined text-[20px] text-[#ee2b6c]">{icon}</span>
+                  <p className="text-xs font-bold mt-2 uppercase tracking-wide text-slate-400">{label}</p>
+                  <p className="text-xl font-black mt-0.5 text-slate-800 dark:text-white">{value}</p>
+                </div>
+              ))}
+            </>
+          )}
+          <div className="rounded-xl p-4 border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+            <span className="material-symbols-outlined text-[20px] text-[#ee2b6c]">receipt</span>
+            <p className="text-xs font-bold mt-2 uppercase tracking-wide text-slate-400">Precio de Costo</p>
+            <p className="text-xl font-black mt-0.5 text-slate-800 dark:text-white">{formatCurrency(recipe.totalCost)}</p>
           </div>
-        ))}
-      </div>
+          {hasPorciones && (
+            <div className="rounded-xl p-4 border bg-[#ee2b6c] text-white border-transparent shadow-md shadow-[#ee2b6c]/20">
+              <span className="material-symbols-outlined text-[20px] text-white/80">cake</span>
+              <p className="text-xs font-bold mt-2 uppercase tracking-wide text-white/70">Precio de Venta</p>
+              <p className="text-xl font-black mt-0.5 text-white">{formatCurrency(recipe.costPerUnit)}</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Precio de venta y ganancia */}
-      <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+      {hasPorciones && (
+        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
           <span className="material-symbols-outlined text-[#ee2b6c]">payments</span>
           <h3 className="font-bold text-base">Precio de Venta y Ganancia</h3>
@@ -207,8 +225,45 @@ export default function RecetaDetailPage() {
           </div>
         </div>
       </section>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Rendimiento físico */}
+      {hasOutput && (
+        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#ee2b6c]">monitoring</span>
+            <h3 className="font-bold text-base">Rendimiento físico</h3>
+          </div>
+          <div className="p-4 sm:p-5 space-y-3">
+            <p className="text-xs text-slate-400">
+              Esta receta puede utilizarse como componente en Productos.
+            </p>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 sm:p-4 text-center">
+                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">
+                  Rendimiento
+                </p>
+                <p className="text-lg sm:text-2xl font-black text-slate-700 dark:text-slate-200">
+                  {recipe.outputQuantity} <span className="text-base font-semibold text-slate-400">{recipe.outputUnit}</span>
+                </p>
+              </div>
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 p-3 sm:p-4 text-center">
+                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">
+                  Costo base para Productos
+                </p>
+                <p className="text-lg sm:text-2xl font-black text-slate-700 dark:text-slate-200">
+                  {formatCurrency(costPerOutputUnit)} <span className="text-base font-semibold text-slate-400">/ {recipe.outputUnit}</span>
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-400">
+              Productos calculará automáticamente el costo según la cantidad utilizada.
+            </p>
+          </div>
+        </section>
+      )}
+
+      <div className={`grid gap-6 ${hasPorciones ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
         {/* Ingredientes */}
         <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
           <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
@@ -229,7 +284,8 @@ export default function RecetaDetailPage() {
         </section>
 
         {/* Costos adicionales */}
-        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+        {hasPorciones && (
+          <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
           <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
             <span className="material-symbols-outlined text-[#ee2b6c]">local_shipping</span>
             <h3 className="font-bold text-base">Costos Adicionales</h3>
@@ -260,10 +316,12 @@ export default function RecetaDetailPage() {
             </div>
           )}
         </section>
+        )}
       </div>
 
       {/* Presupuesto para pedido */}
-      <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+      {hasPorciones && (
+        <section className="rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
           <span className="material-symbols-outlined text-[#ee2b6c]">shopping_bag</span>
           <div>
@@ -330,6 +388,7 @@ export default function RecetaDetailPage() {
           )}
         </div>
       </section>
+      )}
 
     </main>
   );

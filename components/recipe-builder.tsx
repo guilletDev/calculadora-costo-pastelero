@@ -3,11 +3,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { BaseIngredient, Recipe, RecipeIngredient, Unit } from '@/lib/types';
+import { BaseIngredient, Recipe, RecipeIngredient, Unit, SaleType } from '@/lib/types';
 import { storage } from '@/lib/storage';
 import { fetchIngredients } from '@/lib/ingredients-db';
 import { fetchRecipes, upsertRecipe, deleteRecipe as dbDeleteRecipe } from '@/lib/recipes-db';
 import { navigateWithTransition } from '@/lib/view-transition';
+
+interface RecipeDraft {
+  name: string;
+  ingredients: RecipeIngredient[];
+  extraCosts: Record<string, string>;
+  unitsProduced: string;
+  profitMargin: string;
+  saleType: SaleType;
+  outputQuantity: string;
+  outputUnit: Unit | null;
+}
 
 interface RecipeBuilderProps {
   isIngredientsLocked?: boolean;
@@ -30,16 +41,18 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
 
-  const defaultDraft = {
+  const defaultDraft: RecipeDraft = {
     name: '',
     ingredients: [],
     extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' },
     unitsProduced: '',
     profitMargin: '',
     saleType: 'unidad',
+    outputQuantity: '',
+    outputUnit: null,
   };
 
-  const [currentRecipe, setCurrentRecipe] = useState<any>(defaultDraft);
+  const [currentRecipe, setCurrentRecipe] = useState<RecipeDraft>(defaultDraft);
   const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
 
   const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
@@ -93,10 +106,18 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
             setCurrentRecipe({
               name: recipeToEdit.name,
               ingredients: recipeToEdit.ingredients,
-              extraCosts: { ...recipeToEdit.extraCosts },
-              unitsProduced: recipeToEdit.unitsProduced,
-              profitMargin: recipeToEdit.profitMargin || '',
+              extraCosts: {
+                packaging: String(recipeToEdit.extraCosts.packaging || ''),
+                bags: String(recipeToEdit.extraCosts.bags || ''),
+                labels: String(recipeToEdit.extraCosts.labels || ''),
+                shipping: String(recipeToEdit.extraCosts.shipping || ''),
+                others: String(recipeToEdit.extraCosts.others || ''),
+              },
+              unitsProduced: String(recipeToEdit.unitsProduced),
+              profitMargin: String(recipeToEdit.profitMargin || ''),
               saleType: recipeToEdit.saleType || 'unidad',
+              outputQuantity: recipeToEdit.outputQuantity != null ? String(recipeToEdit.outputQuantity) : '',
+              outputUnit: recipeToEdit.outputUnit,
             });
             setBudgetQty('');
             setTimeout(() => {
@@ -110,7 +131,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
       }
 
       const draft = storage.getDraft();
-      if (draft) setCurrentRecipe(draft);
+      if (draft) setCurrentRecipe({ ...defaultDraft, ...draft });
     };
     loadData();
   }, [searchParams]);
@@ -151,15 +172,15 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     return { quantity, unit };
   };
 
-  const calculateRecipeTotals = (recipe: any) => {
-    const ingredientsCost = (recipe.ingredients || []).reduce((sum: number, ing: any) => sum + ing.cost, 0);
+  const calculateRecipeTotals = (recipe: RecipeDraft) => {
+    const ingredientsCost = (recipe.ingredients || []).reduce((sum, ing) => sum + ing.cost, 0);
     const extraCostsTotal = recipe.extraCosts
-      ? Object.values(recipe.extraCosts).reduce((sum: number, cost: any) => sum + (parseFloat(cost) || 0), 0)
+      ? Object.values(recipe.extraCosts).reduce((sum, cost) => sum + (parseFloat(cost) || 0), 0)
       : 0;
     const totalCost = ingredientsCost + extraCostsTotal;
-    const margin = parseFloat(String(recipe.profitMargin)) || 0;
+    const margin = parseFloat(recipe.profitMargin) || 0;
     const totalWithProfit = totalCost * (1 + margin / 100);
-    const units = parseFloat(String(recipe.unitsProduced)) || 0;
+    const units = parseFloat(recipe.unitsProduced) || 0;
     const costPerUnit = units ? totalWithProfit / units : 0;
     return { ingredientsCost, extraCostsTotal, totalCost, totalWithProfit, costPerUnit };
   };
@@ -210,15 +231,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   };
 
   const resetCurrentRecipe = () => {
-    const empty = {
-      name: '',
-      ingredients: [],
-      extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' } as any,
-      unitsProduced: '',
-      profitMargin: '',
-      saleType: 'unidad',
-    };
-    setCurrentRecipe(empty);
+    setCurrentRecipe({ ...defaultDraft });
     storage.clearDraft();
     setBudgetQty('');
   };
@@ -233,17 +246,21 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
         name: currentRecipe.name,
         ingredients: currentRecipe.ingredients,
         extraCosts: {
-          packaging: parseFloat(currentRecipe.extraCosts?.packaging as any) || 0,
-          bags: parseFloat(currentRecipe.extraCosts?.bags as any) || 0,
-          labels: parseFloat(currentRecipe.extraCosts?.labels as any) || 0,
-          shipping: parseFloat(currentRecipe.extraCosts?.shipping as any) || 0,
-          others: parseFloat(currentRecipe.extraCosts?.others as any) || 0,
+          packaging: parseFloat(currentRecipe.extraCosts.packaging) || 0,
+          bags: parseFloat(currentRecipe.extraCosts.bags) || 0,
+          labels: parseFloat(currentRecipe.extraCosts.labels) || 0,
+          shipping: parseFloat(currentRecipe.extraCosts.shipping) || 0,
+          others: parseFloat(currentRecipe.extraCosts.others) || 0,
         },
-        unitsProduced: parseFloat(currentRecipe.unitsProduced as any) || 0,
-        profitMargin: parseFloat(currentRecipe.profitMargin as any) || 0,
+        unitsProduced: parseFloat(currentRecipe.unitsProduced) || 0,
+        profitMargin: parseFloat(currentRecipe.profitMargin) || 0,
         saleType: currentRecipe.saleType || 'unidad',
         totalCost,
         costPerUnit,
+        outputQuantity: currentRecipe.outputQuantity && parseFloat(currentRecipe.outputQuantity) > 0 && currentRecipe.outputUnit
+          ? parseFloat(currentRecipe.outputQuantity)
+          : null,
+        outputUnit: currentRecipe.outputUnit,
       };
 
       const savedRecipe = await upsertRecipe(draftToSave);
@@ -307,10 +324,18 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     setCurrentRecipe({
       name: recipe.name,
       ingredients: recipe.ingredients,
-      extraCosts: { ...recipe.extraCosts },
-      unitsProduced: recipe.unitsProduced,
-      profitMargin: recipe.profitMargin || '',
+      extraCosts: {
+        packaging: String(recipe.extraCosts.packaging || ''),
+        bags: String(recipe.extraCosts.bags || ''),
+        labels: String(recipe.extraCosts.labels || ''),
+        shipping: String(recipe.extraCosts.shipping || ''),
+        others: String(recipe.extraCosts.others || ''),
+      },
+      unitsProduced: String(recipe.unitsProduced),
+      profitMargin: String(recipe.profitMargin || ''),
       saleType: recipe.saleType || 'unidad',
+      outputQuantity: recipe.outputQuantity != null ? String(recipe.outputQuantity) : '',
+      outputUnit: recipe.outputUnit,
     });
     setBudgetQty('');
     setTimeout(() => {
@@ -328,17 +353,21 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
         name: currentRecipe.name,
         ingredients: currentRecipe.ingredients,
         extraCosts: {
-          packaging: parseFloat(currentRecipe.extraCosts?.packaging as any) || 0,
-          bags: parseFloat(currentRecipe.extraCosts?.bags as any) || 0,
-          labels: parseFloat(currentRecipe.extraCosts?.labels as any) || 0,
-          shipping: parseFloat(currentRecipe.extraCosts?.shipping as any) || 0,
-          others: parseFloat(currentRecipe.extraCosts?.others as any) || 0,
+          packaging: parseFloat(currentRecipe.extraCosts.packaging) || 0,
+          bags: parseFloat(currentRecipe.extraCosts.bags) || 0,
+          labels: parseFloat(currentRecipe.extraCosts.labels) || 0,
+          shipping: parseFloat(currentRecipe.extraCosts.shipping) || 0,
+          others: parseFloat(currentRecipe.extraCosts.others) || 0,
         },
-        unitsProduced: parseFloat(currentRecipe.unitsProduced as any) || 0,
-        profitMargin: parseFloat(currentRecipe.profitMargin as any) || 0,
+        unitsProduced: parseFloat(currentRecipe.unitsProduced) || 0,
+        profitMargin: parseFloat(currentRecipe.profitMargin) || 0,
         saleType: currentRecipe.saleType || 'unidad',
         totalCost,
         costPerUnit,
+        outputQuantity: currentRecipe.outputQuantity && parseFloat(currentRecipe.outputQuantity) > 0 && currentRecipe.outputUnit
+          ? parseFloat(currentRecipe.outputQuantity)
+          : null,
+        outputUnit: currentRecipe.outputUnit,
       };
 
       const savedRecipe = await upsertRecipe(draftToUpdate, editingRecipeId);
@@ -382,6 +411,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   }
 
   const canSave = isIngredientsLocked;
+  const hasQty = !!(currentRecipe.outputQuantity && parseFloat(currentRecipe.outputQuantity) > 0);
+  const hasUnit = currentRecipe.outputUnit !== null;
 
   return (
     <div id="recipe-builder" className="space-y-8">
@@ -419,9 +450,53 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               type="number"
               min="0"
               value={currentRecipe.unitsProduced ?? ''}
-              onChange={(e) => setCurrentRecipe({ ...currentRecipe, unitsProduced: e.target.value as any })}
+              onChange={(e) => setCurrentRecipe({ ...currentRecipe, unitsProduced: e.target.value })}
             />
           </div>
+        </div>
+
+        {/* ── Rendimiento físico (opcional) ── */}
+        <div className="pt-4 border-t border-gray-100">
+          <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">
+            Rendimiento físico (opcional)
+          </label>
+          <p className="text-xs text-[#5a5c5d] mt-0.5 mb-3">
+            Cantidad final de preparación.
+          </p>
+          <div className="flex flex-col md:flex-row gap-3">
+            <input
+              className="interactive-input w-full md:w-44 px-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
+              placeholder="Ej: 850"
+              type="number"
+              min="0.01"
+              step="any"
+              value={currentRecipe.outputQuantity}
+              onChange={(e) => setCurrentRecipe({
+                ...currentRecipe,
+                outputQuantity: e.target.value
+              })}
+            />
+            <select
+              className="interactive-input w-full md:w-32 px-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27]"
+              value={currentRecipe.outputUnit ?? ''}
+              onChange={(e) => setCurrentRecipe({
+                ...currentRecipe,
+                outputUnit: e.target.value ? (e.target.value as Unit) : null
+              })}
+            >
+              <option value="" disabled>Unidad</option>
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="l">l</option>
+              <option value="ml">ml</option>
+              <option value="unidad">unidad</option>
+            </select>
+          </div>
+          {(hasQty !== hasUnit) && (
+            <p className="text-xs text-[#ba1a1a] mt-2">
+              Completá cantidad y unidad, o dejá ambos vacíos.
+            </p>
+          )}
         </div>
 
         <div className="pt-6 border-t border-gray-100">
@@ -602,10 +677,10 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                     <input
                       className="interactive-input w-full pl-8 pr-4 py-2 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-right text-[#151c27] placeholder:text-[#c5c7c8]"
                       placeholder="0" type="number" min="0"
-                      value={(currentRecipe.extraCosts as any)?.[key] ?? ''}
+                      value={currentRecipe.extraCosts[key] ?? ''}
                       onChange={(e) => setCurrentRecipe({
                         ...currentRecipe,
-                        extraCosts: { ...currentRecipe.extraCosts!, [key]: e.target.value as any }
+                        extraCosts: { ...currentRecipe.extraCosts, [key]: e.target.value }
                       })}
                     />
                   </div>
@@ -623,7 +698,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                       className="interactive-input w-full px-4 py-2 rounded-lg border-2 border-[#ffd9de] bg-white text-center text-[#b80049] font-semibold placeholder:text-[#c5c7c8]"
                       placeholder="Ej: 40" type="number" min="0" max="500"
                       value={currentRecipe.profitMargin ?? ''}
-                      onChange={(e) => setCurrentRecipe({ ...currentRecipe, profitMargin: e.target.value as any })}
+                      onChange={(e) => setCurrentRecipe({ ...currentRecipe, profitMargin: e.target.value })}
                     />
                   </div>
                   <span className="text-[#b80049] font-bold">%</span>
@@ -634,7 +709,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                   <button
                     key={pct}
                     type="button"
-                    onClick={() => setCurrentRecipe({ ...currentRecipe, profitMargin: String(pct) as any })}
+                    onClick={() => setCurrentRecipe({ ...currentRecipe, profitMargin: String(pct) })}
                     className={`interactive-btn px-4 py-1.5 rounded-full transition-colors text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-xs ${
                       String(currentRecipe.profitMargin) === String(pct)
                         ? 'bg-[#ffd9de] text-[#400014]'

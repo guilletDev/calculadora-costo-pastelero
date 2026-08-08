@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/client';
 import { Recipe, RecipeIngredient, Unit, SaleType, ExtraCosts } from './types';
 import { RecipeRow, RecipeIngredientRow } from './database.types';
+import { toBaseQuantity, toBaseUnit } from './units';
 
 // Convertir DB Row a Frontend Type
 function rowToRecipe(
@@ -16,6 +17,8 @@ function rowToRecipe(
     profitMargin: row.profit_margin,
     totalCost: row.total_cost,
     costPerUnit: row.cost_per_unit,
+    outputQuantity: row.output_quantity,
+    outputUnit: row.output_unit as Unit | null,
     ingredients: ingredientRows.map(ingRow => ({
       id: ingRow.id,
       baseIngredientId: ingRow.ingredient_id,
@@ -98,6 +101,12 @@ export async function upsertRecipe(recipeDraft: Omit<Recipe, 'id'>, id?: string)
     profit_margin: recipeDraft.profitMargin || 0,
     total_cost: recipeDraft.totalCost,
     cost_per_unit: recipeDraft.costPerUnit,
+    output_quantity: recipeDraft.outputQuantity != null && recipeDraft.outputUnit
+      ? toBaseQuantity(recipeDraft.outputQuantity, recipeDraft.outputUnit)
+      : null,
+    output_unit: recipeDraft.outputUnit
+      ? toBaseUnit(recipeDraft.outputUnit)
+      : null,
   };
 
   let recipeId = id;
