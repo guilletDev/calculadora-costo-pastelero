@@ -7,6 +7,8 @@ import { BaseIngredient, Recipe, RecipeIngredient, Unit, SaleType } from '@/lib/
 import { storage } from '@/lib/storage';
 import { fetchIngredients } from '@/lib/ingredients-db';
 import { fetchRecipes, upsertRecipe, deleteRecipe as dbDeleteRecipe } from '@/lib/recipes-db';
+import { calculateIngredientCost, calculateRecipeTotals, calculateRawCostPerUnit, formatCurrency } from '@/lib/cost';
+import { convertToBaseUnit } from '@/lib/units';
 import { navigateWithTransition } from '@/lib/view-transition';
 
 interface RecipeDraft {
@@ -153,44 +155,17 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
       .catch(() => {});
   }, [ingredientsVersion]);
 
-  const toBaseQuantity = (quantity: number, unit: Unit): number => {
-    if (unit === 'kg') return quantity * 1000;
-    if (unit === 'l') return quantity * 1000;
-    return quantity;
-  };
-
-  const calculateIngredientCost = (baseIngredientId: string | null, quantityUsed: number, unit: Unit, existingCost?: number): number => {
-    const baseIngredient = baseIngredients.find(ing => ing.id === baseIngredientId);
-    if (!baseIngredient) return existingCost ?? 0;
-    return baseIngredient.pricePerUnit * toBaseQuantity(quantityUsed, unit);
-  };
-
-
-  const normalizeIngredient = (quantity: number, unit: Unit): { quantity: number; unit: Unit } => {
-    if (unit === 'kg') return { quantity: quantity * 1000, unit: 'g' };
-    if (unit === 'l') return { quantity: quantity * 1000, unit: 'ml' };
-    return { quantity, unit };
-  };
-
-  const calculateRecipeTotals = (recipe: RecipeDraft) => {
-    const ingredientsCost = (recipe.ingredients || []).reduce((sum, ing) => sum + ing.cost, 0);
-    const extraCostsTotal = recipe.extraCosts
-      ? Object.values(recipe.extraCosts).reduce((sum, cost) => sum + (parseFloat(cost) || 0), 0)
-      : 0;
-    const totalCost = ingredientsCost + extraCostsTotal;
-    const margin = parseFloat(recipe.profitMargin) || 0;
-    const totalWithProfit = totalCost * (1 + margin / 100);
-    const units = parseFloat(recipe.unitsProduced) || 0;
-    const costPerUnit = units ? totalWithProfit / units : 0;
-    return { ingredientsCost, extraCostsTotal, totalCost, totalWithProfit, costPerUnit };
+  const resolveIngredientCost = (baseIngredientId: string | null, quantityUsed: number, unit: Unit, existingCost?: number): number => {
+    const base = baseIngredients.find(ing => ing.id === baseIngredientId);
+    return calculateIngredientCost(base?.pricePerUnit, quantityUsed, unit, existingCost);
   };
 
   const addIngredientToRecipe = () => {
     if (!newIngredient.baseIngredientId || !newIngredient.quantityUsed) return;
     const quantityUsed = parseFloat(newIngredient.quantityUsed);
-    const cost = calculateIngredientCost(newIngredient.baseIngredientId, quantityUsed, newIngredient.unit);
-    const normalized = normalizeIngredient(quantityUsed, newIngredient.unit);
     const base = baseIngredients.find(i => i.id === newIngredient.baseIngredientId);
+    const cost = resolveIngredientCost(newIngredient.baseIngredientId, quantityUsed, newIngredient.unit);
+    const normalized = convertToBaseUnit(quantityUsed, newIngredient.unit);
     const recipeIngredient: RecipeIngredient = {
       id: crypto.randomUUID(),
       baseIngredientId: newIngredient.baseIngredientId,
@@ -220,10 +195,10 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const saveEditIngredient = (ingId: string) => {
     const qty = parseFloat(editingQuantity);
     if (!qty || qty <= 0) return;
-    const normalized = normalizeIngredient(qty, editingUnit);
+    const normalized = convertToBaseUnit(qty, editingUnit);
     const updatedIngredients = (currentRecipe.ingredients || []).map((ing: RecipeIngredient) => {
       if (ing.id !== ingId) return ing;
-      const cost = calculateIngredientCost(ing.baseIngredientId, normalized.quantity, normalized.unit, ing.cost);
+      const cost = resolveIngredientCost(ing.baseIngredientId, normalized.quantity, normalized.unit, ing.cost);
       return { ...ing, quantityUsed: normalized.quantity, unit: normalized.unit, cost };
     });
     setCurrentRecipe({ ...currentRecipe, ingredients: updatedIngredients });
@@ -388,16 +363,13 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   };
 
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
-
   const getIngredientName = (ing: RecipeIngredient) =>
     baseIngredients.find(i => i.id === ing.baseIngredientId)?.name || ing.ingredientName;
 
   const totals = calculateRecipeTotals(currentRecipe);
   const budgetTotal = totals.costPerUnit * (parseFloat(budgetQty) || 0);
   const units = parseFloat(String(currentRecipe.unitsProduced)) || 0;
-  const costPerUnitWithoutMargin = units > 0 ? totals.totalCost / units : 0;
+  const costPerUnitWithoutMargin = calculateRawCostPerUnit(totals.totalCost, units);
   const budgetNetProfit = budgetTotal - (costPerUnitWithoutMargin * (parseFloat(budgetQty) || 0));
 
   if (baseIngredients.length === 0) {
@@ -455,10 +427,10 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
           </div>
         </div>
 
-        {/* ── Rendimiento físico (opcional) ── */}
+        {/* ── Rendimiento total (opcional) ── */}
         <div className="pt-4 border-t border-gray-100">
           <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">
-            Rendimiento físico (opcional)
+            Rendimiento total (opcional)
           </label>
           <p className="text-xs text-[#5a5c5d] mt-0.5 mb-3">
             Cantidad final de preparación.
@@ -545,7 +517,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                   <span className="md:hidden text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Costo:</span>
                   <span className="text-[18px] leading-[1.2] text-[#151c27] font-semibold">
                     {editingQuantity
-                      ? formatCurrency(calculateIngredientCost(ing.baseIngredientId, parseFloat(editingQuantity) || 0, editingUnit))
+                      ? formatCurrency(resolveIngredientCost(ing.baseIngredientId, parseFloat(editingQuantity) || 0, editingUnit))
                       : '$0,00'}
                   </span>
                   <button onClick={() => saveEditIngredient(ing.id)}
@@ -641,7 +613,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               <span className="md:hidden text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Costo:</span>
               <span className="text-[18px] leading-[1.2] text-[#151c27] font-semibold">
                 {newIngredient.baseIngredientId && newIngredient.quantityUsed
-                  ? formatCurrency(calculateIngredientCost(newIngredient.baseIngredientId, parseFloat(newIngredient.quantityUsed) || 0, newIngredient.unit))
+                  ? formatCurrency(resolveIngredientCost(newIngredient.baseIngredientId, parseFloat(newIngredient.quantityUsed) || 0, newIngredient.unit))
                   : '$0,00'}
               </span>
               <button

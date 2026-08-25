@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Recipe, BaseIngredient } from '@/lib/types';
 import { fetchIngredients } from '@/lib/ingredients-db';
 import { fetchRecipeById, deleteRecipe } from '@/lib/recipes-db';
+import { formatCurrency, sumExtraCosts, calculateRawCostPerUnit, costPerOutputUnit as calculateCostPerOutputUnit } from '@/lib/cost';
 import { TransitionLink } from '@/components/transition-link';
 import { navigateWithTransition } from '@/lib/view-transition';
 
@@ -44,9 +45,6 @@ export default function RecetaDetailPage() {
     }
     loadData();
   }, [params.id, router]);
-
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
 
   const getIngredientName = (ing: Recipe['ingredients'][number]) =>
     baseIngredients.find(i => i.id === ing.baseIngredientId)?.name ?? ing.ingredientName;
@@ -103,18 +101,11 @@ export default function RecetaDetailPage() {
   }
 
   const budgetTotal = recipe.costPerUnit * (parseFloat(budgetQty) || 0);
-  const costPerUnitWithoutMargin = recipe.unitsProduced > 0 ? recipe.totalCost / recipe.unitsProduced : 0;
-  const costPerOutputUnit = recipe.outputQuantity && recipe.outputQuantity > 0
-    ? recipe.totalCost / recipe.outputQuantity
-    : 0;
+  const costPerUnitWithoutMargin = calculateRawCostPerUnit(recipe.totalCost, recipe.unitsProduced);
+  const costPerOutputUnit = calculateCostPerOutputUnit(recipe.totalCost, recipe.outputQuantity ?? 0);
   const budgetNetProfit = budgetTotal - (costPerUnitWithoutMargin * (parseFloat(budgetQty) || 0));
 
-  const extraCostsTotal =
-    (recipe.extraCosts.packaging || 0) +
-    (recipe.extraCosts.bags || 0) +
-    (recipe.extraCosts.labels || 0) +
-    (recipe.extraCosts.shipping || 0) +
-    (recipe.extraCosts.others || 0);
+  const extraCostsTotal = sumExtraCosts(recipe.extraCosts);
 
   const salePricePerUnit = recipe.costPerUnit;
   const totalSale = salePricePerUnit * recipe.unitsProduced;
@@ -235,12 +226,12 @@ export default function RecetaDetailPage() {
         </section>
       )}
 
-      {/* Rendimiento físico */}
+      {/* Rendimiento total */}
       {hasOutput && (
         <section className="bg-stitch-surface-container-lowest rounded-[32px] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant">
           <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface mb-6 flex items-center gap-3">
             <span className="material-symbols-outlined text-stitch-primary">monitoring</span>
-            Rendimiento físico
+            Rendimiento total
           </h3>
           <div className="space-y-3">
             <p className="font-stitch-body-md text-stitch-body-md text-stitch-secondary">

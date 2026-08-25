@@ -106,6 +106,7 @@ export function Navbar() {
   const navLinks = [
     { href: '/calculadora', label: 'Calculadora', icon: 'calculate' },
     { href: '/recetas',     label: 'Recetas',      icon: 'menu_book' },
+    { href: '/productos',   label: 'Productos',    icon: 'storefront' },
   ];
 
   const isActive = (href: string) =>

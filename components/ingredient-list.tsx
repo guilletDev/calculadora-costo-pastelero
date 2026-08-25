@@ -11,6 +11,8 @@ import {
   deleteIngredient,
   upsertIngredient,
 } from '@/lib/ingredients-db';
+import { formatCurrency } from '@/lib/cost';
+import { convertToBaseUnit } from '@/lib/units';
 
 interface IngredientListProps {
   onLockChange?: (isLocked: boolean) => void;
@@ -86,12 +88,6 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
     loadIngredients();
   }, [ingredientsVersion]);
 
-  const toBaseUnit = (quantity: number, unit: Unit): { quantity: number; unit: Unit } => {
-    if (unit === 'kg') return { quantity: quantity * 1000, unit: 'g' };
-    if (unit === 'l') return { quantity: quantity * 1000, unit: 'ml' };
-    return { quantity, unit };
-  };
-
   // Iniciar edición inline directo en la fila
   const startInlineEdit = (ingredient: BaseIngredient) => {
     setEditingId(ingredient.id);
@@ -111,7 +107,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
     const trimmedName = editInlineData.name.trim();
     if (!rawQuantity || !price || !trimmedName) return;
 
-    const converted = toBaseUnit(rawQuantity, editInlineData.unit);
+    const converted = convertToBaseUnit(rawQuantity, editInlineData.unit);
     const pricePerUnit = price / converted.quantity;
 
     setIsSaving(true);
@@ -146,7 +142,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
 
     const rawQuantity = parseFloat(formData.purchasedQuantity);
     const price = parseFloat(formData.totalPrice);
-    const converted = toBaseUnit(rawQuantity, formData.unit);
+    const converted = convertToBaseUnit(rawQuantity, formData.unit);
     const pricePerUnit = price / converted.quantity;
 
     setIsSaving(true);
@@ -200,10 +196,6 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   };
 
   const totalInvestment = ingredients.reduce((sum, ing) => sum + ing.totalPrice, 0);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
-  };
 
   return (
     <article className="bg-white rounded-[24px] border border-gray-100 overflow-hidden card-animate delay-100" style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.04)' }}>

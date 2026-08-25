@@ -45,6 +45,33 @@ export interface RecipeIngredientRow {
   cost: number;
 }
 
+export interface ProductRow {
+  id: string;
+  user_id: string;
+  name: string;
+  profit_margin: number;
+  extra_costs: {
+    packaging: number;
+    bags: number;
+    labels: number;
+    shipping: number;
+    others: number;
+  };
+  total_cost: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductRecipeRow {
+  id: string;
+  product_id: string;
+  recipe_id: string | null;
+  recipe_name: string;
+  quantity_used: number;
+  unit: string;
+  cost: number;
+}
+
 // Tipos para INSERT (sin id ni timestamps)
 export type IngredientInsert = Omit<IngredientRow, 'id' | 'created_at' | 'updated_at'>;
 export type IngredientUpdate = Partial<Omit<IngredientRow, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;

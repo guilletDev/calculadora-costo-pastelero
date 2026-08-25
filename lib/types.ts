@@ -41,3 +41,21 @@ export interface Recipe {
   outputQuantity: number | null;
   outputUnit: Unit | null;
 }
+
+export interface ProductRecipe {
+  id: string;
+  recipeId: string | null;
+  recipeName: string;
+  quantityUsed: number;
+  unit: Unit;
+  cost: number;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  recipes: ProductRecipe[];
+  extraCosts: ExtraCosts;
+  profitMargin: number;
+  totalCost: number;
+}

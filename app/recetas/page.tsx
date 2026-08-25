@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { Recipe } from '@/lib/types';
 import { fetchRecipes } from '@/lib/recipes-db';
+import { formatCurrency } from '@/lib/cost';
 
 const stitchFontManrope = { fontFamily: "'Manrope', sans-serif" } as const;
 
@@ -27,9 +28,6 @@ export default function RecetasPage() {
     }
     loadRecipes();
   }, []);
-
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
 
   const filtered = recipes.filter(r =>
     r.name.toLowerCase().includes(search.toLowerCase())
