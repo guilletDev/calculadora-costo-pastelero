@@ -42,10 +42,15 @@ export interface Recipe {
   outputUnit: Unit | null;
 }
 
-export interface ProductRecipe {
+export type ComponentType = 'recipe' | 'ingredient';
+
+export interface ProductComponent {
   id: string;
+  componentType: ComponentType;
   recipeId: string | null;
-  recipeName: string;
+  recipeName: string | null;
+  ingredientId: string | null;
+  ingredientName: string | null;
   quantityUsed: number;
   unit: Unit;
   cost: number;
@@ -54,7 +59,8 @@ export interface ProductRecipe {
 export interface Product {
   id: string;
   name: string;
-  recipes: ProductRecipe[];
+  description: string;
+  components: ProductComponent[];
   extraCosts: ExtraCosts;
   profitMargin: number;
   totalCost: number;

@@ -82,7 +82,7 @@ export default function ProductoDetallePage() {
     );
   }
 
-  const componentsCost = sumIngredientCosts(product.recipes);
+  const componentsCost = sumIngredientCosts(product.components);
   const extraCostsTotal = sumExtraCosts(product.extraCosts);
   const salePrice = calculateSalePrice(product.totalCost, product.profitMargin);
   const netProfit = salePrice - product.totalCost;
@@ -102,8 +102,13 @@ export default function ProductoDetallePage() {
         <div>
           <h2 className="font-stitch-headline-lg text-stitch-headline-lg-mobile md:text-stitch-headline-lg text-stitch-on-surface">{product.name}</h2>
           <p className="font-stitch-body-lg text-stitch-body-lg text-stitch-secondary mt-1">
-            {product.recipes.length} componente{product.recipes.length !== 1 ? 's' : ''} · {product.profitMargin}% de margen
+            {product.components.length} componente{product.components.length !== 1 ? 's' : ''} · {product.profitMargin}% de margen
           </p>
+          {product.description && (
+            <p className="font-stitch-body-md text-stitch-body-md text-stitch-secondary mt-2 max-w-xl">
+              {product.description}
+            </p>
+          )}
         </div>
         <div className="flex gap-3">
           <TransitionLink
@@ -202,13 +207,17 @@ export default function ProductoDetallePage() {
             <span className="font-stitch-numeric-data text-stitch-numeric-data text-stitch-secondary">{formatCurrency(componentsCost)}</span>
           </div>
           <div className="divide-y divide-stitch-outline-variant/50">
-            {product.recipes.map(recipe => (
-              <div key={recipe.id} className="flex justify-between items-center py-3">
+            {product.components.map(component => (
+              <div key={component.id} className="flex justify-between items-center py-3">
                 <div className="flex flex-col">
-                  <span className="font-stitch-body-md text-stitch-body-md font-medium text-stitch-on-surface">{recipe.recipeName}</span>
-                  <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary font-normal mt-1">{recipe.quantityUsed} {recipe.unit}</span>
+                  <span className="font-stitch-body-md text-stitch-body-md font-medium text-stitch-on-surface">
+                    {component.recipeName ?? component.ingredientName ?? 'Componente'}
+                  </span>
+                  <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary font-normal mt-1">
+                    {component.componentType === 'recipe' ? 'Subproducto' : 'Ingrediente'} · {component.quantityUsed} {component.unit}
+                  </span>
                 </div>
-                <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{formatCurrency(recipe.cost)}</span>
+                <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{formatCurrency(component.cost)}</span>
               </div>
             ))}
           </div>

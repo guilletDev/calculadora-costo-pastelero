@@ -49,6 +49,7 @@ export interface ProductRow {
   id: string;
   user_id: string;
   name: string;
+  description: string;
   profit_margin: number;
   extra_costs: {
     packaging: number;
@@ -65,8 +66,11 @@ export interface ProductRow {
 export interface ProductRecipeRow {
   id: string;
   product_id: string;
+  component_type: string;
   recipe_id: string | null;
-  recipe_name: string;
+  recipe_name: string | null;
+  ingredient_id: string | null;
+  ingredient_name: string | null;
   quantity_used: number;
   unit: string;
   cost: number;

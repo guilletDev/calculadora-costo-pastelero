@@ -226,12 +226,12 @@ export default function RecetaDetailPage() {
         </section>
       )}
 
-      {/* Rendimiento total */}
+      {/* Subproducto */}
       {hasOutput && (
         <section className="bg-stitch-surface-container-lowest rounded-[32px] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant">
           <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface mb-6 flex items-center gap-3">
             <span className="material-symbols-outlined text-stitch-primary">monitoring</span>
-            Rendimiento total
+            Subproducto
           </h3>
           <div className="space-y-3">
             <p className="font-stitch-body-md text-stitch-body-md text-stitch-secondary">

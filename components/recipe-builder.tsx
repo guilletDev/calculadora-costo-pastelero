@@ -123,8 +123,10 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
             });
             setBudgetQty('');
             setTimeout(() => {
-              document.getElementById('recipe-builder')?.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
+              requestAnimationFrame(() => {
+                document.getElementById('recipe-builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              });
+            }, 150);
             return;
           }
         }
@@ -241,8 +243,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
       const savedRecipe = await upsertRecipe(draftToSave);
       setRecipes([...recipes, savedRecipe]);
       resetCurrentRecipe();
-      toast.success('Receta guardada exitosamente');
-      navigateWithTransition(router, '/recetas');
+      toast.success('Receta guardada exitosamente', { duration: 2500 });
+      navigateWithTransition(router, `/recetas/${savedRecipe.id}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al guardar receta');
     } finally {
@@ -349,7 +351,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
       setRecipes(recipes.map(r => r.id === editingRecipeId ? savedRecipe : r));
       setEditingRecipeId(null);
       resetCurrentRecipe();
-      toast.success('Receta actualizada exitosamente');
+      toast.success('Receta actualizada exitosamente', { duration: 2500 });
+      navigateWithTransition(router, `/recetas/${savedRecipe.id}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al actualizar receta');
     } finally {
@@ -427,13 +430,13 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
           </div>
         </div>
 
-        {/* ── Rendimiento total (opcional) ── */}
+        {/* ── Subproducto ── */}
         <div className="pt-4 border-t border-gray-100">
           <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">
-            Rendimiento total (opcional)
+            Subproducto
           </label>
           <p className="text-xs text-[#5a5c5d] mt-0.5 mb-3">
-            Cantidad final de preparación.
+            Preparación destinada a utilizarse como base en Productos.
           </p>
           <div className="flex flex-col md:flex-row gap-3">
             <input

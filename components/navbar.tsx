@@ -127,29 +127,29 @@ export function Navbar() {
     <>
       {/* ── Modal de confirmación logout ───────────────────────────────────── */}
       <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
-        <AlertDialogContent className="max-w-sm">
+        <AlertDialogContent className="max-w-sm rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant">
           <AlertDialogHeader>
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#ee2b6c]/10">
-              <span className="material-symbols-outlined text-[#ee2b6c]" style={{ fontSize: 24 }}>logout</span>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-stitch-primary-fixed">
+              <span className="material-symbols-outlined text-stitch-primary" style={{ fontSize: 24 }}>logout</span>
             </div>
-            <AlertDialogTitle className="text-center text-base font-bold text-slate-900 dark:text-white">
+            <AlertDialogTitle className="text-center text-base font-bold text-stitch-on-surface">
               Cerrar sesión
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-center text-sm text-slate-500 dark:text-slate-400">
+            <AlertDialogDescription className="text-center text-sm text-stitch-secondary">
               ¿Estás seguro de que deseas cerrar sesión?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-2 sm:flex-row gap-2">
             <AlertDialogCancel
               disabled={isLoggingOut}
-              className="flex-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold text-sm py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              className="flex-1 rounded-md border border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface font-semibold text-sm py-2.5 hover:bg-stitch-surface-container-low transition-colors"
             >
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => { e.preventDefault(); handleLogout(); }}
               disabled={isLoggingOut}
-              className="flex-1 rounded-md bg-[#ee2b6c] text-white font-semibold text-sm py-2.5 hover:bg-[#d4255f] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 rounded-md bg-stitch-primary text-on-primary font-semibold text-sm py-2.5 hover:bg-stitch-surface-tint transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isLoggingOut ? 'Cerrando...' : 'Cerrar sesión'}
             </AlertDialogAction>
@@ -212,7 +212,7 @@ export function Navbar() {
                 <ProfileDropdown size={40} />
                 <button
                   onClick={openLogoutConfirm}
-                  className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-[#ee2b6c]/5 hover:text-[#ee2b6c] transition-colors"
+                  className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-stitch-primary/5 hover:text-stitch-primary transition-colors"
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: 18 }}>logout</span>
                   Cerrar sesión
@@ -240,7 +240,7 @@ export function Navbar() {
                   <ProfileDropdown size={40} />
                   <button
                     onClick={openLogoutConfirm}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-[#ee2b6c]/5 hover:text-[#ee2b6c] transition-colors"
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-stitch-primary/5 hover:text-stitch-primary transition-colors"
                   >
                     <span className="material-symbols-outlined" style={{ fontSize: 18 }}>logout</span>
                     Cerrar sesión

@@ -1,25 +1,29 @@
 import { createClient } from '@/utils/supabase/client';
-import { Product, ProductRecipe, Unit, ExtraCosts } from './types';
+import { Product, ProductComponent, ComponentType, Unit, ExtraCosts } from './types';
 import { ProductRow, ProductRecipeRow } from './database.types';
 
 // Convertir DB Row a Frontend Type
 function rowToProduct(
   row: ProductRow,
-  recipeRows: ProductRecipeRow[]
+  componentRows: ProductRecipeRow[]
 ): Product {
   return {
     id: row.id,
     name: row.name,
+    description: row.description,
     profitMargin: row.profit_margin,
     extraCosts: row.extra_costs as ExtraCosts,
     totalCost: row.total_cost,
-    recipes: recipeRows.map(recipeRow => ({
-      id: recipeRow.id,
-      recipeId: recipeRow.recipe_id,
-      recipeName: recipeRow.recipe_name,
-      quantityUsed: recipeRow.quantity_used,
-      unit: recipeRow.unit as Unit,
-      cost: recipeRow.cost,
+    components: componentRows.map(componentRow => ({
+      id: componentRow.id,
+      componentType: componentRow.component_type as ComponentType,
+      recipeId: componentRow.recipe_id,
+      recipeName: componentRow.recipe_name,
+      ingredientId: componentRow.ingredient_id,
+      ingredientName: componentRow.ingredient_name,
+      quantityUsed: componentRow.quantity_used,
+      unit: componentRow.unit as Unit,
+      cost: componentRow.cost,
     })),
   };
 }
@@ -38,21 +42,21 @@ export async function fetchProducts(): Promise<Product[]> {
 
   const productIds = productsData.map(p => p.id);
 
-  const { data: recipesData, error: recipesError } = await supabase
+  const { data: componentsData, error: componentsError } = await supabase
     .from('product_recipes')
     .select('*')
     .in('product_id', productIds);
 
-  if (recipesError) throw new Error(`Error al cargar recetas de productos: ${recipesError.message}`);
+  if (componentsError) throw new Error(`Error al cargar componentes de productos: ${componentsError.message}`);
 
-  const recipesByProduct = (recipesData || []).reduce((acc, curr) => {
+  const componentsByProduct = (componentsData || []).reduce((acc, curr) => {
     if (!acc[curr.product_id]) acc[curr.product_id] = [];
     acc[curr.product_id].push(curr);
     return acc;
   }, {} as Record<string, ProductRecipeRow[]>);
 
   return (productsData as ProductRow[]).map(row =>
-    rowToProduct(row, recipesByProduct[row.id] || [])
+    rowToProduct(row, componentsByProduct[row.id] || [])
   );
 }
 
@@ -70,14 +74,14 @@ export async function fetchProductById(id: string): Promise<Product | null> {
     throw new Error(`Error al cargar producto: ${productError.message}`);
   }
 
-  const { data: recipesData, error: recipesError } = await supabase
+  const { data: componentsData, error: componentsError } = await supabase
     .from('product_recipes')
     .select('*')
     .eq('product_id', id);
 
-  if (recipesError) throw new Error(`Error al cargar recetas de producto: ${recipesError.message}`);
+  if (componentsError) throw new Error(`Error al cargar componentes de producto: ${componentsError.message}`);
 
-  return rowToProduct(productData as ProductRow, recipesData as ProductRecipeRow[]);
+  return rowToProduct(productData as ProductRow, componentsData as ProductRecipeRow[]);
 }
 
 export async function upsertProduct(productDraft: Omit<Product, 'id'>, id?: string): Promise<Product> {
@@ -89,6 +93,7 @@ export async function upsertProduct(productDraft: Omit<Product, 'id'>, id?: stri
   const productInsertData = {
     user_id: userId,
     name: productDraft.name,
+    description: productDraft.description || '',
     profit_margin: productDraft.profitMargin || 0,
     extra_costs: productDraft.extraCosts,
     total_cost: productDraft.totalCost,
@@ -106,13 +111,13 @@ export async function upsertProduct(productDraft: Omit<Product, 'id'>, id?: stri
 
     if (updateError) throw new Error(`Error al actualizar producto: ${updateError.message}`);
 
-    // Delete existing product recipes
-    const { error: deleteRecError } = await supabase
+    // Delete existing product components
+    const { error: deleteCompError } = await supabase
       .from('product_recipes')
       .delete()
       .eq('product_id', productId);
 
-    if (deleteRecError) throw new Error(`Error al actualizar recetas del producto: ${deleteRecError.message}`);
+    if (deleteCompError) throw new Error(`Error al actualizar componentes del producto: ${deleteCompError.message}`);
   } else {
     // Insert new
     const { data: newProduct, error: insertError } = await supabase
@@ -125,11 +130,11 @@ export async function upsertProduct(productDraft: Omit<Product, 'id'>, id?: stri
     productId = newProduct.id;
   }
 
-  // Insert product recipes
-  if (productDraft.recipes.length > 0) {
-    const recipesToInsert = productDraft.recipes.map(recipe => {
-      let quantityUsed = recipe.quantityUsed;
-      let unit = recipe.unit;
+  // Insert product components
+  if (productDraft.components.length > 0) {
+    const componentsToInsert = productDraft.components.map(component => {
+      let quantityUsed = component.quantityUsed;
+      let unit = component.unit;
 
       if (unit === 'kg') {
         quantityUsed *= 1000;
@@ -139,21 +144,26 @@ export async function upsertProduct(productDraft: Omit<Product, 'id'>, id?: stri
         unit = 'ml';
       }
 
+      const isIngredient = component.componentType === 'ingredient';
+
       return {
         product_id: productId,
-        recipe_id: recipe.recipeId,
-        recipe_name: recipe.recipeName,
+        component_type: isIngredient ? 'ingredient' : 'recipe',
+        recipe_id: isIngredient ? null : component.recipeId,
+        recipe_name: isIngredient ? null : component.recipeName,
+        ingredient_id: isIngredient ? component.ingredientId : null,
+        ingredient_name: isIngredient ? component.ingredientName : null,
         quantity_used: quantityUsed,
         unit,
-        cost: recipe.cost,
+        cost: component.cost,
       };
     });
 
-    const { error: insertRecError } = await supabase
+    const { error: insertCompError } = await supabase
       .from('product_recipes')
-      .insert(recipesToInsert);
+      .insert(componentsToInsert);
 
-    if (insertRecError) throw new Error(`Error al guardar recetas del producto: ${insertRecError.message}`);
+    if (insertCompError) throw new Error(`Error al guardar componentes del producto: ${insertCompError.message}`);
   }
 
   // Return the complete product

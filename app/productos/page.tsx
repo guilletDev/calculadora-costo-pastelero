@@ -139,7 +139,7 @@ export default function ProductosPage() {
                       Componentes
                     </span>
                     <span className="text-[20px] leading-[1.2] text-[#151c27] font-semibold">
-                      {product.recipes.length}
+                      {product.components.length}
                     </span>
                   </div>
                   <div className="bg-[#f0f3ff] rounded-xl p-4 flex flex-col justify-center">

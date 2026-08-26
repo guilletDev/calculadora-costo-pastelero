@@ -3,16 +3,20 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Product, Recipe, Unit } from '@/lib/types';
+import { Product, Recipe, BaseIngredient, ComponentType, Unit } from '@/lib/types';
 import { fetchRecipes } from '@/lib/recipes-db';
+import { fetchIngredients } from '@/lib/ingredients-db';
 import { fetchProductById, upsertProduct } from '@/lib/products-db';
-import { formatCurrency, proportionalCost, calculateTotalCost, sumIngredientCosts, sumExtraCosts, calculateSalePrice, costPerOutputUnit } from '@/lib/cost';
+import { formatCurrency, proportionalCost, costPerOutputUnit, calculateTotalCost, sumIngredientCosts, sumExtraCosts, calculateSalePrice, calculateIngredientCost } from '@/lib/cost';
 import { toBaseQuantity } from '@/lib/units';
 import { navigateWithTransition } from '@/lib/view-transition';
 
-interface ProductRecipeDraft {
+interface ProductComponentDraft {
+  componentType: ComponentType;
   recipeId: string | null;
-  recipeName: string;
+  recipeName: string | null;
+  ingredientId: string | null;
+  ingredientName: string | null;
   quantityUsed: string;
   unit: Unit;
   cost: number;
@@ -20,7 +24,8 @@ interface ProductRecipeDraft {
 
 interface ProductDraft {
   name: string;
-  recipes: ProductRecipeDraft[];
+  description: string;
+  components: ProductComponentDraft[];
   extraCosts: Record<string, string>;
   profitMargin: string;
 }
@@ -42,13 +47,15 @@ const EXTRA_COST_FIELDS = [
 export function ProductBuilder({ productId }: ProductBuilderProps) {
   const router = useRouter();
   const [eligibleRecipes, setEligibleRecipes] = useState<Recipe[]>([]);
+  const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedRecipeId, setSelectedRecipeId] = useState('');
+  const [selectedValue, setSelectedValue] = useState('');
 
   const defaultDraft: ProductDraft = {
     name: '',
-    recipes: [],
+    description: '',
+    components: [],
     extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' },
     profitMargin: '',
   };
@@ -58,9 +65,13 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const recipes = await fetchRecipes();
+        const [recipes, ingredients] = await Promise.all([
+          fetchRecipes(),
+          fetchIngredients(),
+        ]);
         const eligible = recipes.filter(r => r.outputQuantity != null && r.outputUnit != null);
         setEligibleRecipes(eligible);
+        setBaseIngredients(ingredients);
 
         if (productId) {
           const product = await fetchProductById(productId);
@@ -70,12 +81,16 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
           }
           setDraft({
             name: product.name,
-            recipes: product.recipes.map(r => ({
-              recipeId: r.recipeId,
-              recipeName: r.recipeName,
-              quantityUsed: String(r.quantityUsed),
-              unit: r.unit,
-              cost: r.cost,
+            description: product.description,
+            components: product.components.map(c => ({
+              componentType: c.componentType,
+              recipeId: c.recipeId,
+              recipeName: c.recipeName,
+              ingredientId: c.ingredientId,
+              ingredientName: c.ingredientName,
+              quantityUsed: String(c.quantityUsed),
+              unit: c.unit,
+              cost: c.cost,
             })),
             extraCosts: {
               packaging: String(product.extraCosts.packaging || ''),
@@ -96,77 +111,103 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     loadData();
   }, [productId, router]);
 
-  const computeCost = (recipeId: string | null, quantityUsed: string, unit: Unit, fallback?: number): number => {
-    const recipe = eligibleRecipes.find(r => r.id === recipeId);
-    if (!recipe || recipe.outputQuantity == null) return fallback ?? 0;
+  const computeCost = (component: ProductComponentDraft, quantityUsed: string, unit: Unit, fallback?: number): number => {
     const qty = toBaseQuantity(parseFloat(quantityUsed) || 0, unit);
+    if (component.componentType === 'ingredient') {
+      const ingredient = baseIngredients.find(i => i.id === component.ingredientId);
+      if (!ingredient) return fallback ?? 0;
+      return calculateIngredientCost(ingredient.pricePerUnit, parseFloat(quantityUsed) || 0, unit);
+    }
+    const recipe = eligibleRecipes.find(r => r.id === component.recipeId);
+    if (!recipe || recipe.outputQuantity == null) return fallback ?? 0;
     return proportionalCost(recipe.totalCost, recipe.outputQuantity, qty);
   };
 
-  const addRecipeToProduct = () => {
-    if (!selectedRecipeId) return;
-    const recipe = eligibleRecipes.find(r => r.id === selectedRecipeId);
-    if (!recipe || recipe.outputUnit == null) return;
-    const row: ProductRecipeDraft = {
-      recipeId: recipe.id,
-      recipeName: recipe.name,
-      quantityUsed: '',
-      unit: recipe.outputUnit,
-      cost: 0,
-    };
-    setDraft({ ...draft, recipes: [...draft.recipes, row] });
-    setSelectedRecipeId('');
+  const addComponentToProduct = () => {
+    if (!selectedValue) return;
+    const [type, id] = selectedValue.split(':');
+    if (type === 'recipe') {
+      const recipe = eligibleRecipes.find(r => r.id === id);
+      if (!recipe || recipe.outputUnit == null) return;
+      const row: ProductComponentDraft = {
+        componentType: 'recipe',
+        recipeId: recipe.id,
+        recipeName: recipe.name,
+        ingredientId: null,
+        ingredientName: null,
+        quantityUsed: '',
+        unit: recipe.outputUnit,
+        cost: 0,
+      };
+      setDraft(prev => ({ ...prev, components: [row, ...prev.components] }));
+    } else if (type === 'ingredient') {
+      const ingredient = baseIngredients.find(i => i.id === id);
+      if (!ingredient) return;
+      const row: ProductComponentDraft = {
+        componentType: 'ingredient',
+        recipeId: null,
+        recipeName: null,
+        ingredientId: ingredient.id,
+        ingredientName: ingredient.name,
+        quantityUsed: '',
+        unit: ingredient.unit,
+        cost: 0,
+      };
+      setDraft(prev => ({ ...prev, components: [row, ...prev.components] }));
+    }
+    setSelectedValue('');
   };
 
-  const updateRecipeRow = (index: number, patch: Partial<ProductRecipeDraft>) => {
+  const updateComponentQuantity = (index: number, quantityUsed: string) => {
     setDraft(prev => {
-      const rows = prev.recipes.map((row, i) => (i === index ? { ...row, ...patch } : row));
-      return { ...prev, recipes: rows };
-    });
-  };
-
-  const updateRowQuantity = (index: number, quantityUsed: string) => {
-    setDraft(prev => {
-      const rows = prev.recipes.map((row, i) => {
-        if (i !== index) return row;
-        const cost = computeCost(row.recipeId, quantityUsed, row.unit, row.cost);
-        return { ...row, quantityUsed, cost };
+      const components = prev.components.map((component, i) => {
+        if (i !== index) return component;
+        const cost = computeCost(component, quantityUsed, component.unit, component.cost);
+        return { ...component, quantityUsed, cost };
       });
-      return { ...prev, recipes: rows };
+      return { ...prev, components };
     });
   };
 
-  const updateRowUnit = (index: number, unit: Unit) => {
+  const updateComponentUnit = (index: number, unit: Unit) => {
     setDraft(prev => {
-      const rows = prev.recipes.map((row, i) => {
-        if (i !== index) return row;
-        const cost = computeCost(row.recipeId, row.quantityUsed, unit, row.cost);
-        return { ...row, unit, cost };
+      const components = prev.components.map((component, i) => {
+        if (i !== index) return component;
+        const cost = computeCost(component, component.quantityUsed, unit, component.cost);
+        return { ...component, unit, cost };
       });
-      return { ...prev, recipes: rows };
+      return { ...prev, components };
     });
   };
 
-  const removeRecipeFromProduct = (index: number) => {
+  const removeComponentFromProduct = (index: number) => {
     setDraft(prev => ({
       ...prev,
-      recipes: prev.recipes.filter((_, i) => i !== index),
+      components: prev.components.filter((_, i) => i !== index),
     }));
   };
 
-  const getBaseCostPerUnit = (row: ProductRecipeDraft): number | null => {
-    const recipe = eligibleRecipes.find(r => r.id === row.recipeId);
+  const getBaseCostPerUnit = (component: ProductComponentDraft): number | null => {
+    if (component.componentType === 'ingredient') {
+      const ingredient = baseIngredients.find(i => i.id === component.ingredientId);
+      return ingredient ? ingredient.pricePerUnit : null;
+    }
+    const recipe = eligibleRecipes.find(r => r.id === component.recipeId);
     if (!recipe || recipe.outputQuantity == null) return null;
     return costPerOutputUnit(recipe.totalCost, recipe.outputQuantity);
   };
 
-  const recipesCost = sumIngredientCosts(draft.recipes);
+  const isReadOnlyRow = (component: ProductComponentDraft): boolean =>
+    (component.componentType === 'recipe' && component.recipeId == null) ||
+    (component.componentType === 'ingredient' && component.ingredientId == null);
+
+  const componentsCost = sumIngredientCosts(draft.components);
   const extraCostsTotal = sumExtraCosts(draft.extraCosts);
-  const totalCost = calculateTotalCost(recipesCost, extraCostsTotal);
+  const totalCost = calculateTotalCost(componentsCost, extraCostsTotal);
   const margin = parseFloat(draft.profitMargin) || 0;
   const salePrice = calculateSalePrice(totalCost, margin);
 
-  const canSave = draft.name.trim() !== '' && draft.recipes.length > 0;
+  const canSave = draft.name.trim() !== '' && draft.components.length > 0;
 
   const saveProduct = async () => {
     if (!canSave) return;
@@ -174,13 +215,17 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     try {
       const payload: Omit<Product, 'id'> = {
         name: draft.name.trim(),
-        recipes: draft.recipes.map(r => ({
+        description: draft.description.trim(),
+        components: draft.components.map(c => ({
           id: crypto.randomUUID(),
-          recipeId: r.recipeId,
-          recipeName: r.recipeName,
-          quantityUsed: parseFloat(r.quantityUsed) || 0,
-          unit: r.unit,
-          cost: r.cost,
+          componentType: c.componentType,
+          recipeId: c.recipeId,
+          recipeName: c.recipeName,
+          ingredientId: c.ingredientId,
+          ingredientName: c.ingredientName,
+          quantityUsed: parseFloat(c.quantityUsed) || 0,
+          unit: c.unit,
+          cost: c.cost,
         })),
         extraCosts: {
           packaging: parseFloat(draft.extraCosts.packaging) || 0,
@@ -214,7 +259,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
   return (
     <div className="space-y-8">
 
-      {/* ── 1. Nombre del Producto ── */}
+      {/* ── 1. Nombre y Descripción del Producto ── */}
       <article className="bg-stitch-surface-container-lowest rounded-[32px] p-8 border border-stitch-outline-variant shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
         <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface mb-6 flex items-center gap-3">
           <span className="material-symbols-outlined text-stitch-primary">storefront</span>
@@ -227,19 +272,31 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
           value={draft.name}
           onChange={(e) => setDraft({ ...draft, name: e.target.value })}
         />
+        <div className="mt-4">
+          <label className="block font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-2">
+            Descripción (opcional)
+          </label>
+          <textarea
+            className="w-full bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-4 py-3 font-stitch-body-md text-stitch-body-md text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm resize-none"
+            placeholder="Ej: Torta de tres pisos con relleno de dulce de leche y merengue italiano."
+            rows={3}
+            value={draft.description}
+            onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+          />
+        </div>
       </article>
 
-      {/* ── 2. Componentes (Recetas) ── */}
+      {/* ── 2. Ingredientes y Subproductos ── */}
       <article className="bg-stitch-surface-container-lowest rounded-[32px] p-8 border border-stitch-outline-variant shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
         <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface mb-6 flex items-center gap-3">
           <span className="material-symbols-outlined text-stitch-primary">menu_book</span>
-          Componentes (Recetas)
+          Ingredientes y Subproductos
         </h3>
 
-        {eligibleRecipes.length === 0 ? (
+        {eligibleRecipes.length === 0 && baseIngredients.length === 0 ? (
           <div className="bg-stitch-surface-container-low rounded-xl p-6 border border-stitch-outline-variant/50 text-center">
             <p className="font-stitch-body-md text-stitch-secondary mb-4">
-              Completá el rendimiento total de tus recetas para poder usarlas en un producto.
+              Agregá recetas con rendimiento total o ingredientes al inventario para poder armar un producto.
             </p>
             <a
               href="/calculadora"
@@ -251,23 +308,36 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
           </div>
         ) : (
           <>
-            {/* Selector */}
+            {/* Selector combinado */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <select
                 className="w-full sm:w-auto flex-1 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-4 py-3 font-stitch-body-md text-stitch-body-md text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
-                value={selectedRecipeId}
-                onChange={(e) => setSelectedRecipeId(e.target.value)}
+                value={selectedValue}
+                onChange={(e) => setSelectedValue(e.target.value)}
               >
-                <option value="" disabled>Seleccionar receta...</option>
-                {eligibleRecipes.map(recipe => (
-                  <option key={recipe.id} value={recipe.id}>
-                    {recipe.name} — rinde {recipe.outputQuantity} {recipe.outputUnit}
-                  </option>
-                ))}
+                <option value="" disabled>Seleccionar componente...</option>
+                {eligibleRecipes.length > 0 && (
+                  <optgroup label="Subproductos">
+                    {eligibleRecipes.map(recipe => (
+                      <option key={`recipe:${recipe.id}`} value={`recipe:${recipe.id}`}>
+                        {recipe.name} — rinde {recipe.outputQuantity} {recipe.outputUnit}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {baseIngredients.length > 0 && (
+                  <optgroup label="Ingredientes">
+                    {baseIngredients.map(ingredient => (
+                      <option key={`ingredient:${ingredient.id}`} value={`ingredient:${ingredient.id}`}>
+                        {ingredient.name} — {formatCurrency(ingredient.pricePerUnit)} / {ingredient.unit}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
               <button
-                onClick={addRecipeToProduct}
-                disabled={!selectedRecipeId}
+                onClick={addComponentToProduct}
+                disabled={!selectedValue}
                 className="flex items-center justify-center gap-2 px-6 py-3 bg-stitch-primary text-on-primary rounded-xl font-stitch-label-sm text-stitch-label-sm hover:bg-stitch-surface-tint transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 <span className="material-symbols-outlined text-[18px]">add</span>
@@ -276,31 +346,32 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
             </div>
 
             {/* Rows */}
-            {draft.recipes.length === 0 ? (
+            {draft.components.length === 0 ? (
               <div className="bg-stitch-surface-container-low rounded-xl p-6 border border-stitch-outline-variant/50 text-center font-stitch-body-md text-stitch-secondary">
-                Agregá al menos una receta para armar el producto.
+                Agregá al menos un componente para armar el producto.
               </div>
             ) : (
               <div className="space-y-4">
-                {draft.recipes.map((row, index) => {
-                  const baseCost = getBaseCostPerUnit(row);
+                {draft.components.map((component, index) => {
+                  const baseCost = getBaseCostPerUnit(component);
+                  const readOnly = isReadOnlyRow(component);
+                  const displayName = component.recipeName ?? component.ingredientName ?? 'Componente';
                   return (
                     <div key={index} className="bg-stitch-surface-container-low rounded-xl p-4 sm:p-5 border border-stitch-outline-variant/50">
                       <div className="flex flex-col md:flex-row gap-4 md:items-center">
                         <div className="flex-1 min-w-0">
-                          <p className="font-stitch-body-md text-stitch-body-md font-medium text-stitch-on-surface truncate">{row.recipeName}</p>
-                          {baseCost != null && (
-                            <p className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary font-normal mt-1">
-                              Costo base: {formatCurrency(baseCost)} / {row.unit}
-                            </p>
-                          )}
+                          <p className="font-stitch-body-md text-stitch-body-md font-medium text-stitch-on-surface truncate">{displayName}</p>
+                          <p className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary font-normal mt-1">
+                            {component.componentType === 'recipe' ? 'Subproducto' : 'Ingrediente'}
+                            {baseCost != null && ` · Costo base: ${formatCurrency(baseCost)} / ${component.unit}`}
+                          </p>
                         </div>
-                        {row.recipeId == null ? (
+                        {readOnly ? (
                           <div className="flex items-center gap-3">
-                            <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{row.quantityUsed} {row.unit}</span>
-                            <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{formatCurrency(row.cost)}</span>
+                            <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{component.quantityUsed} {component.unit}</span>
+                            <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{formatCurrency(component.cost)}</span>
                             <button
-                              onClick={() => removeRecipeFromProduct(index)}
+                              onClick={() => removeComponentFromProduct(index)}
                               className="text-stitch-error hover:bg-stitch-error-container w-8 h-8 flex items-center justify-center rounded-full transition-colors"
                               title="Quitar"
                             >
@@ -316,13 +387,13 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
                                 min="0.01"
                                 step="any"
                                 placeholder="250"
-                                value={row.quantityUsed}
-                                onChange={(e) => updateRowQuantity(index, e.target.value)}
+                                value={component.quantityUsed}
+                                onChange={(e) => updateComponentQuantity(index, e.target.value)}
                               />
                               <select
                                 className="w-24 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-2 py-2.5 font-stitch-body-md text-stitch-body-md text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
-                                value={row.unit}
-                                onChange={(e) => updateRowUnit(index, e.target.value as Unit)}
+                                value={component.unit}
+                                onChange={(e) => updateComponentUnit(index, e.target.value as Unit)}
                               >
                                 <option value="kg">kg</option>
                                 <option value="g">g</option>
@@ -332,9 +403,9 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
                               </select>
                             </div>
                             <div className="flex items-center justify-between md:justify-end gap-3">
-                              <span className="font-stitch-numeric-data text-[20px] text-stitch-on-surface whitespace-nowrap">{formatCurrency(row.cost)}</span>
+                              <span className="font-stitch-numeric-data text-[20px] text-stitch-on-surface whitespace-nowrap">{formatCurrency(component.cost)}</span>
                               <button
-                                onClick={() => removeRecipeFromProduct(index)}
+                                onClick={() => removeComponentFromProduct(index)}
                                 className="text-stitch-error hover:bg-stitch-error-container w-8 h-8 flex items-center justify-center rounded-full transition-colors"
                                 title="Quitar"
                               >
@@ -390,7 +461,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
           <div className="flex items-center gap-3 mb-4">
             <input
               className="w-24 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-4 py-3 text-center font-stitch-numeric-data text-stitch-numeric-data text-stitch-primary font-bold focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
-              placeholder="40"
+              placeholder="0"
               type="number"
               min="0"
               max="500"
@@ -427,7 +498,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
           <div className="space-y-4 font-stitch-body-md text-body-md" style={{ color: '#ffb2be' }}>
             <div className="flex justify-between items-center border-b border-white/20 pb-4">
               <span>Subtotal Componentes:</span>
-              <span className="text-on-primary font-medium text-[20px]">{formatCurrency(recipesCost)}</span>
+              <span className="text-on-primary font-medium text-[20px]">{formatCurrency(componentsCost)}</span>
             </div>
             <div className="flex justify-between items-center border-b border-white/20 pb-4">
               <span>Costos Adicionales:</span>
