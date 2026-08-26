@@ -73,18 +73,29 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    let retries = 0;
+    const MAX_RETRIES = 30;
+
     const scrollToBuilder = () => {
-      if (window.location.hash === '#recipe-builder') {
-        setTimeout(() => {
-          document.getElementById('recipe-builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 150);
+      const el = document.getElementById('recipe-builder');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      // El form aún no está montado (datos cargando): reintentar cada 100ms
+      if (retries < MAX_RETRIES) {
+        retries += 1;
+        setTimeout(scrollToBuilder, 100);
       }
     };
-    
-    scrollToBuilder();
 
-    window.addEventListener('hashchange', scrollToBuilder);
-    return () => window.removeEventListener('hashchange', scrollToBuilder);
+    const tryScroll = () => {
+      if (window.location.hash === '#recipe-builder') scrollToBuilder();
+    };
+
+    tryScroll();
+    window.addEventListener('hashchange', tryScroll);
+    return () => window.removeEventListener('hashchange', tryScroll);
   }, [searchParams]);
 
   useEffect(() => {
@@ -390,7 +401,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const hasUnit = currentRecipe.outputUnit !== null;
 
   return (
-    <div id="recipe-builder" className="space-y-8">
+    <div id="recipe-builder" className="space-y-8 scroll-mt-20">
 
       {/* ── PASO 2: Armador de Receta ── */}
       <article className="bg-white rounded-[24px] border border-gray-100 p-8 space-y-6 card-animate delay-200" style={stitchShadow}>
