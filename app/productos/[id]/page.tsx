@@ -102,7 +102,7 @@ export default function ProductoDetallePage() {
         <div>
           <h2 className="font-stitch-headline-lg text-stitch-headline-lg-mobile md:text-stitch-headline-lg text-stitch-on-surface">{product.name}</h2>
           <p className="font-stitch-body-lg text-stitch-body-lg text-stitch-secondary mt-1">
-            {product.components.length} componente{product.components.length !== 1 ? 's' : ''} · {product.profitMargin}% de margen
+            {product.components.length} ítem{product.components.length !== 1 ? 's' : ''} · {product.profitMargin}% de margen
           </p>
           {product.description && (
             <p className="font-stitch-body-md text-stitch-body-md text-stitch-secondary mt-2 max-w-xl">
@@ -132,7 +132,7 @@ export default function ProductoDetallePage() {
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <div className="bg-stitch-surface-container-lowest rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
-            <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary uppercase tracking-widest">Costo Componentes</span>
+            <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary uppercase tracking-widest">Costo Ítems</span>
             <div className="w-8 h-8 rounded-full bg-stitch-surface-container-low flex items-center justify-center text-stitch-primary">
               <span className="material-symbols-outlined text-[18px]">menu_book</span>
             </div>
@@ -200,10 +200,10 @@ export default function ProductoDetallePage() {
       </section>
 
       <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
-        {/* Componentes */}
+        {/* Ítems */}
         <section className="bg-stitch-surface-container-lowest rounded-[32px] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface">Componentes</h3>
+            <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface">Ítems</h3>
             <span className="font-stitch-numeric-data text-stitch-numeric-data text-stitch-secondary">{formatCurrency(componentsCost)}</span>
           </div>
           <div className="divide-y divide-stitch-outline-variant/50">
@@ -211,7 +211,7 @@ export default function ProductoDetallePage() {
               <div key={component.id} className="flex justify-between items-center py-3">
                 <div className="flex flex-col">
                   <span className="font-stitch-body-md text-stitch-body-md font-medium text-stitch-on-surface">
-                    {component.recipeName ?? component.ingredientName ?? 'Componente'}
+                    {component.recipeName ?? component.ingredientName ?? 'Ítem'}
                   </span>
                   <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary font-normal mt-1">
                     {component.componentType === 'recipe' ? 'Subproducto' : 'Ingrediente'} · {component.quantityUsed} {component.unit}
@@ -258,7 +258,7 @@ export default function ProductoDetallePage() {
         <div className="flex items-start gap-3">
           <span className="material-symbols-outlined text-stitch-primary text-[20px] mt-0.5">info</span>
           <p className="font-stitch-body-md text-stitch-body-md text-stitch-secondary">
-            El costo de los componentes se calcula con el costo real de cada receta (sin margen).
+            El costo de los ítems se calcula con el costo real de cada receta (sin margen).
             El margen de {product.profitMargin}% se aplica únicamente a este producto final.
           </p>
         </div>

@@ -18,7 +18,7 @@ export default function EditarProductoPage() {
           Editar Producto
         </h1>
         <p className="font-stitch-body-lg text-stitch-body-lg text-stitch-secondary max-w-2xl">
-          Actualizá los componentes y costos de tu producto.
+          Actualizá los ítems y costos de tu producto.
         </p>
       </section>
 

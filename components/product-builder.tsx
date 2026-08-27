@@ -315,7 +315,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
                 value={selectedValue}
                 onChange={(e) => setSelectedValue(e.target.value)}
               >
-                <option value="" disabled>Seleccionar componente...</option>
+                <option value="" disabled>Seleccionar ítem...</option>
                 {eligibleRecipes.length > 0 && (
                   <optgroup label="Subproductos">
                     {eligibleRecipes.map(recipe => (
@@ -348,14 +348,14 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
             {/* Rows */}
             {draft.components.length === 0 ? (
               <div className="bg-stitch-surface-container-low rounded-xl p-6 border border-stitch-outline-variant/50 text-center font-stitch-body-md text-stitch-secondary">
-                Agregá al menos un componente para armar el producto.
+                Agregá al menos un ítem para armar el producto.
               </div>
             ) : (
               <div className="space-y-4">
                 {draft.components.map((component, index) => {
                   const baseCost = getBaseCostPerUnit(component);
                   const readOnly = isReadOnlyRow(component);
-                  const displayName = component.recipeName ?? component.ingredientName ?? 'Componente';
+                  const displayName = component.recipeName ?? component.ingredientName ?? 'Ítem';
                   return (
                     <div key={index} className="bg-stitch-surface-container-low rounded-xl p-4 sm:p-5 border border-stitch-outline-variant/50">
                       <div className="flex flex-col md:flex-row gap-4 md:items-center">
@@ -497,7 +497,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
           </h3>
           <div className="space-y-4 font-stitch-body-md text-body-md" style={{ color: '#ffb2be' }}>
             <div className="flex justify-between items-center border-b border-white/20 pb-4">
-              <span>Subtotal Componentes:</span>
+              <span>Subtotal Ítems:</span>
               <span className="text-on-primary font-medium text-[20px]">{formatCurrency(componentsCost)}</span>
             </div>
             <div className="flex justify-between items-center border-b border-white/20 pb-4">

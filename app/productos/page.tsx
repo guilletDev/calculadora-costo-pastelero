@@ -134,9 +134,9 @@ export default function ProductosPage() {
 
                 {/* Metrics */}
                 <div className="grid grid-cols-2 gap-4 mb-8">
-                  <div className="bg-[#f0f3ff] rounded-xl p-4 flex flex-col justify-center">
-                    <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase mb-1">
-                      Componentes
+                  <div className="bg-[#f0f3ff] rounded-xl p-4 flex items-center justify-between gap-2">
+                    <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase shrink-0 whitespace-nowrap">
+                      Ítems
                     </span>
                     <span className="text-[20px] leading-[1.2] text-[#151c27] font-semibold">
                       {product.components.length}
@@ -153,12 +153,12 @@ export default function ProductosPage() {
                 </div>
 
                 {/* Pricing Footer */}
-                <div className="mt-auto flex justify-between items-end border-t border-[#e4bdc2] pt-6">
+                <div className="mt-auto grid grid-cols-2 gap-4 items-end border-t border-[#e4bdc2] pt-6">
                   <div>
                     <span className="text-[12px] text-[#5a5c5d] uppercase tracking-wider block mb-1 font-semibold" style={{ letterSpacing: '0.05em', fontSize: '12px' }}>
                       Precio Venta
                     </span>
-                    <span className="text-[28px] text-[#b80049] font-bold tracking-tight">
+                    <span className="text-[22px] 2xl:text-[24px] text-[#b80049] font-bold tracking-tighter">
                       {formatCurrency(salePrice)}
                     </span>
                   </div>
@@ -166,7 +166,7 @@ export default function ProductosPage() {
                     <span className="text-[11px] text-[#5a5c5d] uppercase tracking-wider block mb-1 font-semibold" style={{ letterSpacing: '0.05em', fontSize: '11px' }}>
                       Precio de Costo
                     </span>
-                    <span className="text-[18px] text-[#5f5e5e] font-medium tracking-tight">
+                    <span className="text-[14px] 2xl:text-[16px] text-[#5f5e5e] font-medium tracking-tight">
                       {formatCurrency(product.totalCost)}
                     </span>
                   </div>
