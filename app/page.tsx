@@ -1,5 +1,6 @@
 import { LandingNavbar } from '@/components/landing-navbar';
 import { TransitionLink } from '@/components/transition-link';
+import { FREE_TIER_RECIPES_LIMIT, FREE_TIER_INGREDIENTS_LIMIT } from '@/lib/limits';
 
 export default function LandingPage() {
   return (
@@ -263,11 +264,11 @@ export default function LandingPage() {
               <ul className="space-y-5 mb-12 flex-1">
                 <li className="flex items-start gap-3">
                   <span className="material-symbols-outlined text-[#b80049] text-[20px]">check</span>
-                  <span className="text-sm text-[#5f5e5e]" style={{ fontFamily: "'Inter', sans-serif" }}>Hasta 5 recetas completas</span>
+                  <span className="text-sm text-[#5f5e5e]" style={{ fontFamily: "'Inter', sans-serif" }}>Hasta {FREE_TIER_RECIPES_LIMIT} recetas completas</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="material-symbols-outlined text-[#b80049] text-[20px]">check</span>
-                  <span className="text-sm text-[#5f5e5e]" style={{ fontFamily: "'Inter', sans-serif" }}>Base de datos de 20 ingredientes</span>
+                  <span className="text-sm text-[#5f5e5e]" style={{ fontFamily: "'Inter', sans-serif" }}>Base de datos de {FREE_TIER_INGREDIENTS_LIMIT} ingredientes</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="material-symbols-outlined text-[#b80049] text-[20px]">check</span>
@@ -346,7 +347,7 @@ export default function LandingPage() {
                 ¿Es CostoRepostero gratuito?
               </h4>
               <p className="text-sm text-[#5f5e5e] leading-relaxed" style={{ fontFamily: "'Inter', sans-serif" }}>
-                Sí, ofrecemos un plan gratuito para siempre que te permite gestionar hasta 10 recetas y 50 ingredientes.
+                Sí, ofrecemos un plan gratuito para siempre que te permite gestionar hasta {FREE_TIER_RECIPES_LIMIT} recetas y {FREE_TIER_INGREDIENTS_LIMIT} ingredientes.
               </p>
             </div>
             <div className="bg-white p-8 rounded-2xl border border-[#e4bdc2]/20 shadow-card hover:shadow-ambient-hover transition-all duration-300">

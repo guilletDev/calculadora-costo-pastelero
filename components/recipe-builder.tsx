@@ -9,6 +9,9 @@ import { fetchIngredients } from '@/lib/ingredients-db';
 import { fetchRecipes, upsertRecipe, deleteRecipe as dbDeleteRecipe } from '@/lib/recipes-db';
 import { calculateIngredientCost, calculateRecipeTotals, calculateRawCostPerUnit, formatCurrency } from '@/lib/cost';
 import { convertToBaseUnit } from '@/lib/units';
+import { withClockSkewRetry } from '@/lib/retry';
+import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
+import { UpgradeModal } from '@/components/upgrade-modal';
 import { navigateWithTransition } from '@/lib/view-transition';
 
 interface RecipeDraft {
@@ -42,6 +45,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const router = useRouter();
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
 
   const defaultDraft: RecipeDraft = {
     name: '',
@@ -101,10 +105,12 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [ingredients, dbRecipes] = await Promise.all([
-          fetchIngredients(),
-          fetchRecipes(),
-        ]);
+        const [ingredients, dbRecipes] = await withClockSkewRetry(() =>
+          Promise.all([
+            fetchIngredients(),
+            fetchRecipes(),
+          ])
+        );
         const sortedIngredients = [...ingredients].sort((a, b) =>
           a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
         );
@@ -226,6 +232,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
   const saveRecipe = async () => {
     if (!currentRecipe.name || !currentRecipe.ingredients?.length) return;
+    if (!guardUpgrade('recipes', recipes.length)) return;
     const { totalCost, costPerUnit } = calculateRecipeTotals(currentRecipe);
     
     setIsSaving(true);
@@ -401,7 +408,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const hasUnit = currentRecipe.outputUnit !== null;
 
   return (
-    <div id="recipe-builder" className="space-y-8 scroll-mt-20">
+    <>
+      <div id="recipe-builder" className="space-y-8 scroll-mt-20">
 
       {/* ── PASO 2: Armador de Receta ── */}
       <article className="bg-white rounded-[24px] border border-gray-100 p-8 space-y-6 card-animate delay-200" style={stitchShadow}>
@@ -836,5 +844,12 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
       </article>
 
     </div>
+
+      <UpgradeModal
+        open={upgradeType !== null}
+        onOpenChange={(open) => { if (!open) closeUpgrade(); }}
+        resourceType={upgradeType ?? 'recipes'}
+      />
+    </>
   );
 }

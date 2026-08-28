@@ -13,6 +13,10 @@ import {
 } from '@/lib/ingredients-db';
 import { formatCurrency } from '@/lib/cost';
 import { convertToBaseUnit } from '@/lib/units';
+import { withClockSkewRetry } from '@/lib/retry';
+import { FREE_TIER_INGREDIENTS_LIMIT } from '@/lib/limits';
+import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
+import { UpgradeModal } from '@/components/upgrade-modal';
 
 interface IngredientListProps {
   onLockChange?: (isLocked: boolean) => void;
@@ -25,6 +29,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   const [isLocked, setIsLocked] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -53,7 +58,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   const loadIngredients = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await fetchIngredients();
+      const data = await withClockSkewRetry(() => fetchIngredients());
       const sorted = [...data].sort((a, b) =>
         a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
       );
@@ -140,6 +145,10 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   const handleSave = async () => {
     if (!formData.name || !formData.purchasedQuantity || !formData.totalPrice) return;
 
+    const normalizedName = formData.name.toLowerCase().trim();
+    const exists = ingredients.some(ing => ing.name.toLowerCase().trim() === normalizedName);
+    if (!exists && !guardUpgrade('ingredients', ingredients.length)) return;
+
     const rawQuantity = parseFloat(formData.purchasedQuantity);
     const price = parseFloat(formData.totalPrice);
     const converted = convertToBaseUnit(rawQuantity, formData.unit);
@@ -198,7 +207,8 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   const totalInvestment = ingredients.reduce((sum, ing) => sum + ing.totalPrice, 0);
 
   return (
-    <article className="bg-white rounded-[24px] border border-gray-100 overflow-hidden card-animate delay-100" style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.04)' }}>
+    <>
+      <article className="bg-white rounded-[24px] border border-gray-100 overflow-hidden card-animate delay-100" style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.04)' }}>
       <div className="p-8 border-b border-gray-100 flex items-center gap-3">
         <span className="material-symbols-outlined text-[#b80049] text-[28px]">inventory_2</span>
         <h2 className="font-semibold text-[24px] leading-[1.3] text-[#151c27]" style={{ fontFamily: "'Manrope', sans-serif" }}>1. Inventario de Ingredientes</h2>
@@ -398,7 +408,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
         </div>
       ) : (
         <div className="p-8 border-t border-gray-100">
-          <button onClick={() => setIsAdding(true)} className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200">
+          <button onClick={() => { if (guardUpgrade('ingredients', ingredients.length)) setIsAdding(true); }} className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200">
             <span className="material-symbols-outlined text-[20px]">add</span> Añadir Ingrediente
           </button>
         </div>
@@ -433,5 +443,12 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
         </div>
       )}
     </article>
+
+      <UpgradeModal
+        open={upgradeType !== null}
+        onOpenChange={(open) => { if (!open) closeUpgrade(); }}
+        resourceType={upgradeType ?? 'ingredients'}
+      />
+    </>
   );
 }

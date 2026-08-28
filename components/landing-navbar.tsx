@@ -68,7 +68,7 @@ export function LandingNavbar() {
         <div className="hidden lg:flex items-center gap-6">
           <TransitionLink
             href="/login"
-            className="text-sm font-semibold tracking-[0.02em] text-[#5f5e5e] hover:text-[#151c27] transition-colors duration-200 whitespace-nowrap"
+            className="text-sm font-semibold tracking-[0.02em] border border-[#b80049] text-[#b80049] px-4 py-2.5 rounded-full font-medium hover:bg-[#b80049]/10 transition-colors whitespace-nowrap"
           >
             Iniciar Sesión
           </TransitionLink>
@@ -109,7 +109,7 @@ export function LandingNavbar() {
           <TransitionLink
             href="/login"
             onClick={() => setIsOpen(false)}
-            className="w-full text-center text-base font-semibold text-[#151c27] py-3 border border-[#e4bdc2]/20 rounded-full"
+            className="w-full text-center text-base font-semibold text-[#b80049] py-3 border border-[#b80049] rounded-full hover:bg-[#b80049]/10 transition-colors"
           >
             Iniciar Sesión
           </TransitionLink>

@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import { Product } from '@/lib/types';
 import { fetchProducts } from '@/lib/products-db';
 import { formatCurrency, calculateSalePrice } from '@/lib/cost';
+import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
+import { UpgradeModal } from '@/components/upgrade-modal';
 
 const stitchFontManrope = { fontFamily: "'Manrope', sans-serif" } as const;
 
@@ -13,6 +15,7 @@ export default function ProductosPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
 
   useEffect(() => {
     async function loadProducts() {
@@ -34,7 +37,8 @@ export default function ProductosPage() {
   );
 
   return (
-    <main
+    <>
+      <main
       className="flex-grow w-full max-w-[1200px] mx-auto px-6 md:px-[10%] py-12 flex flex-col gap-12"
     >
       {/* ── Hero Section ── */}
@@ -71,6 +75,7 @@ export default function ProductosPage() {
           {/* Nuevo Producto button */}
           <Link
             href="/productos/nuevo"
+            onClick={(e) => { if (!guardUpgrade('products', products.length)) e.preventDefault(); }}
             className="bg-[#b80049] text-white px-8 py-3 rounded-full text-[14px] leading-[1.4] tracking-[0.05em] font-semibold uppercase flex items-center justify-center gap-2 hover:bg-[#bc004b] hover:shadow-lg transition-all hover:-translate-y-0.5 active:scale-95 duration-150 whitespace-nowrap"
           >
             <span className="material-symbols-outlined text-xl">add</span>
@@ -100,6 +105,7 @@ export default function ProductosPage() {
           {!search && (
             <Link
               href="/productos/nuevo"
+              onClick={(e) => { if (!guardUpgrade('products', products.length)) e.preventDefault(); }}
               className="bg-[#b80049] text-white px-8 py-3 rounded-full text-[14px] leading-[1.4] tracking-[0.05em] font-semibold uppercase flex items-center gap-2 hover:bg-[#bc004b] transition-all hover:shadow-lg"
             >
               <span className="material-symbols-outlined text-xl">add</span>
@@ -177,5 +183,12 @@ export default function ProductosPage() {
         </section>
       )}
     </main>
+
+      <UpgradeModal
+        open={upgradeType !== null}
+        onOpenChange={(open) => { if (!open) closeUpgrade(); }}
+        resourceType={upgradeType ?? 'products'}
+      />
+    </>
   );
 }

@@ -109,7 +109,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="pt-2 text-center md:text-left">
+          <div className="pt-2 text-center">
             <Link
               href="/"
               className="text-xs text-[#5b3f43] opacity-80 hover:text-[#b80049] hover:opacity-100 transition-colors inline-flex items-center gap-1 font-medium"
