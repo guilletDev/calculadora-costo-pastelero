@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Product } from '@/lib/types';
+import { Product, EXTRA_COST_LABELS } from '@/lib/types';
 import { fetchProductById, deleteProduct } from '@/lib/products-db';
 import { formatCurrency, sumIngredientCosts, sumExtraCosts, calculateSalePrice } from '@/lib/cost';
 import { TransitionLink } from '@/components/transition-link';
@@ -232,17 +232,11 @@ export default function ProductoDetallePage() {
             )}
           </div>
           <div className="divide-y divide-stitch-outline-variant/50">
-            {[
-              { label: 'Packaging / Cajas', value: product.extraCosts.packaging },
-              { label: 'Bolsas / Stickers', value: product.extraCosts.bags },
-              { label: 'Envío / Logística', value: product.extraCosts.shipping },
-              { label: 'Etiquetas', value: product.extraCosts.labels },
-              { label: 'Otros', value: product.extraCosts.others },
-            ]
-              .filter(item => item.value > 0)
-              .map(({ label, value }) => (
-                <div key={label} className="flex justify-between items-center py-3">
-                  <span className="font-stitch-body-md text-stitch-body-md text-stitch-on-surface">{label}</span>
+            {Object.entries(product.extraCosts)
+              .filter(([, value]) => value > 0)
+              .map(([key, value]) => (
+                <div key={key} className="flex justify-between items-center py-3">
+                  <span className="font-stitch-body-md text-stitch-body-md text-stitch-on-surface">{EXTRA_COST_LABELS[key] ?? key}</span>
                   <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{formatCurrency(value)}</span>
                 </div>
               ))}

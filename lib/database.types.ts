@@ -17,15 +17,10 @@ export interface RecipeRow {
   id: string;
   user_id: string;
   name: string;
+  description: string | null;
   units_produced: number;
   sale_type: string;
-  extra_costs: {
-    packaging: number;
-    bags: number;
-    labels: number;
-    shipping: number;
-    others: number;
-  };
+  extra_costs: Record<string, number>;
   profit_margin: number;
   total_cost: number;
   cost_per_unit: number;
@@ -51,13 +46,7 @@ export interface ProductRow {
   name: string;
   description: string;
   profit_margin: number;
-  extra_costs: {
-    packaging: number;
-    bags: number;
-    labels: number;
-    shipping: number;
-    others: number;
-  };
+  extra_costs: Record<string, number>;
   total_cost: number;
   created_at: string;
   updated_at: string;
@@ -74,6 +63,14 @@ export interface ProductRecipeRow {
   quantity_used: number;
   unit: string;
   cost: number;
+}
+
+export interface ProfileRow {
+  id: string;
+  plan_type: string;
+  pro_valid_until: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // Tipos para INSERT (sin id ni timestamps)

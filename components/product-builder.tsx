@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Product, Recipe, BaseIngredient, ComponentType, Unit } from '@/lib/types';
+import { Product, Recipe, BaseIngredient, ComponentType, Unit, AdditionalCost, EXTRA_COST_LABELS } from '@/lib/types';
 import { fetchRecipes } from '@/lib/recipes-db';
 import { fetchIngredients } from '@/lib/ingredients-db';
 import { fetchProductById, upsertProduct } from '@/lib/products-db';
-import { formatCurrency, proportionalCost, costPerOutputUnit, calculateTotalCost, sumIngredientCosts, sumExtraCosts, calculateSalePrice, calculateIngredientCost } from '@/lib/cost';
+import { formatCurrency, proportionalCost, costPerOutputUnit, calculateTotalCost, sumIngredientCosts, calculateSalePrice, calculateIngredientCost } from '@/lib/cost';
 import { toBaseQuantity } from '@/lib/units';
 import { navigateWithTransition } from '@/lib/view-transition';
 
@@ -26,7 +26,7 @@ interface ProductDraft {
   name: string;
   description: string;
   components: ProductComponentDraft[];
-  extraCosts: Record<string, string>;
+  additionalCosts: AdditionalCost[];
   profitMargin: string;
 }
 
@@ -36,13 +36,48 @@ interface ProductBuilderProps {
 
 const QUICK_MARGINS = [10, 20, 30, 40];
 
-const EXTRA_COST_FIELDS = [
-  { key: 'packaging', label: 'Packaging / Cajas' },
-  { key: 'bags', label: 'Bolsas / Stickers' },
-  { key: 'shipping', label: 'Envío / Logística' },
-  { key: 'labels', label: 'Etiquetas' },
-  { key: 'others', label: 'Otros' },
+const CUSTOM_EXTRA_COST_KEY = 'others';
+const CUSTOM_EXTRA_COST_OPTION = '__custom__';
+
+const EXTRA_COST_PRESETS = [
+  { key: 'packaging', label: EXTRA_COST_LABELS.packaging },
+  { key: 'bags', label: EXTRA_COST_LABELS.bags },
+  { key: 'shipping', label: EXTRA_COST_LABELS.shipping },
+  { key: 'labels', label: EXTRA_COST_LABELS.labels },
+  { key: 'labor', label: EXTRA_COST_LABELS.labor },
 ];
+
+function buildDefaultAdditionalCosts(): AdditionalCost[] {
+  return [
+    ...EXTRA_COST_PRESETS.map(p => ({ key: p.key, label: p.label, value: '', isCustom: false })),
+    { key: CUSTOM_EXTRA_COST_KEY, label: '', value: '', isCustom: true },
+  ];
+}
+
+function buildAdditionalCostsFromExtraCosts(extraCosts: Record<string, number>): AdditionalCost[] {
+  const rows: AdditionalCost[] = [];
+  for (const [key, value] of Object.entries(extraCosts || {})) {
+    if (key === CUSTOM_EXTRA_COST_KEY) {
+      rows.push({ key, label: '', value: String(value || ''), isCustom: true });
+    } else if (EXTRA_COST_LABELS[key]) {
+      rows.push({ key, label: EXTRA_COST_LABELS[key], value: String(value || ''), isCustom: false });
+    } else {
+      rows.push({ key, label: key, value: String(value || ''), isCustom: true });
+    }
+  }
+  return rows.length > 0 ? rows : buildDefaultAdditionalCosts();
+}
+
+function additionalCostsToExtraCosts(rows: AdditionalCost[]): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const row of rows) {
+    const value = parseFloat(row.value) || 0;
+    if (value <= 0) continue;
+    const key = row.isCustom ? (row.label.trim() || CUSTOM_EXTRA_COST_KEY) : row.key;
+    result[key] = value;
+  }
+  return result;
+}
 
 export function ProductBuilder({ productId }: ProductBuilderProps) {
   const router = useRouter();
@@ -56,7 +91,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     name: '',
     description: '',
     components: [],
-    extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' },
+    additionalCosts: buildDefaultAdditionalCosts(),
     profitMargin: '',
   };
 
@@ -69,9 +104,14 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
           fetchRecipes(),
           fetchIngredients(),
         ]);
-        const eligible = recipes.filter(r => r.outputQuantity != null && r.outputUnit != null);
+        const eligible = recipes
+          .filter(r => r.outputQuantity != null && r.outputUnit != null)
+          .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+        const sortedIngredients = [...ingredients].sort((a, b) =>
+          a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+        );
         setEligibleRecipes(eligible);
-        setBaseIngredients(ingredients);
+        setBaseIngredients(sortedIngredients);
 
         if (productId) {
           const product = await fetchProductById(productId);
@@ -92,13 +132,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
               unit: c.unit,
               cost: c.cost,
             })),
-            extraCosts: {
-              packaging: String(product.extraCosts.packaging || ''),
-              bags: String(product.extraCosts.bags || ''),
-              labels: String(product.extraCosts.labels || ''),
-              shipping: String(product.extraCosts.shipping || ''),
-              others: String(product.extraCosts.others || ''),
-            },
+            additionalCosts: buildAdditionalCostsFromExtraCosts(product.extraCosts),
             profitMargin: String(product.profitMargin || ''),
           });
         }
@@ -187,6 +221,35 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     }));
   };
 
+  const updateAdditionalCostValue = (index: number, value: string) => {
+    setDraft(prev => ({
+      ...prev,
+      additionalCosts: prev.additionalCosts.map((row, i) => i === index ? { ...row, value } : row),
+    }));
+  };
+
+  const updateAdditionalCostPreset = (index: number, option: string) => {
+    setDraft(prev => ({
+      ...prev,
+      additionalCosts: prev.additionalCosts.map((row, i) => {
+        if (i !== index) return row;
+        if (option === CUSTOM_EXTRA_COST_OPTION) {
+          return { ...row, key: CUSTOM_EXTRA_COST_KEY, label: '', isCustom: true };
+        }
+        const preset = EXTRA_COST_PRESETS.find(p => p.key === option);
+        if (!preset) return row;
+        return { ...row, key: preset.key, label: preset.label, isCustom: false };
+      }),
+    }));
+  };
+
+  const updateAdditionalCostLabel = (index: number, label: string) => {
+    setDraft(prev => ({
+      ...prev,
+      additionalCosts: prev.additionalCosts.map((row, i) => i === index ? { ...row, label } : row),
+    }));
+  };
+
   const getBaseCostPerUnit = (component: ProductComponentDraft): number | null => {
     if (component.componentType === 'ingredient') {
       const ingredient = baseIngredients.find(i => i.id === component.ingredientId);
@@ -202,7 +265,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     (component.componentType === 'ingredient' && component.ingredientId == null);
 
   const componentsCost = sumIngredientCosts(draft.components);
-  const extraCostsTotal = sumExtraCosts(draft.extraCosts);
+  const extraCostsTotal = draft.additionalCosts.reduce((sum, row) => sum + (parseFloat(row.value) || 0), 0);
   const totalCost = calculateTotalCost(componentsCost, extraCostsTotal);
   const margin = parseFloat(draft.profitMargin) || 0;
   const salePrice = calculateSalePrice(totalCost, margin);
@@ -227,13 +290,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
           unit: c.unit,
           cost: c.cost,
         })),
-        extraCosts: {
-          packaging: parseFloat(draft.extraCosts.packaging) || 0,
-          bags: parseFloat(draft.extraCosts.bags) || 0,
-          labels: parseFloat(draft.extraCosts.labels) || 0,
-          shipping: parseFloat(draft.extraCosts.shipping) || 0,
-          others: parseFloat(draft.extraCosts.others) || 0,
-        },
+        extraCosts: additionalCostsToExtraCosts(draft.additionalCosts),
         profitMargin: margin,
         totalCost,
       };
@@ -431,22 +488,49 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
           Costos Adicionales
         </h3>
         <div className="space-y-4">
-          {EXTRA_COST_FIELDS.map(({ key, label }) => (
-            <div key={key} className="flex items-center justify-between gap-4">
-              <label className="font-stitch-body-md text-stitch-body-md text-stitch-secondary">{label}</label>
-              <div className="relative w-32">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-stitch-tertiary-fixed-dim pointer-events-none">$</span>
-                <input
-                  className="w-full pl-8 pr-4 py-2.5 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl text-right font-stitch-numeric-data text-stitch-numeric-data text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
-                  placeholder="0"
-                  type="number"
-                  min="0"
-                  value={draft.extraCosts[key] ?? ''}
-                  onChange={(e) => setDraft({ ...draft, extraCosts: { ...draft.extraCosts, [key]: e.target.value } })}
-                />
+          {draft.additionalCosts.map((row, index) => {
+            const usedKeys = draft.additionalCosts
+              .filter((r, i) => i !== index && !r.isCustom)
+              .map(r => r.key);
+            return (
+              <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <select
+                    className="w-full sm:w-56 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-3 py-2.5 font-stitch-body-md text-stitch-body-md text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
+                    value={row.isCustom ? CUSTOM_EXTRA_COST_OPTION : row.key}
+                    onChange={(e) => updateAdditionalCostPreset(index, e.target.value)}
+                  >
+                    {EXTRA_COST_PRESETS.map(preset => (
+                      <option key={preset.key} value={preset.key} disabled={usedKeys.includes(preset.key)}>
+                        {preset.label}
+                      </option>
+                    ))}
+                    <option value={CUSTOM_EXTRA_COST_OPTION}>Otro...</option>
+                  </select>
+                  {row.isCustom && (
+                    <input
+                      className="w-full sm:w-56 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-3 py-2.5 font-stitch-body-md text-stitch-body-md text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
+                      placeholder="Ej: Envase especial"
+                      type="text"
+                      value={row.label}
+                      onChange={(e) => updateAdditionalCostLabel(index, e.target.value)}
+                    />
+                  )}
+                </div>
+                <div className="relative w-full sm:w-32">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-stitch-tertiary-fixed-dim pointer-events-none">$</span>
+                  <input
+                    className="w-full pl-8 pr-4 py-2.5 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl text-right font-stitch-numeric-data text-stitch-numeric-data text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
+                    placeholder="0"
+                    type="number"
+                    min="0"
+                    value={row.value}
+                    onChange={(e) => updateAdditionalCostValue(index, e.target.value)}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </article>
 

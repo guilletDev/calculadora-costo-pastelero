@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Recipe } from '@/lib/types';
 import { fetchRecipes } from '@/lib/recipes-db';
 import { formatCurrency, costPerOutputUnit } from '@/lib/cost';
+import { costPerUnitLabel } from '@/lib/units';
 import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
 import { UpgradeModal } from '@/components/upgrade-modal';
 
@@ -150,6 +151,12 @@ Subproducto
                 </div>
               </header>
 
+              {recipe.description && (
+                <p className="mb-6 text-[14px] leading-[1.5] text-[#5f5e5e] line-clamp-2">
+                  {recipe.description}
+                </p>
+              )}
+
               {isBaseRecipe ? (
                 /* ── Metrics: Subproducto ── */
                 <div className="flex flex-col gap-4 mb-8">
@@ -197,7 +204,7 @@ Subproducto
                 <div className="mt-auto grid grid-cols-2 gap-4 border-t border-[#e4bdc2] pt-6">
                   <div>
                     <span className="text-[12px] text-[#5a5c5d] uppercase tracking-wider block mb-1 font-semibold" style={{ letterSpacing: '0.05em', fontSize: '12px' }}>
-                      Costo por unidad
+                      {costPerUnitLabel(recipe.outputUnit)}
                     </span>
                     <span className="text-[22px] 2xl:text-[24px] text-[#b80049] font-bold tracking-tighter">
                       {formatCurrency(baseCostPerUnit)}

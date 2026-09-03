@@ -11,6 +11,7 @@ function rowToRecipe(
   return {
     id: row.id,
     name: row.name,
+    description: row.description ?? '',
     unitsProduced: row.units_produced,
     saleType: row.sale_type as SaleType,
     extraCosts: row.extra_costs as ExtraCosts,
@@ -95,6 +96,7 @@ export async function upsertRecipe(recipeDraft: Omit<Recipe, 'id'>, id?: string)
   const recipeInsertData = {
     user_id: userId,
     name: recipeDraft.name,
+    description: recipeDraft.description || '',
     units_produced: recipeDraft.unitsProduced,
     sale_type: recipeDraft.saleType,
     extra_costs: recipeDraft.extraCosts,

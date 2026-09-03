@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Recipe, BaseIngredient } from '@/lib/types';
+import { Recipe, BaseIngredient, EXTRA_COST_LABELS } from '@/lib/types';
 import { fetchIngredients } from '@/lib/ingredients-db';
 import { fetchRecipeById, deleteRecipe } from '@/lib/recipes-db';
 import { formatCurrency, sumExtraCosts, calculateRawCostPerUnit, costPerOutputUnit as calculateCostPerOutputUnit } from '@/lib/cost';
@@ -128,6 +128,11 @@ export default function RecetaDetailPage() {
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <h2 className="font-stitch-headline-lg text-stitch-headline-lg-mobile md:text-stitch-headline-lg text-stitch-on-surface">{recipe.name}</h2>
+            {recipe.description && (
+              <p className="font-stitch-body-md text-stitch-body-md text-stitch-secondary mt-2 max-w-xl">
+                {recipe.description}
+              </p>
+            )}
             {hasPorciones && (
               <p className="font-stitch-body-lg text-stitch-body-lg text-stitch-secondary mt-1">
                 {recipe.unitsProduced} porciones · {recipe.profitMargin ?? 0}% de ganancia
@@ -287,17 +292,11 @@ export default function RecetaDetailPage() {
             )}
           </div>
           <div className="divide-y divide-stitch-outline-variant/50">
-            {[
-              { label: 'Packaging / Cajas', value: recipe.extraCosts.packaging },
-              { label: 'Bolsas / Stickers', value: recipe.extraCosts.bags },
-              { label: 'Envío / Logística', value: recipe.extraCosts.shipping },
-              { label: 'Etiquetas', value: recipe.extraCosts.labels },
-              { label: 'Otros', value: recipe.extraCosts.others },
-            ]
-              .filter(item => item.value > 0)
-              .map(({ label, value }) => (
-                <div key={label} className="flex justify-between items-center py-3">
-                  <span className="font-stitch-body-md text-stitch-body-md text-stitch-on-surface">{label}</span>
+            {Object.entries(recipe.extraCosts)
+              .filter(([, value]) => value > 0)
+              .map(([key, value]) => (
+                <div key={key} className="flex justify-between items-center py-3">
+                  <span className="font-stitch-body-md text-stitch-body-md text-stitch-on-surface">{EXTRA_COST_LABELS[key] ?? key}</span>
                   <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{formatCurrency(value)}</span>
                 </div>
               ))}

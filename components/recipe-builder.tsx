@@ -16,6 +16,7 @@ import { navigateWithTransition } from '@/lib/view-transition';
 
 interface RecipeDraft {
   name: string;
+  description: string;
   ingredients: RecipeIngredient[];
   extraCosts: Record<string, string>;
   unitsProduced: string;
@@ -49,6 +50,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
   const defaultDraft: RecipeDraft = {
     name: '',
+    description: '',
     ingredients: [],
     extraCosts: { packaging: '', bags: '', labels: '', shipping: '', others: '' },
     unitsProduced: '',
@@ -124,6 +126,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
             setEditingRecipeId(recipeToEdit.id);
             setCurrentRecipe({
               name: recipeToEdit.name,
+              description: recipeToEdit.description ?? '',
               ingredients: recipeToEdit.ingredients,
               extraCosts: {
                 packaging: String(recipeToEdit.extraCosts.packaging || ''),
@@ -239,6 +242,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     try {
       const draftToSave = {
         name: currentRecipe.name,
+        description: currentRecipe.description.trim(),
         ingredients: currentRecipe.ingredients,
         extraCosts: {
           packaging: parseFloat(currentRecipe.extraCosts.packaging) || 0,
@@ -318,6 +322,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     setEditingRecipeId(recipe.id);
     setCurrentRecipe({
       name: recipe.name,
+      description: recipe.description ?? '',
       ingredients: recipe.ingredients,
       extraCosts: {
         packaging: String(recipe.extraCosts.packaging || ''),
@@ -346,6 +351,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     try {
       const draftToUpdate = {
         name: currentRecipe.name,
+        description: currentRecipe.description.trim(),
         ingredients: currentRecipe.ingredients,
         extraCosts: {
           packaging: parseFloat(currentRecipe.extraCosts.packaging) || 0,
@@ -434,6 +440,16 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               type="text"
               value={currentRecipe.name}
               onChange={(e) => setCurrentRecipe({ ...currentRecipe, name: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Descripción (opcional)</label>
+            <textarea
+              className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8] resize-none"
+              placeholder="Ej: Bizcochuelo de vainilla con relleno de crema y frutillas."
+              rows={2}
+              value={currentRecipe.description}
+              onChange={(e) => setCurrentRecipe({ ...currentRecipe, description: e.target.value })}
             />
           </div>
           <div className="space-y-2">

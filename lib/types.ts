@@ -18,12 +18,22 @@ export interface RecipeIngredient {
   cost: number;
 }
 
-export interface ExtraCosts {
-  packaging: number;
-  bags: number;
-  labels: number;
-  shipping: number;
-  others: number;
+export type ExtraCosts = Record<string, number>;
+
+export const EXTRA_COST_LABELS: Record<string, string> = {
+  packaging: 'Packaging / Cajas',
+  bags: 'Bolsas / Stickers',
+  shipping: 'Envío / Logística',
+  labels: 'Etiquetas',
+  labor: 'Mano de obra',
+  others: 'Otros',
+};
+
+export interface AdditionalCost {
+  key: string;
+  label: string;
+  value: string;
+  isCustom: boolean;
 }
 
 export type SaleType = 'unidad' | 'docena' | 'media-docena';
@@ -31,6 +41,7 @@ export type SaleType = 'unidad' | 'docena' | 'media-docena';
 export interface Recipe {
   id: string;
   name: string;
+  description: string;
   ingredients: RecipeIngredient[];
   extraCosts: ExtraCosts;
   unitsProduced: number;

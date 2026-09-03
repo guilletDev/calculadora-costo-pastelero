@@ -13,3 +13,13 @@ export function toBaseQuantity(quantity: number, unit: Unit): number {
 export function toBaseUnit(unit: Unit): Unit {
   return convertToBaseUnit(0, unit).unit;
 }
+
+export function costPerUnitLabel(unit: Unit | null): string {
+  switch (unit) {
+    case 'g':  return 'Costo por gramo';
+    case 'ml': return 'Costo por ml';
+    case 'kg': return 'Costo por kilogramo';
+    case 'l':  return 'Costo por litro';
+    default:   return 'Costo por unidad';
+  }
+}

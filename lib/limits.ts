@@ -21,3 +21,14 @@ export function isProEmail(email: string | null | undefined): boolean {
   const normalized = email.toLowerCase().trim();
   return PRO_EMAILS.includes(normalized);
 }
+
+export function isProUser(
+  email: string | null | undefined,
+  planType: string | null | undefined,
+  proValidUntil: string | null | undefined
+): boolean {
+  if (isProEmail(email)) return true;
+  if (planType !== 'pro') return false;
+  if (!proValidUntil) return false;
+  return new Date(proValidUntil).getTime() > Date.now();
+}
