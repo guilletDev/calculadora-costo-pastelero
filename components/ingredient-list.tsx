@@ -17,6 +17,7 @@ import { withClockSkewRetry } from '@/lib/retry';
 import { FREE_TIER_INGREDIENTS_LIMIT } from '@/lib/limits';
 import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
 import { UpgradeModal } from '@/components/upgrade-modal';
+import { useAppBoot } from '@/components/boot/app-boot-context';
 
 interface IngredientListProps {
   onLockChange?: (isLocked: boolean) => void;
@@ -32,6 +33,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const { ready, ingredients: bootIngredients } = useAppBoot();
 
   // Estado para edición inline de un ingrediente existente
   const [editInlineData, setEditInlineData] = useState({
@@ -73,11 +75,22 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   }, []);
 
   useEffect(() => {
-    loadIngredients();
     const savedLocked = storage.getIsLocked();
     setIsLocked(savedLocked);
     onLockChange?.(savedLocked);
-  }, []);
+  }, [onLockChange]);
+
+  // Seed inicial desde el boot cache (evita el fetch inicial duplicado)
+  useEffect(() => {
+    if (!ready) return;
+    if (ingredients.length === 0) {
+      const sorted = [...bootIngredients].sort((a, b) =>
+        a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+      );
+      setIngredients(sorted);
+    }
+    setIsLoading(false);
+  }, [ready, bootIngredients, ingredients.length]);
 
   // Auto-desbloquear si no hay ingredientes (ej: al migrar a DB vacía con localStorage bloqueado)
   useEffect(() => {

@@ -2,35 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { toast } from 'sonner';
 import { Product } from '@/lib/types';
-import { fetchProducts } from '@/lib/products-db';
 import { formatCurrency, calculateSalePrice } from '@/lib/cost';
 import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
 import { UpgradeModal } from '@/components/upgrade-modal';
+import { useAppBoot } from '@/components/boot/app-boot-context';
 
 const stitchFontManrope = { fontFamily: "'Manrope', sans-serif" } as const;
 
 export default function ProductosPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const { ready, products: bootProducts } = useAppBoot();
   const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
 
   useEffect(() => {
-    async function loadProducts() {
-      try {
-        setIsLoading(true);
-        const data = await fetchProducts();
-        setProducts(data);
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Error al cargar productos');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadProducts();
-  }, []);
+    if (ready) setProducts(bootProducts);
+  }, [ready, bootProducts]);
+
+  const isLoading = !ready;
 
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase())

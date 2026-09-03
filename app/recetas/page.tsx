@@ -2,36 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { toast } from 'sonner';
 import { Recipe } from '@/lib/types';
-import { fetchRecipes } from '@/lib/recipes-db';
 import { formatCurrency, costPerOutputUnit } from '@/lib/cost';
 import { costPerUnitLabel } from '@/lib/units';
 import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
 import { UpgradeModal } from '@/components/upgrade-modal';
+import { useAppBoot } from '@/components/boot/app-boot-context';
 
 const stitchFontManrope = { fontFamily: "'Manrope', sans-serif" } as const;
 
 export default function RecetasPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [search, setSearch] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const { ready, recipes: bootRecipes } = useAppBoot();
   const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
 
   useEffect(() => {
-    async function loadRecipes() {
-      try {
-        setIsLoading(true);
-        const data = await fetchRecipes();
-        setRecipes(data);
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Error al cargar recetas');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadRecipes();
-  }, []);
+    if (ready) setRecipes(bootRecipes);
+  }, [ready, bootRecipes]);
+
+  const isLoading = !ready;
 
   const filtered = recipes.filter(r =>
     r.name.toLowerCase().includes(search.toLowerCase())

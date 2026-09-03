@@ -9,6 +9,7 @@ import { fetchRecipeById, deleteRecipe } from '@/lib/recipes-db';
 import { formatCurrency, sumExtraCosts, calculateRawCostPerUnit, costPerOutputUnit as calculateCostPerOutputUnit } from '@/lib/cost';
 import { TransitionLink } from '@/components/transition-link';
 import { navigateWithTransition } from '@/lib/view-transition';
+import { useAppBoot } from '@/components/boot/app-boot-context';
 
 const QUICK_QUANTITIES = [
   { label: '½ doc.', value: 6 },
@@ -25,12 +26,23 @@ export default function RecetaDetailPage() {
   const [budgetQty, setBudgetQty] = useState('');
 
   const [isDeleting, setIsDeleting] = useState(false);
+  const { ready, recipes: bootRecipes, ingredients: bootIngredients } = useAppBoot();
 
   useEffect(() => {
-    async function loadData() {
+    if (!ready) return;
+    const id = Array.isArray(params.id) ? params.id[0] : params.id;
+    if (!id) { navigateWithTransition(router, '/recetas'); return; }
+
+    const cached = bootRecipes.find(r => r.id === id);
+    if (cached) {
+      setRecipe(cached);
+      setBaseIngredients(bootIngredients);
+      return;
+    }
+
+    // Fallback: deep-link o cache fallida → fetch individual
+    (async () => {
       try {
-        const id = Array.isArray(params.id) ? params.id[0] : params.id;
-        if (!id) { navigateWithTransition(router, '/recetas'); return; }
         const [found, ingredients] = await Promise.all([
           fetchRecipeById(id),
           fetchIngredients(),
@@ -42,9 +54,8 @@ export default function RecetaDetailPage() {
         toast.error('Error al cargar datos');
         navigateWithTransition(router, '/recetas');
       }
-    }
-    loadData();
-  }, [params.id, router]);
+    })();
+  }, [ready, bootRecipes, bootIngredients, params.id, router]);
 
   const getIngredientName = (ing: Recipe['ingredients'][number]) =>
     baseIngredients.find(i => i.id === ing.baseIngredientId)?.name ?? ing.ingredientName;

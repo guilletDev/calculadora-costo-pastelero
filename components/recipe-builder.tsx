@@ -6,12 +6,12 @@ import { toast } from 'sonner';
 import { BaseIngredient, Recipe, RecipeIngredient, Unit, SaleType } from '@/lib/types';
 import { storage } from '@/lib/storage';
 import { fetchIngredients } from '@/lib/ingredients-db';
-import { fetchRecipes, upsertRecipe, deleteRecipe as dbDeleteRecipe } from '@/lib/recipes-db';
+import { upsertRecipe, deleteRecipe as dbDeleteRecipe } from '@/lib/recipes-db';
 import { calculateIngredientCost, calculateRecipeTotals, calculateRawCostPerUnit, formatCurrency } from '@/lib/cost';
 import { convertToBaseUnit } from '@/lib/units';
-import { withClockSkewRetry } from '@/lib/retry';
 import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
 import { UpgradeModal } from '@/components/upgrade-modal';
+import { useAppBoot } from '@/components/boot/app-boot-context';
 import { navigateWithTransition } from '@/lib/view-transition';
 
 interface RecipeDraft {
@@ -46,6 +46,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const router = useRouter();
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const { ready, ingredients: bootIngredients, recipes: bootRecipes } = useAppBoot();
   const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
 
   const defaultDraft: RecipeDraft = {
@@ -105,60 +106,48 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   }, [searchParams]);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [ingredients, dbRecipes] = await withClockSkewRetry(() =>
-          Promise.all([
-            fetchIngredients(),
-            fetchRecipes(),
-          ])
-        );
-        const sortedIngredients = [...ingredients].sort((a, b) =>
-          a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
-        );
-        setBaseIngredients(sortedIngredients);
-        setRecipes(dbRecipes);
+    if (!ready) return;
 
-        const editId = searchParams.get('edit');
-        if (editId) {
-          const recipeToEdit = dbRecipes.find(r => r.id === editId);
-          if (recipeToEdit) {
-            setEditingRecipeId(recipeToEdit.id);
-            setCurrentRecipe({
-              name: recipeToEdit.name,
-              description: recipeToEdit.description ?? '',
-              ingredients: recipeToEdit.ingredients,
-              extraCosts: {
-                packaging: String(recipeToEdit.extraCosts.packaging || ''),
-                bags: String(recipeToEdit.extraCosts.bags || ''),
-                labels: String(recipeToEdit.extraCosts.labels || ''),
-                shipping: String(recipeToEdit.extraCosts.shipping || ''),
-                others: String(recipeToEdit.extraCosts.others || ''),
-              },
-              unitsProduced: String(recipeToEdit.unitsProduced),
-              profitMargin: String(recipeToEdit.profitMargin || ''),
-              saleType: recipeToEdit.saleType || 'unidad',
-              outputQuantity: recipeToEdit.outputQuantity != null ? String(recipeToEdit.outputQuantity) : '',
-              outputUnit: recipeToEdit.outputUnit,
-            });
-            setBudgetQty('');
-            setTimeout(() => {
-              requestAnimationFrame(() => {
-                document.getElementById('recipe-builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              });
-            }, 150);
-            return;
-          }
-        }
-      } catch (err) {
-        toast.error('Error al cargar datos iniciales');
+    setBaseIngredients([...bootIngredients].sort((a, b) =>
+      a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+    ));
+    setRecipes(bootRecipes);
+
+    const editId = searchParams.get('edit');
+    if (editId) {
+      const recipeToEdit = bootRecipes.find(r => r.id === editId);
+      if (recipeToEdit) {
+        setEditingRecipeId(recipeToEdit.id);
+        setCurrentRecipe({
+          name: recipeToEdit.name,
+          description: recipeToEdit.description ?? '',
+          ingredients: recipeToEdit.ingredients,
+          extraCosts: {
+            packaging: String(recipeToEdit.extraCosts.packaging || ''),
+            bags: String(recipeToEdit.extraCosts.bags || ''),
+            labels: String(recipeToEdit.extraCosts.labels || ''),
+            shipping: String(recipeToEdit.extraCosts.shipping || ''),
+            others: String(recipeToEdit.extraCosts.others || ''),
+          },
+          unitsProduced: String(recipeToEdit.unitsProduced),
+          profitMargin: String(recipeToEdit.profitMargin || ''),
+          saleType: recipeToEdit.saleType || 'unidad',
+          outputQuantity: recipeToEdit.outputQuantity != null ? String(recipeToEdit.outputQuantity) : '',
+          outputUnit: recipeToEdit.outputUnit,
+        });
+        setBudgetQty('');
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            document.getElementById('recipe-builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        }, 150);
+        return;
       }
+    }
 
-      const draft = storage.getDraft();
-      if (draft) setCurrentRecipe({ ...defaultDraft, ...draft });
-    };
-    loadData();
-  }, [searchParams]);
+    const draft = storage.getDraft();
+    if (draft) setCurrentRecipe({ ...defaultDraft, ...draft });
+  }, [ready, bootIngredients, bootRecipes, searchParams]);
 
   useEffect(() => {
     if (editingRecipeId) return;

@@ -8,9 +8,10 @@ interface TransitionLinkProps {
   children: ReactNode;
   className?: string;
   onClick?: (e: MouseEvent) => void;
+  ref?: React.Ref<HTMLAnchorElement>;
 }
 
-export function TransitionLink({ href, children, className, onClick }: TransitionLinkProps) {
+export function TransitionLink({ href, children, className, onClick, ref, ...rest }: TransitionLinkProps) {
   const router = useRouter();
 
   const handleClick = (e: MouseEvent) => {
@@ -23,5 +24,9 @@ export function TransitionLink({ href, children, className, onClick }: Transitio
     }
   };
 
-  return <a href={href} onClick={handleClick} className={className}>{children}</a>;
+  return (
+    <a href={href} onClick={handleClick} className={className} ref={ref} {...rest}>
+      {children}
+    </a>
+  );
 }

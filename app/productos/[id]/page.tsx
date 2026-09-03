@@ -8,18 +8,29 @@ import { fetchProductById, deleteProduct } from '@/lib/products-db';
 import { formatCurrency, sumIngredientCosts, sumExtraCosts, calculateSalePrice } from '@/lib/cost';
 import { TransitionLink } from '@/components/transition-link';
 import { navigateWithTransition } from '@/lib/view-transition';
+import { useAppBoot } from '@/components/boot/app-boot-context';
 
 export default function ProductoDetallePage() {
   const params = useParams();
   const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { ready, products: bootProducts } = useAppBoot();
 
   useEffect(() => {
-    async function loadData() {
+    if (!ready) return;
+    const id = Array.isArray(params.id) ? params.id[0] : params.id;
+    if (!id) { navigateWithTransition(router, '/productos'); return; }
+
+    const cached = bootProducts.find(p => p.id === id);
+    if (cached) {
+      setProduct(cached);
+      return;
+    }
+
+    // Fallback: deep-link o cache fallida → fetch individual
+    (async () => {
       try {
-        const id = Array.isArray(params.id) ? params.id[0] : params.id;
-        if (!id) { navigateWithTransition(router, '/productos'); return; }
         const found = await fetchProductById(id);
         if (!found) { navigateWithTransition(router, '/productos'); return; }
         setProduct(found);
@@ -27,9 +38,8 @@ export default function ProductoDetallePage() {
         toast.error('Error al cargar datos');
         navigateWithTransition(router, '/productos');
       }
-    }
-    loadData();
-  }, [params.id, router]);
+    })();
+  }, [ready, bootProducts, params.id, router]);
 
   const handleDelete = () => {
     if (!product) return;
