@@ -168,11 +168,22 @@ export function Navbar() {
           <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
             <DropdownMenuTrigger asChild>
               <button
-                className="group flex items-center gap-2 rounded-full pl-1 pr-2.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="group flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 aria-label="Perfil de usuario"
                 aria-expanded={dropdownOpen}
               >
-                <UserProfile size={32} />
+                <span className="flex flex-col items-center justify-center gap-0.5">
+                  <UserProfile size={32} />
+                  <span
+                    className={`inline-flex items-center rounded-full px-1 py-[1px] text-[10px] font-extrabold uppercase tracking-wide leading-none ${
+                      isPro
+                        ? 'bg-[#ee2b6c]/10 text-[#ee2b6c]'
+                        : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                    }`}
+                  >
+                    {isPro ? 'PRO' : 'FREE'}
+                  </span>
+                </span>
                 <span className="material-symbols-outlined text-slate-400 transition-transform duration-200 group-data-[state=open]:rotate-180">
                   expand_more
                 </span>
