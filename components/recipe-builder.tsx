@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { BaseIngredient, Recipe, RecipeIngredient, Unit, SaleType } from '@/lib/types';
@@ -46,7 +46,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const router = useRouter();
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const { ready, ingredients: bootIngredients, recipes: bootRecipes } = useAppBoot();
+  const { ready, ingredients: bootIngredients, recipes: bootRecipes, applyLocal } = useAppBoot();
   const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
 
   const defaultDraft: RecipeDraft = {
@@ -70,6 +70,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
   const [budgetQty, setBudgetQty] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
 
   const [newIngredient, setNewIngredient] = useState({
     baseIngredientId: '',
@@ -223,10 +224,12 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   };
 
   const saveRecipe = async () => {
+    if (savingRef.current || isSaving) return;
     if (!currentRecipe.name || !currentRecipe.ingredients?.length) return;
     if (!guardUpgrade('recipes', recipes.length)) return;
     const { totalCost, costPerUnit } = calculateRecipeTotals(currentRecipe);
     
+    savingRef.current = true;
     setIsSaving(true);
     try {
       const draftToSave = {
@@ -252,13 +255,16 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
       };
 
       const savedRecipe = await upsertRecipe(draftToSave);
-      setRecipes([...recipes, savedRecipe]);
+      const nextRecipes = [savedRecipe, ...recipes];
+      setRecipes(nextRecipes);
+      applyLocal({ recipes: nextRecipes });
       resetCurrentRecipe();
       toast.success('Receta guardada exitosamente', { duration: 2500 });
       navigateWithTransition(router, `/recetas/${savedRecipe.id}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al guardar receta');
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   };
@@ -285,15 +291,20 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
           </button>
           <button
             onClick={async () => {
+              if (savingRef.current || isSaving) return;
+              savingRef.current = true;
               setIsSaving(true);
               try {
                 await dbDeleteRecipe(id);
-                setRecipes(recipes.filter(r => r.id !== id));
+                const nextRecipes = recipes.filter(r => r.id !== id);
+                setRecipes(nextRecipes);
+                applyLocal({ recipes: nextRecipes });
                 toast.dismiss(t);
                 toast.success('Receta eliminada');
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : 'Error al eliminar');
               } finally {
+                savingRef.current = false;
                 setIsSaving(false);
               }
             }}
@@ -333,9 +344,11 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   };
 
   const updateRecipe = async () => {
+    if (savingRef.current || isSaving) return;
     if (!currentRecipe.name || !currentRecipe.ingredients?.length || !editingRecipeId) return;
     const { totalCost, costPerUnit } = calculateRecipeTotals(currentRecipe);
     
+    savingRef.current = true;
     setIsSaving(true);
     try {
       const draftToUpdate = {
@@ -361,7 +374,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
       };
 
       const savedRecipe = await upsertRecipe(draftToUpdate, editingRecipeId);
-      setRecipes(recipes.map(r => r.id === editingRecipeId ? savedRecipe : r));
+      const nextRecipes = recipes.map(r => r.id === editingRecipeId ? savedRecipe : r);
+      setRecipes(nextRecipes);
+      applyLocal({ recipes: nextRecipes });
       setEditingRecipeId(null);
       resetCurrentRecipe();
       toast.success('Receta actualizada exitosamente', { duration: 2500 });
@@ -369,6 +384,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al actualizar receta');
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   };

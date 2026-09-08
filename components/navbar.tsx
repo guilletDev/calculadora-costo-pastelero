@@ -23,12 +23,19 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import type { User } from '@supabase/supabase-js';
+import { isProUser } from '@/lib/limits';
+import { formatProValidUntil } from '@/lib/pricing';
+import { UpgradeButton } from '@/components/upgrade-button';
 
 export function Navbar() {
   const [logoutOpen, setLogoutOpen]     = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [proStatus, setProStatus] = useState<{ planType: string | null; proValidUntil: string | null }>({
+    planType: null,
+    proValidUntil: null,
+  });
 
   const pathname = usePathname();
   const router   = useRouter();
@@ -36,12 +43,26 @@ export function Navbar() {
   // ── Cargar usuario autenticado ──────────────────────────────────────────────
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    supabase.auth.getUser().then(async ({ data }) => {
+      setUser(data.user);
+      if (!data.user) return;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('plan_type, pro_valid_until')
+        .eq('id', data.user.id)
+        .maybeSingle();
+      setProStatus({
+        planType: profile?.plan_type ?? null,
+        proValidUntil: profile?.pro_valid_until ?? null,
+      });
+    });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  const isPro = isProUser(user?.email, proStatus.planType, proStatus.proValidUntil);
 
   // ── Datos del usuario ───────────────────────────────────────────────────────
   const meta      = user?.user_metadata ?? {};
@@ -185,6 +206,29 @@ export function Navbar() {
                   </TransitionLink>
                 </DropdownMenuItem>
               ))}
+
+              <DropdownMenuSeparator />
+
+              {isPro ? (
+                <div className="px-4 py-2.5 flex items-center gap-2.5">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#ee2b6c]/10 text-[#ee2b6c] text-[11px] font-bold px-2.5 py-1 uppercase tracking-wide">
+                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>workspace_premium</span>
+                    Pro
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {proStatus.proValidUntil
+                      ? `Vence el ${formatProValidUntil(proStatus.proValidUntil)}`
+                      : 'Plan activo'}
+                  </span>
+                </div>
+              ) : (
+                <div className="px-2 pb-2">
+                  <UpgradeButton
+                    label="Desbloquear Plan Pro"
+                    className="flex w-full items-center justify-center gap-2 rounded-md bg-[#ee2b6c] text-white text-sm font-semibold py-2 hover:bg-[#d4235e] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
+                </div>
+              )}
 
               <DropdownMenuSeparator />
 

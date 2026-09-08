@@ -138,7 +138,12 @@ export async function upsertRecipe(recipeDraft: Omit<Recipe, 'id'>, id?: string)
       .select('id')
       .single();
 
-    if (insertError) throw new Error(`Error al crear receta: ${insertError.message}`);
+    if (insertError) {
+      if (insertError.code === '23505') {
+        throw new Error('Ya existe una receta con ese nombre. Elegí otro nombre o editá la receta existente.');
+      }
+      throw new Error(`Error al crear receta: ${insertError.message}`);
+    }
     recipeId = newRecipe.id;
   }
 

@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { BaseIngredient, Unit } from '@/lib/types';
 import { storage } from '@/lib/storage';
 import {
   fetchIngredients,
-  createIngredient,
   updateIngredient,
   deleteIngredient,
   upsertIngredient,
@@ -33,7 +32,8 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const { ready, ingredients: bootIngredients } = useAppBoot();
+  const savingRef = useRef(false);
+  const { ready, ingredients: bootIngredients, applyLocal } = useAppBoot();
 
   // Estado para edición inline de un ingrediente existente
   const [editInlineData, setEditInlineData] = useState({
@@ -65,6 +65,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
         a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
       );
       setIngredients(sorted);
+      applyLocal({ ingredients: sorted });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cargar ingredientes';
       toast.error(message);
@@ -72,7 +73,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [applyLocal]);
 
   useEffect(() => {
     const savedLocked = storage.getIsLocked();
@@ -120,6 +121,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   };
 
   const saveInlineEdit = async (ingredient: BaseIngredient) => {
+    if (savingRef.current || isSaving) return;
     const rawQuantity = parseFloat(editInlineData.purchasedQuantity);
     const price = parseFloat(editInlineData.totalPrice);
     const trimmedName = editInlineData.name.trim();
@@ -128,6 +130,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
     const converted = convertToBaseUnit(rawQuantity, editInlineData.unit);
     const pricePerUnit = price / converted.quantity;
 
+    savingRef.current = true;
     setIsSaving(true);
     try {
       const updated = await updateIngredient(ingredient.id, {
@@ -140,12 +143,14 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
       const next = ingredients.map(ing => ing.id === ingredient.id ? updated : ing);
       const sorted = [...next].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
       setIngredients(sorted);
+      applyLocal({ ingredients: sorted });
       onIngredientsChange?.(sorted);
       setEditingId(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al guardar';
       toast.error(message);
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   };
@@ -156,6 +161,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
 
   // Guardar ingrediente nuevo
   const handleSave = async () => {
+    if (savingRef.current || isSaving) return;
     if (!formData.name || !formData.purchasedQuantity || !formData.totalPrice) return;
 
     const normalizedName = formData.name.toLowerCase().trim();
@@ -167,24 +173,24 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
     const converted = convertToBaseUnit(rawQuantity, formData.unit);
     const pricePerUnit = price / converted.quantity;
 
+    savingRef.current = true;
     setIsSaving(true);
     try {
-      const { ingredient: savedIngredient, isNew } = await upsertIngredient(
-        {
-          name: formData.name,
-          purchasedQuantity: converted.quantity,
-          unit: converted.unit,
-          totalPrice: price,
-          pricePerUnit,
-        },
-        ingredients
-      );
+      const savedIngredient = await upsertIngredient({
+        name: formData.name,
+        purchasedQuantity: converted.quantity,
+        unit: converted.unit,
+        totalPrice: price,
+        pricePerUnit,
+      });
 
+      const isNew = !ingredients.some(ing => ing.id === savedIngredient.id);
       const raw = isNew
         ? [...ingredients, savedIngredient]
         : ingredients.map(ing => ing.id === savedIngredient.id ? savedIngredient : ing);
       const sorted = [...raw].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
       setIngredients(sorted);
+      applyLocal({ ingredients: sorted });
       onIngredientsChange?.(sorted);
 
       setFormData({ name: '', purchasedQuantity: '', unit: 'kg', totalPrice: '' });
@@ -193,21 +199,26 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
       const message = err instanceof Error ? err.message : 'Error al guardar';
       toast.error(message);
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
+    if (savingRef.current || isSaving) return;
+    savingRef.current = true;
     setIsSaving(true);
     try {
       await deleteIngredient(id);
       const updated = ingredients.filter(ing => ing.id !== id);
       setIngredients(updated);
+      applyLocal({ ingredients: updated });
       onIngredientsChange?.(updated);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar';
       toast.error(message);
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   };

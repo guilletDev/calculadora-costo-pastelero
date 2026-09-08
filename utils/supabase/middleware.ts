@@ -36,7 +36,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protect private routes
-  const isPrivateRoute = request.nextUrl.pathname.startsWith('/recetas') || request.nextUrl.pathname.startsWith('/calculadora') || request.nextUrl.pathname.startsWith('/productos')
+  const isPrivateRoute = request.nextUrl.pathname.startsWith('/recetas') || request.nextUrl.pathname.startsWith('/calculadora') || request.nextUrl.pathname.startsWith('/productos') || request.nextUrl.pathname.startsWith('/pro')
   
   if (!user && isPrivateRoute) {
     // no user, potentially respond by redirecting the user to the login page

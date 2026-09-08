@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Product, Recipe, BaseIngredient, ComponentType, Unit, AdditionalCost, EXTRA_COST_LABELS } from '@/lib/types';
@@ -10,6 +10,7 @@ import { fetchProductById, upsertProduct } from '@/lib/products-db';
 import { formatCurrency, proportionalCost, costPerOutputUnit, calculateTotalCost, sumIngredientCosts, calculateSalePrice, calculateIngredientCost } from '@/lib/cost';
 import { toBaseQuantity } from '@/lib/units';
 import { navigateWithTransition } from '@/lib/view-transition';
+import { useAppBoot } from '@/components/boot/app-boot-context';
 
 interface ProductComponentDraft {
   componentType: ComponentType;
@@ -81,10 +82,12 @@ function additionalCostsToExtraCosts(rows: AdditionalCost[]): Record<string, num
 
 export function ProductBuilder({ productId }: ProductBuilderProps) {
   const router = useRouter();
+  const { products: bootProducts, applyLocal } = useAppBoot();
   const [eligibleRecipes, setEligibleRecipes] = useState<Recipe[]>([]);
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
   const [selectedValue, setSelectedValue] = useState('');
 
   const defaultDraft: ProductDraft = {
@@ -273,7 +276,9 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
   const canSave = draft.name.trim() !== '' && draft.components.length > 0;
 
   const saveProduct = async () => {
+    if (savingRef.current || isSaving) return;
     if (!canSave) return;
+    savingRef.current = true;
     setIsSaving(true);
     try {
       const payload: Omit<Product, 'id'> = {
@@ -296,11 +301,16 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
       };
 
       const saved = await upsertProduct(payload, productId);
+      const nextProducts = productId
+        ? bootProducts.map(p => p.id === productId ? saved : p)
+        : [saved, ...bootProducts];
+      applyLocal({ products: nextProducts });
       toast.success(productId ? 'Producto actualizado exitosamente' : 'Producto guardado exitosamente');
       navigateWithTransition(router, `/productos/${saved.id}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al guardar producto');
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   };

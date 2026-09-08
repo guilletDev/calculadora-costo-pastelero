@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Recipe, BaseIngredient, EXTRA_COST_LABELS } from '@/lib/types';
@@ -26,7 +26,8 @@ export default function RecetaDetailPage() {
   const [budgetQty, setBudgetQty] = useState('');
 
   const [isDeleting, setIsDeleting] = useState(false);
-  const { ready, recipes: bootRecipes, ingredients: bootIngredients } = useAppBoot();
+  const deletingRef = useRef(false);
+  const { ready, recipes: bootRecipes, ingredients: bootIngredients, applyLocal } = useAppBoot();
 
   useEffect(() => {
     if (!ready) return;
@@ -82,15 +83,20 @@ export default function RecetaDetailPage() {
           </button>
           <button
             onClick={async () => {
+              if (deletingRef.current || isDeleting) return;
+              deletingRef.current = true;
               setIsDeleting(true);
               try {
                 await deleteRecipe(recipe.id);
+                applyLocal({ recipes: bootRecipes.filter(r => r.id !== recipe.id) });
                 toast.dismiss(t);
                 toast.success('Receta eliminada');
                 navigateWithTransition(router, '/recetas');
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : 'Error al eliminar');
                 setIsDeleting(false);
+              } finally {
+                deletingRef.current = false;
               }
             }}
             disabled={isDeleting}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Product, EXTRA_COST_LABELS } from '@/lib/types';
@@ -15,7 +15,8 @@ export default function ProductoDetallePage() {
   const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { ready, products: bootProducts } = useAppBoot();
+  const deletingRef = useRef(false);
+  const { ready, products: bootProducts, applyLocal } = useAppBoot();
 
   useEffect(() => {
     if (!ready) return;
@@ -63,15 +64,20 @@ export default function ProductoDetallePage() {
           </button>
           <button
             onClick={async () => {
+              if (deletingRef.current || isDeleting) return;
+              deletingRef.current = true;
               setIsDeleting(true);
               try {
                 await deleteProduct(product.id);
+                applyLocal({ products: bootProducts.filter(p => p.id !== product.id) });
                 toast.dismiss(t);
                 toast.success('Producto eliminado');
                 navigateWithTransition(router, '/productos');
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : 'Error al eliminar');
                 setIsDeleting(false);
+              } finally {
+                deletingRef.current = false;
               }
             }}
             disabled={isDeleting}

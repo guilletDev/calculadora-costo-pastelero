@@ -126,7 +126,12 @@ export async function upsertProduct(productDraft: Omit<Product, 'id'>, id?: stri
       .select('id')
       .single();
 
-    if (insertError) throw new Error(`Error al crear producto: ${insertError.message}`);
+    if (insertError) {
+      if (insertError.code === '23505') {
+        throw new Error('Ya existe un producto con ese nombre. Elegí otro nombre o editá el producto existente.');
+      }
+      throw new Error(`Error al crear producto: ${insertError.message}`);
+    }
     productId = newProduct.id;
   }
 

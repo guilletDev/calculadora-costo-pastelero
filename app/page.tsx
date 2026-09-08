@@ -1,6 +1,8 @@
 import { LandingNavbar } from '@/components/landing-navbar';
 import { TransitionLink } from '@/components/transition-link';
+import { UpgradeButton } from '@/components/upgrade-button';
 import { FREE_TIER_RECIPES_LIMIT, FREE_TIER_INGREDIENTS_LIMIT } from '@/lib/limits';
+import { PRO_PLAN_NAME, PRO_PLAN_LABEL } from '@/lib/pricing';
 
 export default function LandingPage() {
   return (
@@ -283,21 +285,21 @@ export default function LandingPage() {
               </TransitionLink>
             </div>
 
-            {/* Plan Plus */}
+            {/* Plan Pro */}
             <div className="bg-[#2a313d] text-[#ebf1ff] p-8 md:p-12 rounded-3xl border border-[#b80049] relative shadow-floating flex flex-col h-full transform md:-translate-y-4">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#b80049] text-white text-xs px-4 py-1.5 rounded-full flex items-center gap-1.5 font-bold shadow-sm">
                 <span className="material-symbols-outlined text-[14px]">star</span> Más elegido
               </div>
               <div className="mb-8 mt-2">
                 <h3 className="text-4xl text-[#ebf1ff] mb-3 tracking-tight font-[800]" style={{ fontFamily: "'Manrope', sans-serif" }}>
-                  Plus
+                  {PRO_PLAN_NAME}
                 </h3>
                 <p className="text-sm opacity-80" style={{ fontFamily: "'Inter', sans-serif" }}>
-                  14 días de prueba gratis
+                  Pago único · 30 días de acceso
                 </p>
               </div>
               <div className="text-5xl text-[#ebf1ff] mb-10 tracking-tight font-[800]" style={{ fontFamily: "'Manrope', sans-serif" }}>
-                $9.900 <span className="text-base opacity-80 font-normal" style={{ fontFamily: "'Inter', sans-serif" }}>/mes</span>
+                {PRO_PLAN_LABEL.split(' / ')[0]} <span className="text-base opacity-80 font-normal" style={{ fontFamily: "'Inter', sans-serif" }}>/ 30 días</span>
               </div>
               <ul className="space-y-5 mb-12 flex-1">
                 <li className="flex items-start gap-3">
@@ -317,12 +319,10 @@ export default function LandingPage() {
                   <span className="text-sm opacity-90" style={{ fontFamily: "'Inter', sans-serif" }}>Soporte prioritario 24/7</span>
                 </li>
               </ul>
-              <TransitionLink
-                href="/login"
-                className="w-full text-center bg-[#b80049] text-white text-sm py-4 rounded-full btn-hover-effect font-semibold shadow-sm hover:bg-[#bc004b] transition-all duration-300 hover:scale-105 block"
-              >
-                Probar Plus Gratis
-              </TransitionLink>
+              <UpgradeButton
+                label={`Activar ${PRO_PLAN_NAME} por ${PRO_PLAN_LABEL}`}
+                className="w-full text-center bg-[#b80049] text-white text-sm py-4 rounded-full btn-hover-effect font-semibold shadow-sm hover:bg-[#bc004b] transition-all duration-300 hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
+              />
             </div>
           </div>
         </section>

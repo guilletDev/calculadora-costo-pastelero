@@ -87,29 +87,30 @@ export async function deleteIngredient(id: string): Promise<void> {
   if (error) throw new Error(`Error al eliminar ingrediente: ${error.message}`);
 }
 
+// Upsert atómico en la base de datos: si ya existe un ingrediente con
+// el mismo nombre (insensible a mayúsculas) suma cantidad y precio;
+// si no, inserta. Lo resuelve el RPC public.upsert_ingredient (migración 010),
+// por lo que no depende del estado local del cliente ni hay race conditions.
+// El RPC devuelve RETURNS SETOF public.ingredients (fila completa, incluye
+// user_id/created_at/updated_at de más): el mapeo rowToIngredient solo lee
+// los campos que necesita, por eso la respuesta se puede castear directo.
 export async function upsertIngredient(
-  ingredient: Omit<BaseIngredient, 'id'>,
-  existingIngredients: BaseIngredient[]
-): Promise<{ ingredient: BaseIngredient; isNew: boolean }> {
-  const normalizedName = ingredient.name.toLowerCase().trim();
-  const existing = existingIngredients.find(
-    ing => ing.name.toLowerCase().trim() === normalizedName
-  );
+  ingredient: Omit<BaseIngredient, 'id'>
+): Promise<BaseIngredient> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc('upsert_ingredient', {
+    p_name: ingredient.name,
+    p_purchased_quantity: ingredient.purchasedQuantity,
+    p_unit: ingredient.unit,
+    p_total_price: ingredient.totalPrice,
+  });
 
-  if (existing) {
-    // Acumular cantidad y precio
-    const newTotalQuantity = existing.purchasedQuantity + ingredient.purchasedQuantity;
-    const newTotalPrice = existing.totalPrice + ingredient.totalPrice;
-    const newPricePerUnit = newTotalPrice / newTotalQuantity;
-
-    const updated = await updateIngredient(existing.id, {
-      purchasedQuantity: newTotalQuantity,
-      totalPrice: newTotalPrice,
-      pricePerUnit: newPricePerUnit,
-    });
-    return { ingredient: updated, isNew: false };
+  if (error) {
+    console.error('[upsertIngredient]', error);
+    throw new Error(`Error al guardar ingrediente: ${error.message} (${error.code})`);
   }
 
-  const created = await createIngredient(ingredient);
-  return { ingredient: created, isNew: true };
+  const row = (Array.isArray(data) ? data[0] : data) as IngredientRow | undefined;
+  if (!row) throw new Error('Error al guardar ingrediente: no se recibió respuesta');
+  return rowToIngredient(row);
 }

@@ -1,9 +1,7 @@
 'use client';
 
-import { toast } from 'sonner';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -11,7 +9,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { UpgradeButton } from '@/components/upgrade-button';
 import { UpgradeResourceType, FREE_TIER_LIMITS } from '@/lib/limits';
+import { PRO_PLAN_LABEL } from '@/lib/pricing';
 
 interface UpgradeModalProps {
   open: boolean;
@@ -57,16 +57,11 @@ export function UpgradeModal({ open, onOpenChange, resourceType }: UpgradeModalP
           >
             Quizás más tarde
           </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={(e) => {
-              e.preventDefault();
-              onOpenChange(false);
-              toast('Próximamente', { description: 'El Plan Pro estará disponible muy pronto.' });
-            }}
-            className="flex-1 rounded-md bg-stitch-primary text-on-primary font-semibold text-sm py-2.5 hover:bg-stitch-surface-tint transition-colors"
-          >
-            Desbloquear Plan Pro
-          </AlertDialogAction>
+          <UpgradeButton
+            onCheckoutStart={() => onOpenChange(false)}
+            label={`Desbloquear Plan Pro · ${PRO_PLAN_LABEL}`}
+            className="flex-1 rounded-md bg-stitch-primary text-on-primary font-semibold text-sm py-2.5 hover:bg-stitch-surface-tint transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          />
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
