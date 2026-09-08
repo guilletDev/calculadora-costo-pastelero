@@ -1,11 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getPaymentClient } from '@/lib/mercadopago';
-import { createAdminClient } from '@/lib/supabase-admin';
-import { PRO_PLAN_PRICE, PRO_PLAN_DAYS } from '@/lib/pricing';
+import { activateProPlan } from '@/lib/payment-activation';
 
 export const runtime = 'nodejs';
-
-const DAYS_MS = PRO_PLAN_DAYS * 24 * 60 * 60 * 1000;
 
 function parsePaymentId(req: NextRequest): string | null {
   const searchParams = req.nextUrl.searchParams;
@@ -18,13 +16,6 @@ function parsePaymentId(req: NextRequest): string | null {
   if (dataId) return dataId;
 
   return null;
-}
-
-function parseUserIdFromExternalReference(externalReference: string | undefined | null): string | null {
-  if (!externalReference) return null;
-  const userId = externalReference.split(':')[0];
-  if (!userId || userId.length < 8) return null;
-  return userId;
 }
 
 export async function POST(req: NextRequest) {
@@ -42,77 +33,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'mercadopago_error' }, { status: 500 });
   }
 
-  if (payment.status !== 'approved') {
-    return NextResponse.json({ received: true, ignored: `status_${payment.status}` });
-  }
-
-  if (Number(payment.transaction_amount) !== PRO_PLAN_PRICE) {
-    console.warn(
-      `[webhook] Monto inesperado en pago ${payment.id}: ${payment.transaction_amount}`
-    );
-    return NextResponse.json({ received: true, ignored: 'amount_mismatch' });
-  }
-
-  const userId = parseUserIdFromExternalReference(payment.external_reference);
-  if (!userId) {
-    console.warn(`[webhook] external_reference inválida en pago ${payment.id}`);
-    return NextResponse.json({ received: true, ignored: 'bad_external_reference' });
-  }
-
-  const admin = createAdminClient();
-
-  const { data: inserted, error: insertError } = await admin
-    .from('payment_events')
-    .insert({
-      payment_id: String(payment.id),
-      external_reference: payment.external_reference ?? '',
-      user_id: userId,
-      amount: Number(payment.transaction_amount),
-      currency: payment.currency_id ?? 'ARS',
-      status: payment.status,
-      raw_payload: payment as unknown as Record<string, unknown>,
-    })
-    .select('id')
-    .maybeSingle();
-
-  if (insertError) {
-    if (insertError.code === '23505') {
-      // payment_id ya procesado (notificación duplicada) → no sumar días otra vez
-      return NextResponse.json({ received: true, ignored: 'duplicate' });
-    }
-    console.error('[webhook] Error registrando payment_event:', insertError);
+  let result;
+  try {
+    // La activación usa el cliente con service_role (ignora RLS) y busca al
+    // usuario por el external_reference del pago (no hay sesión de usuario
+    // cuando Mercado Pago llama al webhook).
+    result = await activateProPlan(payment);
+  } catch (error) {
+    console.error('[webhook] Error activando plan:', error);
     return NextResponse.json({ error: 'db_error' }, { status: 500 });
   }
 
-  if (!inserted) {
+  if (result.status === 'ignored') {
+    return NextResponse.json({ received: true, ignored: result.reason });
+  }
+
+  if (result.status === 'duplicate') {
     return NextResponse.json({ received: true, ignored: 'duplicate' });
   }
 
-  const { data: profile, error: profileError } = await admin
-    .from('profiles')
-    .select('pro_valid_until')
-    .eq('id', userId)
-    .maybeSingle();
-
-  if (profileError) {
-    console.error('[webhook] Error consultando perfil:', profileError);
-    return NextResponse.json({ error: 'db_error' }, { status: 500 });
-  }
-
-  const baseMs = profile?.pro_valid_until
-    ? Math.max(new Date(profile.pro_valid_until).getTime(), Date.now())
-    : Date.now();
-  const newValidUntil = new Date(baseMs + DAYS_MS).toISOString();
-
-  const { error: updateError } = await admin
-    .from('profiles')
-    .update({ plan_type: 'pro', pro_valid_until: newValidUntil })
-    .eq('id', userId);
-
-  if (updateError) {
-    console.error('[webhook] Error actualizando perfil:', updateError);
-    return NextResponse.json({ error: 'db_error' }, { status: 500 });
-  }
+  // Invalidar la caché de Next para que el estado PRO se refleje de inmediato
+  revalidatePath('/pro/estado', 'layout');
+  revalidatePath('/', 'layout');
 
   return NextResponse.json({ received: true, processed: true });
 }

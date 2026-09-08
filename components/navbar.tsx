@@ -40,10 +40,14 @@ export function Navbar() {
   const pathname = usePathname();
   const router   = useRouter();
 
-  // ── Cargar usuario autenticado ──────────────────────────────────────────────
+  // ── Cargar usuario autenticado + perfil (re-fetch al navegar) ──────────────
+  // El re-fetch por pathname hace que el badge PRO/FREE se actualice al volver
+  // del pago (o tras cualquier navegación) sin necesidad de F5.
   useEffect(() => {
+    let cancelled = false;
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data }) => {
+      if (cancelled) return;
       setUser(data.user);
       if (!data.user) return;
       const { data: profile } = await supabase
@@ -51,6 +55,7 @@ export function Navbar() {
         .select('plan_type, pro_valid_until')
         .eq('id', data.user.id)
         .maybeSingle();
+      if (cancelled) return;
       setProStatus({
         planType: profile?.plan_type ?? null,
         proValidUntil: profile?.pro_valid_until ?? null,
@@ -59,8 +64,11 @@ export function Navbar() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
     });
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [pathname]);
 
   const isPro = isProUser(user?.email, proStatus.planType, proStatus.proValidUntil);
 
