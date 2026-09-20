@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { RecipeBuilder } from '@/components/recipe-builder';
 
 export default function NuevaRecetaPage() {
@@ -18,7 +19,14 @@ export default function NuevaRecetaPage() {
         </p>
       </section>
 
-      <RecipeBuilder standalone />
+      <Suspense fallback={
+        <div className="py-20 text-center text-[#5f5e5e] flex flex-col items-center gap-2">
+          <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
+          <p className="text-[16px]">Cargando creador de recetas...</p>
+        </div>
+      }>
+        <RecipeBuilder standalone />
+      </Suspense>
     </main>
   );
 }
