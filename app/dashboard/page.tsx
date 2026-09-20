@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
+import { ArrowRight } from 'lucide-react';
 import { TransitionLink } from '@/components/transition-link';
 import { UpgradeButton } from '@/components/upgrade-button';
 import { useAppBoot } from '@/components/boot/app-boot-context';
@@ -99,25 +100,18 @@ function DashboardContent() {
     };
   }, [paymentSuccess]);
 
-  const subproducts = recipes.filter(r =>
-    r.outputQuantity != null && r.outputQuantity > 0 &&
-    r.outputUnit != null && r.unitsProduced <= 0
-  );
-  const totalRecetas = recipes.length - subproducts.length;
+  const totalRecetas = recipes.length;
   const totalIngredientes = ingredients.length;
-  const totalSubproductos = subproducts.length;
   const totalProductos = products.length;
 
   const kpis = [
-    { label: 'Recetas', value: String(totalRecetas), icon: 'menu_book', iconBg: 'bg-[#ffd9de]/50 text-[#b80049]' },
-    { label: 'Subproductos', value: String(totalSubproductos), icon: 'layers', iconBg: 'bg-[#dce2f3]/50 text-[#151c27]' },
-    { label: 'Productos', value: String(totalProductos), icon: 'storefront', iconBg: 'bg-[#ffd9de]/50 text-[#b80049]' },
-    { label: 'Ingredientes', value: String(totalIngredientes), icon: 'inventory_2', iconBg: 'bg-[#dce2f3]/50 text-[#151c27]' },
+    { label: 'Recetas', value: String(totalRecetas), icon: 'menu_book', iconBg: 'bg-[#ffd9de]/50 text-[#b80049]', href: '/recetas' },
+    { label: 'Productos', value: String(totalProductos), icon: 'storefront', iconBg: 'bg-[#dce2f3]/50 text-[#151c27]', href: '/productos' },
+    { label: 'Ingredientes', value: String(totalIngredientes), icon: 'inventory_2', iconBg: 'bg-[#ffd9de]/50 text-[#b80049]', href: '/inventario' },
   ];
 
   const quickActions = [
     { href: '/recetas/nueva', label: 'Nueva Receta', description: 'Calcular costos y márgenes de una receta completa', icon: 'cake', cta: '+ Crear' },
-    { href: '/subproductos/nuevo', label: 'Nuevo Subproducto', description: 'Armar preparaciones base (masas, rellenos, cremas)', icon: 'blender', cta: '+ Crear' },
     { href: '/productos/nuevo', label: 'Nuevo Producto', description: 'Configurar producto final para la venta', icon: 'storefront', cta: '+ Crear' },
     { href: '/inventario', label: 'Inventario de Insumos', description: 'Actualizar precios de ingredientes y empaques', icon: 'inventory', cta: 'Ver' },
   ];
@@ -146,26 +140,15 @@ function DashboardContent() {
             Este es el resumen de tu negocio.
           </p>
         </div>
-        <span
-          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide w-max ${
-            isPro
-              ? 'bg-[#ee2b6c]/10 text-[#ee2b6c]'
-              : 'bg-slate-100 text-slate-500'
-          }`}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-            {isPro ? 'workspace_premium' : 'person'}
-          </span>
-          {isPro ? 'Pro' : 'Free'}
-        </span>
       </section>
 
       {/* ── KPIs ── */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {kpis.map((kpi) => (
-          <div
+          <TransitionLink
             key={kpi.label}
-            className="bg-stitch-surface-container-lowest rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant flex flex-col justify-between"
+            href={kpi.href}
+            className="bg-stitch-surface-container-lowest rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant flex flex-col justify-between hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer"
           >
             <div className="flex items-center justify-between mb-4">
               <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary uppercase tracking-widest">
@@ -178,7 +161,10 @@ function DashboardContent() {
             <div className="font-stitch-numeric-data text-[32px] leading-tight text-stitch-on-surface">
               {kpi.value}
             </div>
-          </div>
+            <div className="mt-3 flex justify-end">
+              <ArrowRight className="w-4 h-4 text-muted-foreground" />
+            </div>
+          </TransitionLink>
         ))}
       </section>
 
@@ -232,7 +218,7 @@ function DashboardContent() {
         >
           Crea y Calcula
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {quickActions.map((action) => (
             <TransitionLink
               key={action.href}

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Recipe } from '@/lib/types';
-import { formatCurrency } from '@/lib/cost';
+import { formatCurrency, costPerGram, costPerPortion } from '@/lib/cost';
+import { portionsLabel } from '@/lib/units';
 import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
 import { UpgradeModal } from '@/components/upgrade-modal';
 import { useAppBoot } from '@/components/boot/app-boot-context';
@@ -17,14 +18,7 @@ export default function RecetasPage() {
   const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
 
   useEffect(() => {
-    if (ready) {
-      // Excluir subproductos: solo se listan recetas finales.
-      // Un subproducto es una receta con rendimiento físico y sin porciones.
-      setRecipes(bootRecipes.filter(r =>
-        !(r.outputQuantity != null && r.outputQuantity > 0 &&
-          r.outputUnit != null && r.unitsProduced <= 0)
-      ));
-    }
+    if (ready) setRecipes(bootRecipes);
   }, [ready, bootRecipes]);
 
   const isLoading = !ready;
@@ -114,6 +108,12 @@ export default function RecetasPage() {
         /* ── Recipe Cards Grid ── */
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
           {filtered.map((recipe, index) => {
+            const hasPortions = recipe.yieldPortions != null && recipe.yieldPortions > 0;
+            const hasGrams = recipe.yieldGrams != null && recipe.yieldGrams > 0;
+            const yieldBadge = [
+              hasPortions ? portionsLabel(recipe.yieldPortions ?? 0) : '',
+              hasGrams ? `${recipe.yieldGrams} g` : '',
+            ].filter(Boolean).join(' • ');
             return (
             <Link
               key={recipe.id}
@@ -125,7 +125,12 @@ export default function RecetasPage() {
               <div className="absolute top-0 left-0 w-full h-1.5 bg-[#b80049] rounded-t-full scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
 
               {/* Header */}
-              <header className="flex flex-col gap-2 mb-6" style={stitchFontManrope}>
+              <header className="flex flex-col gap-3 mb-6" style={stitchFontManrope}>
+                {yieldBadge && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#ffd9de] text-[#b80049] text-[11px] leading-[1.4] tracking-[0.05em] font-semibold whitespace-nowrap max-w-max">
+                    {yieldBadge}
+                  </span>
+                )}
                 <div className="flex justify-between items-start gap-2">
                   <h2 className="flex-1 min-w-0 line-clamp-2 font-semibold text-[24px] leading-[1.3] text-[#151c27] group-hover:text-[#b80049] transition-colors">
                     {recipe.name}
@@ -142,44 +147,56 @@ export default function RecetasPage() {
                 </p>
               )}
 
-              {/* ── Metrics: Receta clásica ── */}
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-[#f0f3ff] rounded-xl p-4 flex flex-col justify-center">
-                  <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase mb-1">
-                    Porciones
+              {/* ── Metrics: costo neto por unidad ── */}
+              <div className="grid grid-cols-2 gap-1.5 mb-8">
+                {hasPortions && (
+                  <div className="bg-[#f0f3ff] rounded-xl p-2 flex flex-col justify-center min-w-0">
+                    <span className="text-[11px] leading-[1.3] tracking-tight font-semibold text-[#5f5e5e] uppercase mb-0.5">
+                      $ / Porción
+                    </span>
+                    <span className="text-[18px] leading-[1.2] text-[#151c27] font-semibold">
+                      {formatCurrency(costPerPortion(recipe.totalCost, recipe.yieldPortions ?? 0))}
+                    </span>
+                  </div>
+                )}
+                {hasGrams && (
+                  <div className="bg-[#f0f3ff] rounded-xl p-2 flex flex-col justify-center min-w-0">
+                    <span className="text-[11px] leading-[1.3] tracking-tight font-semibold text-[#5f5e5e] uppercase mb-0.5">
+                      $ / Gramo
+                    </span>
+                    <span className="text-[18px] leading-[1.2] text-[#151c27] font-semibold">
+                      {formatCurrency(costPerGram(recipe.totalCost, recipe.yieldGrams ?? 0))}
+                    </span>
+                  </div>
+                )}
+                {(recipe.profitMargin ?? 0) > 0 && (
+                  <div className="bg-[#f0f3ff] rounded-xl p-2 flex flex-col justify-center min-w-0">
+                    <span className="text-[11px] leading-[1.3] tracking-tight font-semibold text-[#5f5e5e] uppercase mb-0.5">
+                      Ganancia
+                    </span>
+                    <span className="text-[18px] leading-[1.2] text-[#151c27] font-semibold">
+                      {recipe.profitMargin ?? 0}%
+                    </span>
+                  </div>
+                )}
+                <div className="bg-[#f0f3ff] rounded-xl p-2 flex flex-col justify-center min-w-0">
+                  <span className="text-[11px] leading-[1.3] tracking-tight font-semibold text-[#5f5e5e] uppercase mb-0.5">
+                    Costo Total
                   </span>
-                  <span className="text-[20px] leading-[1.2] text-[#151c27] font-semibold">
-                    {recipe.unitsProduced}
-                  </span>
-                </div>
-                <div className="bg-[#f0f3ff] rounded-xl p-4 flex flex-col justify-center">
-                  <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase mb-1">
-                    Ganancia
-                  </span>
-                  <span className="text-[20px] leading-[1.2] text-[#151c27] font-semibold">
-                    {recipe.profitMargin ?? 0}%
+                  <span className="text-[18px] leading-[1.2] text-[#151c27] font-semibold">
+                    {formatCurrency(recipe.totalCost)}
                   </span>
                 </div>
               </div>
 
-              {/* ── Footer: Receta clásica ── */}
-              <div className="mt-auto grid grid-cols-2 gap-4 items-end border-t border-[#e4bdc2] pt-6">
-                <div className="min-w-0">
-                  <span className="text-[12px] text-[#5a5c5d] uppercase tracking-wider block mb-1 font-semibold" style={{ letterSpacing: '0.05em', fontSize: '12px' }}>
-                    Precio Venta
-                  </span>
-                  <span className="text-[22px] 2xl:text-[24px] text-[#b80049] font-bold tracking-tighter">
-                    {formatCurrency(recipe.costPerUnit)}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-[11px] text-[#5a5c5d] uppercase tracking-wider block mb-1 font-semibold" style={{ letterSpacing: '0.05em', fontSize: '11px' }}>
-                    Precio de Costo
-                  </span>
-                  <span className="text-[14px] 2xl:text-[16px] text-[#5f5e5e] font-medium tracking-tight">
-                    {formatCurrency(recipe.totalCost)}
-                  </span>
-                </div>
+              {/* ── Footer ── */}
+              <div className="mt-auto border-t border-[#e4bdc2] pt-6">
+                <span className="text-[12px] text-[#5a5c5d] uppercase tracking-wider block mb-1 font-semibold" style={{ letterSpacing: '0.05em', fontSize: '12px' }}>
+                  Costo de producción
+                </span>
+                <span className="text-[22px] 2xl:text-[24px] text-[#b80049] font-bold tracking-tighter">
+                  {formatCurrency(recipe.totalCost)}
+                </span>
               </div>
             </Link>
             );

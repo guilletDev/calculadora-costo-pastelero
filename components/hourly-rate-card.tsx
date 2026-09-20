@@ -64,7 +64,7 @@ export function HourlyRateCard() {
 
       <div className="p-8 space-y-6">
         <p className="text-[#5f5e5e] text-[16px] leading-[1.6]">
-          Definí tu valor hora global. En tus recetas y subproductos podrás ingresar los minutos
+          Definí tu valor hora global. En tus recetas podrás ingresar los minutos
           trabajados para sumar la mano de obra automáticamente.
         </p>
 

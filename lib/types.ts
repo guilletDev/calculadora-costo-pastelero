@@ -47,13 +47,12 @@ export interface Recipe {
   description: string;
   ingredients: RecipeIngredient[];
   extraCosts: ExtraCosts;
-  unitsProduced: number;
+  yieldPortions: number | null;
+  yieldGrams: number | null;
   saleType: SaleType;
   totalCost: number;
   costPerUnit: number;
   profitMargin?: number;
-  outputQuantity: number | null;
-  outputUnit: Unit | null;
   laborMinutes?: number;
 }
 
@@ -67,8 +66,9 @@ export interface ProductComponent {
   ingredientId: string | null;
   ingredientName: string | null;
   quantityUsed: number;
-  unit: Unit;
+  unit: Unit | null;
   cost: number;
+  useUnit?: 'portion' | 'gram' | null;
 }
 
 export interface Product {

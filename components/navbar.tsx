@@ -97,11 +97,10 @@ export function Navbar() {
   };
 
   const navLinks = [
-    { href: '/dashboard',    label: 'Dashboard',    icon: 'dashboard' },
-    { href: '/inventario',   label: 'Inventario',   icon: 'inventory' },
-    { href: '/subproductos', label: 'Subproductos', icon: 'layers' },
-    { href: '/recetas',      label: 'Recetas',      icon: 'menu_book' },
-    { href: '/productos',    label: 'Productos',    icon: 'storefront' },
+    { href: '/dashboard',  label: 'Dashboard',  icon: 'dashboard' },
+    { href: '/inventario', label: 'Inventario', icon: 'inventory' },
+    { href: '/recetas',    label: 'Recetas',    icon: 'menu_book' },
+    { href: '/productos',  label: 'Productos',  icon: 'storefront' },
   ];
 
   const isActive = (href: string) =>

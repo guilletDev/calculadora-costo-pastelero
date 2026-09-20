@@ -22,8 +22,9 @@ function rowToProduct(
       ingredientId: componentRow.ingredient_id,
       ingredientName: componentRow.ingredient_name,
       quantityUsed: componentRow.quantity_used,
-      unit: componentRow.unit as Unit,
+      unit: componentRow.unit as Unit | null,
       cost: componentRow.cost,
+      useUnit: componentRow.use_unit as 'portion' | 'gram' | null,
     })),
   };
 }
@@ -159,8 +160,9 @@ export async function upsertProduct(productDraft: Omit<Product, 'id'>, id?: stri
         ingredient_id: isIngredient ? component.ingredientId : null,
         ingredient_name: isIngredient ? component.ingredientName : null,
         quantity_used: quantityUsed,
-        unit,
+        unit: isIngredient ? unit : null,
         cost: component.cost,
+        use_unit: isIngredient ? null : (component.useUnit ?? 'portion'),
       };
     });
 

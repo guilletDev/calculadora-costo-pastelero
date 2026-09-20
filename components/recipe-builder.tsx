@@ -7,13 +7,19 @@ import { AdditionalCost, BaseIngredient, EXTRA_COST_LABELS, Recipe, RecipeIngred
 import { storage } from '@/lib/storage';
 import { fetchIngredients } from '@/lib/ingredients-db';
 import { upsertRecipe } from '@/lib/recipes-db';
-import { calculateIngredientCost, formatCurrency, proportionalCost, sumIngredientCosts } from '@/lib/cost';
+import { calculateIngredientCost, costPerGram, costPerPortion, formatCurrency, proportionalCost, sumIngredientCosts } from '@/lib/cost';
 import { convertToBaseUnit, toBaseQuantity } from '@/lib/units';
 import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
 import { UpgradeModal } from '@/components/upgrade-modal';
 import { useAppBoot } from '@/components/boot/app-boot-context';
 import { navigateWithTransition } from '@/lib/view-transition';
 import { createClient } from '@/utils/supabase/client';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import {
   Select,
   SelectContent,
@@ -28,7 +34,8 @@ interface RecipeDraft {
   name: string;
   description: string;
   ingredients: RecipeIngredient[];
-  unitsProduced: string;
+  yieldPortions: string;
+  yieldGrams: string;
   profitMargin: string;
   saleType: SaleType;
   laborMinutes: string;
@@ -99,7 +106,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     name: '',
     description: '',
     ingredients: [],
-    unitsProduced: '',
+    yieldPortions: '',
+    yieldGrams: '',
     profitMargin: '',
     saleType: 'unidad',
     laborMinutes: '',
@@ -184,7 +192,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
           name: recipeToEdit.name,
           description: recipeToEdit.description ?? '',
           ingredients: recipeToEdit.ingredients,
-          unitsProduced: String(recipeToEdit.unitsProduced),
+          yieldPortions: recipeToEdit.yieldPortions != null && recipeToEdit.yieldPortions > 0 ? String(recipeToEdit.yieldPortions) : '',
+          yieldGrams: recipeToEdit.yieldGrams != null && recipeToEdit.yieldGrams > 0 ? String(recipeToEdit.yieldGrams) : '',
           profitMargin: String(recipeToEdit.profitMargin || ''),
           saleType: recipeToEdit.saleType || 'unidad',
           laborMinutes: String(recipeToEdit.laborMinutes ?? 0),
@@ -224,17 +233,17 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
   );
 
-  const subproducts: Recipe[] = bootRecipes.filter(r =>
+  // Recetas con rendimiento en gramos: se pueden usar como componente (se miden en gramos).
+  const yieldRecipes: Recipe[] = bootRecipes.filter(r =>
     r.id !== editingRecipeId &&
-    r.outputQuantity != null && r.outputQuantity > 0 &&
-    r.outputUnit != null
+    r.yieldGrams != null && r.yieldGrams > 0
   );
 
   const resolveComponentCost = (ing: RecipeIngredient, qty: number, unit: Unit, fallback?: number): number => {
     if (ing.componentType === 'subproduct') {
-      const sub = subproducts.find(s => s.id === ing.subproductRecipeId);
-      if (!sub || sub.outputQuantity == null) return fallback ?? 0;
-      return proportionalCost(sub.totalCost, sub.outputQuantity, toBaseQuantity(qty, unit));
+      const sub = yieldRecipes.find(s => s.id === ing.subproductRecipeId);
+      if (!sub || sub.yieldGrams == null) return fallback ?? 0;
+      return proportionalCost(sub.totalCost, sub.yieldGrams, toBaseQuantity(qty, unit));
     }
     const base = baseIngredients.find(i => i.id === ing.baseIngredientId);
     if (!base) return fallback ?? 0;
@@ -265,8 +274,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
         componentType: 'ingredient',
       };
     } else if (type === 'subproduct') {
-      const sub = subproducts.find(s => s.id === id);
-      if (!sub || sub.outputUnit == null || sub.outputQuantity == null) return;
+      const sub = yieldRecipes.find(s => s.id === id);
+      if (!sub || sub.yieldGrams == null) return;
       const normalized = convertToBaseUnit(qty, newUnit);
       row = {
         id: crypto.randomUUID(),
@@ -274,7 +283,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
         ingredientName: sub.name,
         quantityUsed: normalized.quantity,
         unit: normalized.unit,
-        cost: proportionalCost(sub.totalCost, sub.outputQuantity, normalized.quantity),
+        cost: proportionalCost(sub.totalCost, sub.yieldGrams, normalized.quantity),
         componentType: 'subproduct',
         subproductRecipeId: sub.id,
         subproductRecipeName: sub.name,
@@ -389,15 +398,20 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const laborCost = (minutes / 60) * hourlyRate;
   const extraCostsTotal = currentRecipe.additionalCosts.reduce((sum, row) => sum + (parseFloat(row.value) || 0), 0);
   const totalCost = componentsCost + laborCost + extraCostsTotal;
-  const units = parseFloat(currentRecipe.unitsProduced) || 0;
+  const baseCost = componentsCost + laborCost;
+  const portions = parseFloat(currentRecipe.yieldPortions) || 0;
+  const grams = parseFloat(currentRecipe.yieldGrams) || 0;
   const margin = parseFloat(currentRecipe.profitMargin) || 0;
-  const costPerUnitNet = units > 0 ? totalCost / units : 0;
+  const costPerPortionNet = costPerPortion(baseCost, portions);
+  const costPerGramNet = costPerGram(baseCost, grams);
   const salePriceTotal = totalCost * (1 + margin / 100);
-  const salePerUnit = units > 0 ? salePriceTotal / units : 0;
+  const salePerUnit = portions > 0
+    ? salePriceTotal / portions
+    : (grams > 0 ? salePriceTotal / grams : 0);
 
   const isNameValid = currentRecipe.name.trim().length > 0;
   const hasComponents = (currentRecipe.ingredients || []).length > 0;
-  const isOutputValid = units > 0;
+  const isOutputValid = portions > 0 || grams > 0;
   const canSave = isNameValid && hasComponents && isOutputValid && (standalone || isIngredientsLocked);
 
   const getComponentName = (ing: RecipeIngredient) =>
@@ -415,9 +429,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     }
     const [type, id] = selectedValue.split(':');
     if (type === 'subproduct') {
-      const sub = subproducts.find(s => s.id === id);
-      if (!sub || sub.outputQuantity == null) return 0;
-      return proportionalCost(sub.totalCost, sub.outputQuantity, toBaseQuantity(qty, newUnit));
+      const sub = yieldRecipes.find(s => s.id === id);
+      if (!sub || sub.yieldGrams == null) return 0;
+      return proportionalCost(sub.totalCost, sub.yieldGrams, toBaseQuantity(qty, newUnit));
     }
     const base = baseIngredients.find(i => i.id === id);
     if (!base) return 0;
@@ -440,13 +454,12 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
         description: currentRecipe.description.trim(),
         ingredients: currentRecipe.ingredients,
         extraCosts: additionalCostsToExtraCosts(currentRecipe.additionalCosts),
-        unitsProduced: units,
+        yieldPortions: portions > 0 ? portions : null,
+        yieldGrams: grams > 0 ? grams : null,
         profitMargin: margin,
         saleType: currentRecipe.saleType || 'unidad',
         totalCost,
         costPerUnit: salePerUnit,
-        outputQuantity: null,
-        outputUnit: null,
         laborMinutes: minutes,
       };
 
@@ -472,11 +485,11 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     resetCurrentRecipe();
   };
 
-  if (!sandbox && baseIngredients.length === 0 && subproducts.length === 0) {
+  if (!sandbox && baseIngredients.length === 0 && yieldRecipes.length === 0) {
     return (
       <section className="bg-white rounded-[24px] border border-gray-100 p-8 text-center card-animate delay-200" style={stitchShadow}>
         <p className="text-[#5f5e5e] text-[16px] leading-[1.5] mb-4">
-          Primero debes agregar ingredientes al inventario o crear subproductos para poder armar una receta.
+          Primero debes agregar ingredientes al inventario o crear recetas base con gramos para poder armar una receta.
         </p>
         <a
           href="/inventario"
@@ -538,14 +551,25 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Rendimiento (Porciones)</label>
+              <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Porciones (opcional)</label>
               <input
                 className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
                 placeholder="Ej: 12"
                 type="number"
                 min="0"
-                value={currentRecipe.unitsProduced ?? ''}
-                onChange={(e) => setCurrentRecipe({ ...currentRecipe, unitsProduced: e.target.value })}
+                value={currentRecipe.yieldPortions ?? ''}
+                onChange={(e) => setCurrentRecipe({ ...currentRecipe, yieldPortions: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Rendimiento en gramos (opcional)</label>
+              <input
+                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
+                placeholder="Ej: 500"
+                type="number"
+                min="0"
+                value={currentRecipe.yieldGrams ?? ''}
+                onChange={(e) => setCurrentRecipe({ ...currentRecipe, yieldGrams: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -561,12 +585,15 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               />
             </div>
           </div>
+          <p className="text-xs text-[#5a5c5d] -mt-2">
+            Completá al menos uno de los dos rendimientos (porciones y/o gramos). El costo por unidad se calcula automáticamente.
+          </p>
 
           <div className="pt-6 border-t border-gray-100">
             {/* Header de la grilla */}
             <div className="hidden md:grid grid-cols-12 gap-4 items-end mb-2">
               <div className="col-span-6">
-                <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] mb-2 uppercase text-[10px]">INGREDIENTE / SUBPRODUCTO</label>
+                <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] mb-2 uppercase text-[10px]">INGREDIENTE / RECETA</label>
               </div>
               <div className="col-span-3">
                 <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] mb-2 uppercase text-[10px]">CANT. USADA</label>
@@ -626,7 +653,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                     <span className="text-[16px] leading-[1.5] font-medium text-[#151c27]">{getComponentName(ing)}</span>
                     {ing.componentType === 'subproduct' && (
                       <span className="inline-flex items-center ml-2 px-2 py-0.5 rounded-full bg-[#ffd9de] text-[#b80049] text-[10px] leading-[1.4] tracking-[0.05em] font-semibold whitespace-nowrap align-middle">
-                        Subproducto
+                        Receta
                       </span>
                     )}
                   </div>
@@ -681,8 +708,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                       }
                       const [type, id] = val.split(':');
                       if (type === 'subproduct') {
-                        const sub = subproducts.find(s => s.id === id);
-                        if (sub?.outputUnit) setNewUnit(sub.outputUnit);
+                        const sub = yieldRecipes.find(s => s.id === id);
+                        if (sub) setNewUnit('g');
                       } else {
                         const base = baseIngredients.find(i => i.id === id);
                         if (base) setNewUnit(base.unit);
@@ -690,7 +717,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                     }}
                   >
                     <SelectTrigger className="interactive-input w-full truncate rounded-lg border border-gray-200 bg-white px-4 py-3 text-[16px] text-[#5f5e5e] justify-between gap-2">
-                      <SelectValue placeholder="Seleccionar ingrediente o subproducto..." />
+                      <SelectValue placeholder="Seleccionar ingrediente o receta..." />
                     </SelectTrigger>
                     <SelectContent position="popper" side="bottom" className="bg-white border border-gray-200 rounded-xl shadow-lg max-w-[min(24rem,calc(100vw-2rem))]">
                       {sortedBaseIngredients.length > 0 && (
@@ -707,16 +734,16 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                           ))}
                         </SelectGroup>
                       )}
-                      {subproducts.length > 0 && (
+                      {yieldRecipes.length > 0 && (
                         <SelectGroup>
-                          <SelectLabel className="text-[#b80049] font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Subproductos</SelectLabel>
-                          {subproducts.map(sub => (
+                          <SelectLabel className="text-[#b80049] font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Recetas</SelectLabel>
+                          {yieldRecipes.map(sub => (
                             <SelectItem
                               key={`subproduct:${sub.id}`}
                               value={`subproduct:${sub.id}`}
                               className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
                             >
-                              {sub.name} — rinde {sub.outputQuantity} {sub.outputUnit}
+                              {sub.name} — rinde {sub.yieldGrams} g
                             </SelectItem>
                           ))}
                         </SelectGroup>
@@ -785,197 +812,225 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
           </div>
         </article>
 
-        {/* ── Costos Adicionales + Resumen ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          {/* Costos Adicionales */}
-          <div id="col-costos-adicionales">
-            <article className="bg-white rounded-[24px] border border-gray-100 p-8 card-animate delay-300" style={stitchShadow}>
-              <div className="flex items-center gap-3 mb-8">
-                <span className="material-symbols-outlined text-[#b80049] text-[28px]">local_shipping</span>
-                <h2 className="font-semibold text-[24px] leading-[1.3] text-[#151c27]" style={stitchFontManrope}>3. Costos Adicionales</h2>
+        {/* ── Resumen base (siempre visible) ── */}
+        <article
+          className="bg-[#b80049] rounded-[32px] p-8 text-white card-animate delay-300"
+          style={{ boxShadow: '0 20px 50px rgba(184, 0, 73, 0.3)' }}
+        >
+          <h2 className="font-bold text-[28px] mb-8" style={stitchFontManrope}>Resumen de Costos</h2>
+          <div className="space-y-4 text-sm text-[#ffb2be]" style={{ fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: '1.5' }}>
+            <div className="flex justify-between items-center border-b border-white/20 pb-4">
+              <span>Subtotal Ingredientes:</span>
+              <span className="text-white font-medium" style={{ fontSize: '20px', lineHeight: '1.2', fontWeight: '500', fontFamily: "'Inter', sans-serif" }}>{formatCurrency(componentsCost)}</span>
+            </div>
+            {minutes > 0 && (
+              <div className="flex justify-between items-center border-b border-white/20 pb-4">
+                <span>Mano de Obra ({minutes} min × {formatCurrency(hourlyRate)}/h):</span>
+                <span className="text-white font-medium" style={{ fontSize: '20px', lineHeight: '1.2', fontWeight: '500', fontFamily: "'Inter', sans-serif" }}>{formatCurrency(laborCost)}</span>
               </div>
-
-              <form
-                noValidate
-                onSubmit={(e) => { e.preventDefault(); addCostRow(); }}
-                className="space-y-6"
-              >
-                {currentRecipe.additionalCosts.map((row, index) => {
-                  const usedKeys = currentRecipe.additionalCosts
-                    .filter((r, i) => i !== index && !r.isCustom)
-                    .map(r => r.key);
-                  return (
-                    <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3">
-                      <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3">
-                        <select
-                          className="interactive-input w-full sm:w-56 px-3 py-2.5 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] text-sm"
-                          value={row.isCustom ? CUSTOM_EXTRA_COST_OPTION : row.key}
-                          onChange={(e) => updateCostRowPreset(index, e.target.value)}
-                        >
-                          {EXTRA_COST_PRESETS.map(preset => (
-                            <option key={preset.key} value={preset.key} disabled={usedKeys.includes(preset.key)}>
-                              {preset.label}
-                            </option>
-                          ))}
-                          <option value={CUSTOM_EXTRA_COST_OPTION}>Otro...</option>
-                        </select>
-                        {row.isCustom && (
-                          <input
-                            className="interactive-input w-full sm:w-56 px-3 py-2.5 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] text-sm"
-                            placeholder="Ej: Moldes descartables"
-                            type="text"
-                            value={row.label}
-                            onChange={(e) => updateCostRowLabel(index, e.target.value)}
-                          />
-                        )}
-                      </div>
-                      <div className="relative w-full sm:w-32">
-                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#c5c7c8] pointer-events-none">$</span>
-                        <input
-                          className="interactive-input w-full pl-8 pr-4 py-2.5 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-right text-[#151c27] placeholder:text-[#c5c7c8]"
-                          placeholder="0" type="number" min="0"
-                          value={row.value}
-                          onChange={(e) => updateCostRowValue(index, e.target.value)}
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeCostRow(index)}
-                        className="interactive-btn text-[#ba1a1a] hover:text-[#ffffff] w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#ffdad6] shrink-0"
-                        title="Quitar costo"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
-                      </button>
-                    </div>
-                  );
-                })}
-                <button
-                  type="submit"
-                  className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200"
-                >
-                  <span className="material-symbols-outlined text-[20px]">add</span>
-                  Agregar costo adicional
-                </button>
-              </form>
-
-              <hr className="border-gray-100 my-6" />
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-[14px] leading-[1.4] tracking-[0.05em] font-bold text-[#b80049]">Margen de Ganancia (%)</h3>
-                  <p className="text-[12px] text-[#5a5c5d]">Porcentaje extra sobre el costo total</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="relative w-20">
-                    <input
-                      className="interactive-input w-full px-4 py-2 rounded-lg border-2 border-[#ffd9de] bg-white text-center text-[#b80049] font-semibold placeholder:text-[#c5c7c8]"
-                      placeholder="Ej: 40" type="number" min="0" max="500"
-                      value={currentRecipe.profitMargin ?? ''}
-                      onChange={(e) => setCurrentRecipe({ ...currentRecipe, profitMargin: e.target.value })}
-                    />
-                  </div>
-                  <span className="text-[#b80049] font-bold">%</span>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2 pt-2">
-                {[10, 20, 30, 40].map((pct) => (
-                  <button
-                    key={pct}
-                    type="button"
-                    onClick={() => setCurrentRecipe({ ...currentRecipe, profitMargin: String(pct) })}
-                    className={`interactive-btn px-4 py-1.5 rounded-full transition-colors text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-xs ${
-                      String(currentRecipe.profitMargin) === String(pct)
-                        ? 'bg-[#ffd9de] text-[#400014]'
-                        : 'bg-[#ffd9de]/30 text-[#b80049] hover:bg-[#ffd9de]'
-                    }`}
-                  >
-                    {pct}%
-                  </button>
-                ))}
-              </div>
-            </article>
+            )}
+            <div className="flex justify-between items-center border-b border-white/20 pb-4">
+              <span>Costo Base:</span>
+              <span className="text-white font-medium" style={{ fontSize: '20px', lineHeight: '1.2', fontWeight: '500', fontFamily: "'Inter', sans-serif" }}>{formatCurrency(baseCost)}</span>
+            </div>
           </div>
 
-          {/* Resumen Total */}
-          <div id="col-resumen-total">
-            <article
-              className="bg-[#b80049] rounded-[32px] p-8 text-white card-animate delay-400"
-              style={{ boxShadow: '0 20px 50px rgba(184, 0, 73, 0.3)' }}
-            >
-              <h2
-                className="font-bold text-[28px] mb-8"
-                style={{ fontFamily: "'Manrope', sans-serif" }}
-              >
-                Resumen Total
-              </h2>
-              <div className="space-y-4 text-sm text-[#ffb2be]" style={{ fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: '1.5' }}>
-                <div className="flex justify-between items-center border-b border-white/20 pb-4">
-                  <span>Subtotal Ingredientes:</span>
-                  <span className="text-white font-medium" style={{ fontSize: '20px', lineHeight: '1.2', fontWeight: '500', fontFamily: "'Inter', sans-serif" }}>{formatCurrency(componentsCost)}</span>
-                </div>
-                <div className="flex justify-between items-center border-b border-white/20 pb-4">
-                  <span>Mano de Obra{minutes > 0 ? ` (${minutes} min × ${formatCurrency(hourlyRate)}/h)` : ''}:</span>
-                  <span className="text-white font-medium" style={{ fontSize: '20px', lineHeight: '1.2', fontWeight: '500', fontFamily: "'Inter', sans-serif" }}>{formatCurrency(laborCost)}</span>
-                </div>
-                <div className="flex justify-between items-center border-b border-white/20 pb-4">
-                  <span>Costos Extras / Packaging:</span>
-                  <span className="text-white font-medium" style={{ fontSize: '20px', lineHeight: '1.2', fontWeight: '500', fontFamily: "'Inter', sans-serif" }}>{formatCurrency(extraCostsTotal)}</span>
-                </div>
-                <div className="flex justify-between items-center border-b border-white/20 pb-4">
-                  <span>Costo Total Neto:</span>
-                  <span className="text-white font-medium" style={{ fontSize: '20px', lineHeight: '1.2', fontWeight: '500', fontFamily: "'Inter', sans-serif" }}>{formatCurrency(totalCost)}</span>
-                </div>
-                <div className="flex justify-between items-center pt-2">
-                  <span className="font-bold text-white text-base">Precio de Venta Sugerido ({margin}%):</span>
-                  <span className="text-white font-bold text-lg" style={{ fontSize: '20px', lineHeight: '1.2', fontWeight: '700', fontFamily: "'Inter', sans-serif" }}>{formatCurrency(salePriceTotal)}</span>
-                </div>
-              </div>
+          {hourlyRate === 0 && (
+            <p className="mt-4 text-[13px] text-[#ffd9de]">
+              Configurá tu valor hora en Inventario para calcular la mano de obra automáticamente.
+            </p>
+          )}
 
-              {hourlyRate === 0 && (
-                <p className="mt-4 text-[13px] text-[#ffd9de]">
-                  Configurá tu valor hora en Inventario para calcular la mano de obra automáticamente.
+          <div className="mt-8 pt-6 border-t border-white/20 grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {portions > 0 && (
+              <div>
+                <p className="uppercase tracking-widest text-[#ffd9de] mb-1 text-[10px] font-bold" style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: "'Inter', sans-serif" }}>
+                  COSTO POR PORCIÓN
                 </p>
-              )}
-
-              <div className="mt-10 pt-6 border-t border-white/20">
-                <p
-                  className="uppercase tracking-widest text-[#ffd9de] mb-1 text-[10px] font-bold"
-                  style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: "'Inter', sans-serif" }}
-                >
-                  COSTO POR UNIDAD
-                </p>
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="font-extrabold text-[42px] leading-none" style={{ fontFamily: "'Manrope', sans-serif", fontWeight: '800' }}>{formatCurrency(costPerUnitNet)}</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-extrabold text-[34px] leading-none" style={{ fontFamily: "'Manrope', sans-serif", fontWeight: '800' }}>{formatCurrency(costPerPortionNet)}</span>
                   <span className="text-[#ffb2be] text-sm">/ porción</span>
                 </div>
-                <p className="text-[13px] text-[#ffd9de] mb-8">
-                  Precio sugerido por porción: {formatCurrency(salePerUnit)}
-                </p>
-                <button
-                  onClick={saveRecipe}
-                  disabled={!canSave || isSaving}
-                  className="interactive-btn w-full py-4 bg-white text-[#b80049] rounded-full font-bold tracking-wider hover:bg-[#ffd9de] hover:text-[#400014] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: "'Inter', sans-serif" }}
-                >
-                  {isSaving ? 'GUARDANDO...' : (editingRecipeId ? 'ACTUALIZAR RECETA' : sandbox ? 'GUARDAR COMO RECETA OFICIAL' : 'GUARDAR RECETA')}
-                </button>
-                {!canSave && (
-                  <p className="mt-3 text-center text-[13px] text-[#ffd9de]">
-                    {!isNameValid ? 'Completá el nombre.' : !hasComponents ? 'Agregá al menos un ingrediente o subproducto.' : !isOutputValid ? 'Completá el rendimiento (porciones).' : 'Bloqueá el inventario para poder guardar recetas.'}
-                  </p>
-                )}
-                {editingRecipeId && (
-                  <button
-                    onClick={cancelEdit}
-                    className="interactive-btn mt-2 w-full py-2.5 bg-transparent border border-white text-white rounded-full font-bold hover:bg-white/10 transition-colors"
-                    style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: "'Inter', sans-serif" }}
-                  >
-                    CANCELAR
-                  </button>
-                )}
               </div>
-            </article>
+            )}
+            {grams > 0 && (
+              <div>
+                <p className="uppercase tracking-widest text-[#ffd9de] mb-1 text-[10px] font-bold" style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: "'Inter', sans-serif" }}>
+                  COSTO POR GRAMO
+                </p>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-extrabold text-[34px] leading-none" style={{ fontFamily: "'Manrope', sans-serif", fontWeight: '800' }}>{formatCurrency(costPerGramNet)}</span>
+                  <span className="text-[#ffb2be] text-sm">/ gr</span>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+
+          <div className="mt-10 pt-6 border-t border-white/20">
+            <button
+              onClick={saveRecipe}
+              disabled={!canSave || isSaving}
+              className="interactive-btn w-full py-4 bg-white text-[#b80049] rounded-full font-bold tracking-wider hover:bg-[#ffd9de] hover:text-[#400014] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: "'Inter', sans-serif" }}
+            >
+              {isSaving ? 'GUARDANDO...' : (editingRecipeId ? 'ACTUALIZAR RECETA' : sandbox ? 'GUARDAR COMO RECETA OFICIAL' : 'GUARDAR RECETA')}
+            </button>
+            {!canSave && (
+              <p className="mt-3 text-center text-[13px] text-[#ffd9de]">
+                {!isNameValid ? 'Completá el nombre.' : !hasComponents ? 'Agregá al menos un ingrediente o receta.' : !isOutputValid ? 'Completá el rendimiento (porciones y/o gramos).' : 'Bloqueá el inventario para poder guardar recetas.'}
+              </p>
+            )}
+            {editingRecipeId && (
+              <button
+                onClick={cancelEdit}
+                className="interactive-btn mt-2 w-full py-2.5 bg-transparent border border-white text-white rounded-full font-bold hover:bg-white/10 transition-colors"
+                style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: "'Inter', sans-serif" }}
+              >
+                CANCELAR
+              </button>
+            )}
+          </div>
+        </article>
+
+        {/* ── Costos Adicionales + Precio de Venta (acordeón opcional) ── */}
+        <Accordion type="single" collapsible className="bg-white rounded-[24px] border border-gray-100 overflow-hidden card-animate delay-400" style={stitchShadow}>
+          <AccordionItem value="costos" className="border-b-0">
+            <AccordionTrigger className="px-8 py-6 text-left text-[18px] font-semibold text-[#151c27] hover:no-underline hover:text-[#b80049] transition-colors" style={{ fontFamily: "'Manrope', sans-serif" }}>
+              <span className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-[#b80049] text-[24px]">local_shipping</span>
+                ¿Querés calcular costos adicionales y precio de venta?
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="px-8 pb-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                {/* Costos Adicionales */}
+                <div>
+                  <form
+                    noValidate
+                    onSubmit={(e) => { e.preventDefault(); addCostRow(); }}
+                    className="space-y-6"
+                  >
+                    <h3 className="text-[16px] leading-[1.4] tracking-[0.05em] font-bold text-[#b80049]">Costos Adicionales</h3>
+                    {currentRecipe.additionalCosts.map((row, index) => {
+                      const usedKeys = currentRecipe.additionalCosts
+                        .filter((r, i) => i !== index && !r.isCustom)
+                        .map(r => r.key);
+                      return (
+                        <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3">
+                          <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                            <select
+                              className="interactive-input w-full sm:w-56 px-3 py-2.5 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] text-sm"
+                              value={row.isCustom ? CUSTOM_EXTRA_COST_OPTION : row.key}
+                              onChange={(e) => updateCostRowPreset(index, e.target.value)}
+                            >
+                              {EXTRA_COST_PRESETS.map(preset => (
+                                <option key={preset.key} value={preset.key} disabled={usedKeys.includes(preset.key)}>
+                                  {preset.label}
+                                </option>
+                              ))}
+                              <option value={CUSTOM_EXTRA_COST_OPTION}>Otro...</option>
+                            </select>
+                            {row.isCustom && (
+                              <input
+                                className="interactive-input w-full sm:w-56 px-3 py-2.5 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] text-sm"
+                                placeholder="Ej: Moldes descartables"
+                                type="text"
+                                value={row.label}
+                                onChange={(e) => updateCostRowLabel(index, e.target.value)}
+                              />
+                            )}
+                          </div>
+                          <div className="relative w-full sm:w-32">
+                            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#c5c7c8] pointer-events-none">$</span>
+                            <input
+                              className="interactive-input w-full pl-8 pr-4 py-2.5 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-right text-[#151c27] placeholder:text-[#c5c7c8]"
+                              placeholder="0" type="number" min="0"
+                              value={row.value}
+                              onChange={(e) => updateCostRowValue(index, e.target.value)}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeCostRow(index)}
+                            className="interactive-btn text-[#ba1a1a] hover:text-[#ffffff] w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#ffdad6] shrink-0"
+                            title="Quitar costo"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                        </div>
+                      );
+                    })}
+                    <button
+                      type="submit"
+                      className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">add</span>
+                      Agregar costo adicional
+                    </button>
+                  </form>
+                </div>
+
+                {/* Margen + Precio de Venta */}
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-[14px] leading-[1.4] tracking-[0.05em] font-bold text-[#b80049]">Margen de Ganancia (%)</h3>
+                      <p className="text-[12px] text-[#5a5c5d]">Porcentaje extra sobre el costo total</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-20">
+                        <input
+                          className="interactive-input w-full px-4 py-2 rounded-lg border-2 border-[#ffd9de] bg-white text-center text-[#b80049] font-semibold placeholder:text-[#c5c7c8]"
+                          placeholder="Ej: 40" type="number" min="0" max="500"
+                          value={currentRecipe.profitMargin ?? ''}
+                          onChange={(e) => setCurrentRecipe({ ...currentRecipe, profitMargin: e.target.value })}
+                        />
+                      </div>
+                      <span className="text-[#b80049] font-bold">%</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[10, 20, 30, 40].map((pct) => (
+                      <button
+                        key={pct}
+                        type="button"
+                        onClick={() => setCurrentRecipe({ ...currentRecipe, profitMargin: String(pct) })}
+                        className={`interactive-btn px-4 py-1.5 rounded-full transition-colors text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-xs ${
+                          String(currentRecipe.profitMargin) === String(pct)
+                            ? 'bg-[#ffd9de] text-[#400014]'
+                            : 'bg-[#ffd9de]/30 text-[#b80049] hover:bg-[#ffd9de]'
+                        }`}
+                      >
+                        {pct}%
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="bg-[#f0f3ff] rounded-[24px] p-6 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase">Costos Extras / Packaging</span>
+                      <span className="text-[18px] font-semibold text-[#151c27]">{formatCurrency(extraCostsTotal)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase">Costo Total Neto</span>
+                      <span className="text-[18px] font-semibold text-[#151c27]">{formatCurrency(totalCost)}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-t border-[#e4bdc2] pt-3">
+                      <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-bold text-[#b80049]">Precio de Venta Sugerido ({margin}%)</span>
+                      <span className="text-[22px] font-bold text-[#b80049]">{formatCurrency(salePriceTotal)}</span>
+                    </div>
+                    {portions > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-[13px] text-[#5f5e5e]">Precio sugerido por porción</span>
+                        <span className="text-[15px] font-semibold text-[#151c27]">{formatCurrency(salePerUnit)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
 
       <UpgradeModal

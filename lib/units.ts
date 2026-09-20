@@ -23,3 +23,7 @@ export function costPerUnitLabel(unit: Unit | null): string {
     default:   return 'Costo por unidad';
   }
 }
+
+export function portionsLabel(portions: number): string {
+  return `${portions} ${portions === 1 ? 'porción' : 'porciones'}`;
+}

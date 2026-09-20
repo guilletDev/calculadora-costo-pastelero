@@ -7,10 +7,20 @@ import { Product, Recipe, BaseIngredient, ComponentType, Unit, AdditionalCost, E
 import { fetchRecipes } from '@/lib/recipes-db';
 import { fetchIngredients } from '@/lib/ingredients-db';
 import { fetchProductById, upsertProduct } from '@/lib/products-db';
-import { formatCurrency, proportionalCost, costPerOutputUnit, calculateTotalCost, sumIngredientCosts, calculateSalePrice, calculateIngredientCost } from '@/lib/cost';
+import { formatCurrency, proportionalCost, costPerGram, costPerPortion, calculateTotalCost, sumIngredientCosts, calculateSalePrice, calculateIngredientCost } from '@/lib/cost';
 import { toBaseQuantity } from '@/lib/units';
+import { portionsLabel } from '@/lib/units';
 import { navigateWithTransition } from '@/lib/view-transition';
 import { useAppBoot } from '@/components/boot/app-boot-context';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface ProductComponentDraft {
   componentType: ComponentType;
@@ -19,8 +29,9 @@ interface ProductComponentDraft {
   ingredientId: string | null;
   ingredientName: string | null;
   quantityUsed: string;
-  unit: Unit;
+  unit: Unit | null;
   cost: number;
+  useUnit: 'portion' | 'gram' | null;
 }
 
 interface ProductDraft {
@@ -80,6 +91,15 @@ function additionalCostsToExtraCosts(rows: AdditionalCost[]): Record<string, num
   return result;
 }
 
+const UNIT_OPTIONS: Unit[] = ['kg', 'g', 'l', 'ml', 'unidad'];
+
+function yieldLabel(recipe: Recipe): string {
+  const parts: string[] = [];
+  if (recipe.yieldPortions != null && recipe.yieldPortions > 0) parts.push(portionsLabel(recipe.yieldPortions));
+  if (recipe.yieldGrams != null && recipe.yieldGrams > 0) parts.push(`${recipe.yieldGrams} g`);
+  return parts.join(' • ');
+}
+
 export function ProductBuilder({ productId }: ProductBuilderProps) {
   const router = useRouter();
   const { products: bootProducts, applyLocal } = useAppBoot();
@@ -108,7 +128,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
           fetchIngredients(),
         ]);
         const eligible = recipes
-          .filter(r => r.outputQuantity != null && r.outputUnit != null)
+          .filter(r => (r.yieldPortions != null && r.yieldPortions > 0) || (r.yieldGrams != null && r.yieldGrams > 0))
           .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
         const sortedIngredients = [...ingredients].sort((a, b) =>
           a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
@@ -134,6 +154,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
               quantityUsed: String(c.quantityUsed),
               unit: c.unit,
               cost: c.cost,
+              useUnit: c.useUnit ?? null,
             })),
             additionalCosts: buildAdditionalCostsFromExtraCosts(product.extraCosts),
             profitMargin: String(product.profitMargin || ''),
@@ -148,16 +169,21 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     loadData();
   }, [productId, router]);
 
-  const computeCost = (component: ProductComponentDraft, quantityUsed: string, unit: Unit, fallback?: number): number => {
-    const qty = toBaseQuantity(parseFloat(quantityUsed) || 0, unit);
+  const computeCost = (component: ProductComponentDraft, quantityUsed: string, fallback?: number): number => {
+    const qty = parseFloat(quantityUsed) || 0;
     if (component.componentType === 'ingredient') {
       const ingredient = baseIngredients.find(i => i.id === component.ingredientId);
       if (!ingredient) return fallback ?? 0;
-      return calculateIngredientCost(ingredient.pricePerUnit, parseFloat(quantityUsed) || 0, unit);
+      return calculateIngredientCost(ingredient.pricePerUnit, qty, component.unit ?? 'g');
     }
     const recipe = eligibleRecipes.find(r => r.id === component.recipeId);
-    if (!recipe || recipe.outputQuantity == null) return fallback ?? 0;
-    return proportionalCost(recipe.totalCost, recipe.outputQuantity, qty);
+    if (!recipe) return fallback ?? 0;
+    if (component.useUnit === 'gram') {
+      if (recipe.yieldGrams == null) return fallback ?? 0;
+      return proportionalCost(recipe.totalCost, recipe.yieldGrams, qty);
+    }
+    if (recipe.yieldPortions == null) return fallback ?? 0;
+    return proportionalCost(recipe.totalCost, recipe.yieldPortions, qty);
   };
 
   const addComponentToProduct = () => {
@@ -165,7 +191,9 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     const [type, id] = selectedValue.split(':');
     if (type === 'recipe') {
       const recipe = eligibleRecipes.find(r => r.id === id);
-      if (!recipe || recipe.outputUnit == null) return;
+      if (!recipe) return;
+      const hasPortions = recipe.yieldPortions != null && recipe.yieldPortions > 0;
+      const hasGrams = recipe.yieldGrams != null && recipe.yieldGrams > 0;
       const row: ProductComponentDraft = {
         componentType: 'recipe',
         recipeId: recipe.id,
@@ -173,8 +201,9 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
         ingredientId: null,
         ingredientName: null,
         quantityUsed: '',
-        unit: recipe.outputUnit,
+        unit: null,
         cost: 0,
+        useUnit: hasPortions ? 'portion' : 'gram',
       };
       setDraft(prev => ({ ...prev, components: [row, ...prev.components] }));
     } else if (type === 'ingredient') {
@@ -189,6 +218,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
         quantityUsed: '',
         unit: ingredient.unit,
         cost: 0,
+        useUnit: null,
       };
       setDraft(prev => ({ ...prev, components: [row, ...prev.components] }));
     }
@@ -199,7 +229,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     setDraft(prev => {
       const components = prev.components.map((component, i) => {
         if (i !== index) return component;
-        const cost = computeCost(component, quantityUsed, component.unit, component.cost);
+        const cost = computeCost(component, quantityUsed, component.cost);
         return { ...component, quantityUsed, cost };
       });
       return { ...prev, components };
@@ -210,8 +240,19 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     setDraft(prev => {
       const components = prev.components.map((component, i) => {
         if (i !== index) return component;
-        const cost = computeCost(component, component.quantityUsed, unit, component.cost);
+        const cost = computeCost(component, component.quantityUsed, component.cost);
         return { ...component, unit, cost };
+      });
+      return { ...prev, components };
+    });
+  };
+
+  const updateComponentUseUnit = (index: number, useUnit: 'portion' | 'gram') => {
+    setDraft(prev => {
+      const components = prev.components.map((component, i) => {
+        if (i !== index) return component;
+        const cost = computeCost({ ...component, useUnit }, component.quantityUsed, component.cost);
+        return { ...component, useUnit, cost };
       });
       return { ...prev, components };
     });
@@ -259,8 +300,14 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
       return ingredient ? ingredient.pricePerUnit : null;
     }
     const recipe = eligibleRecipes.find(r => r.id === component.recipeId);
-    if (!recipe || recipe.outputQuantity == null) return null;
-    return costPerOutputUnit(recipe.totalCost, recipe.outputQuantity);
+    if (!recipe) return null;
+    if (component.useUnit === 'gram' && recipe.yieldGrams != null) {
+      return costPerGram(recipe.totalCost, recipe.yieldGrams);
+    }
+    if (recipe.yieldPortions != null) {
+      return costPerPortion(recipe.totalCost, recipe.yieldPortions);
+    }
+    return null;
   };
 
   const isReadOnlyRow = (component: ProductComponentDraft): boolean =>
@@ -294,6 +341,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
           quantityUsed: parseFloat(c.quantityUsed) || 0,
           unit: c.unit,
           cost: c.cost,
+          useUnit: c.useUnit,
         })),
         extraCosts: additionalCostsToExtraCosts(draft.additionalCosts),
         profitMargin: margin,
@@ -353,58 +401,74 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
         </div>
       </article>
 
-      {/* ── 2. Ingredientes y Subproductos ── */}
+      {/* ── 2. Ingredientes y Recetas ── */}
       <article className="bg-stitch-surface-container-lowest rounded-[32px] p-8 border border-stitch-outline-variant shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
         <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface mb-6 flex items-center gap-3">
           <span className="material-symbols-outlined text-stitch-primary">menu_book</span>
-          Ingredientes y Subproductos
+          Ingredientes y Recetas
         </h3>
 
         {eligibleRecipes.length === 0 && baseIngredients.length === 0 ? (
           <div className="bg-stitch-surface-container-low rounded-xl p-6 border border-stitch-outline-variant/50 text-center">
             <p className="font-stitch-body-md text-stitch-secondary mb-4">
-              Agregá recetas con rendimiento total o ingredientes al inventario para poder armar un producto.
+              Agregá recetas con rendimiento o ingredientes al inventario para poder armar un producto.
             </p>
             <a
-              href="/calculadora"
+              href="/recetas/nueva"
               className="inline-flex items-center gap-2 px-6 py-3 bg-stitch-primary text-on-primary rounded-xl font-stitch-label-sm text-stitch-label-sm hover:bg-stitch-surface-tint transition-colors"
             >
-              <span className="material-symbols-outlined text-[18px]">calculate</span>
-              Ir a la Calculadora
+              <span className="material-symbols-outlined text-[18px]">receipt_long</span>
+              Crear una receta
             </a>
           </div>
         ) : (
           <>
-            {/* Selector combinado */}
+            {/* Selector combinado (estética de la vista de Recetas) */}
             <form
+              noValidate
               onSubmit={(e) => { e.preventDefault(); addComponentToProduct(); }}
               className="flex flex-col sm:flex-row gap-4 mb-6"
             >
-              <select
-                className="w-full sm:w-auto flex-1 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-4 py-3 font-stitch-body-md text-stitch-body-md text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
-                value={selectedValue}
-                onChange={(e) => setSelectedValue(e.target.value)}
-              >
-                <option value="" disabled>Seleccionar ítem...</option>
-                {eligibleRecipes.length > 0 && (
-                  <optgroup label="Subproductos">
-                    {eligibleRecipes.map(recipe => (
-                      <option key={`recipe:${recipe.id}`} value={`recipe:${recipe.id}`}>
-                        {recipe.name} — rinde {recipe.outputQuantity} {recipe.outputUnit}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {baseIngredients.length > 0 && (
-                  <optgroup label="Ingredientes">
-                    {baseIngredients.map(ingredient => (
-                      <option key={`ingredient:${ingredient.id}`} value={`ingredient:${ingredient.id}`}>
-                        {ingredient.name} — {formatCurrency(ingredient.pricePerUnit)} / {ingredient.unit}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
+              <div className="flex-1">
+                <Select
+                  value={selectedValue || undefined}
+                  onValueChange={(val) => setSelectedValue(val)}
+                >
+                  <SelectTrigger className="interactive-input w-full truncate rounded-lg border border-gray-200 bg-white px-4 py-3 text-[16px] text-[#5f5e5e] justify-between gap-2">
+                    <SelectValue placeholder="Seleccionar ingrediente o receta..." />
+                  </SelectTrigger>
+                  <SelectContent position="popper" side="bottom" className="bg-white border border-gray-200 rounded-xl shadow-lg max-w-[min(26rem,calc(100vw-2rem))]">
+                    {baseIngredients.length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel className="text-[#b80049] font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Ingredientes</SelectLabel>
+                        {baseIngredients.map(ingredient => (
+                          <SelectItem
+                            key={`ingredient:${ingredient.id}`}
+                            value={`ingredient:${ingredient.id}`}
+                            className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
+                          >
+                            {ingredient.name} — {formatCurrency(ingredient.pricePerUnit)} / {ingredient.unit}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    )}
+                    {eligibleRecipes.length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel className="text-[#b80049] font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Recetas</SelectLabel>
+                        {eligibleRecipes.map(recipe => (
+                          <SelectItem
+                            key={`recipe:${recipe.id}`}
+                            value={`recipe:${recipe.id}`}
+                            className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
+                          >
+                            {recipe.name} — {yieldLabel(recipe)}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
               <button
                 type="submit"
                 disabled={!selectedValue}
@@ -426,19 +490,26 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
                   const baseCost = getBaseCostPerUnit(component);
                   const readOnly = isReadOnlyRow(component);
                   const displayName = component.recipeName ?? component.ingredientName ?? 'Ítem';
+                  const recipe = component.componentType === 'recipe'
+                    ? eligibleRecipes.find(r => r.id === component.recipeId)
+                    : null;
+                  const recipeHasBoth = recipe != null &&
+                    (recipe.yieldPortions != null && recipe.yieldPortions > 0) &&
+                    (recipe.yieldGrams != null && recipe.yieldGrams > 0);
+                  const isRecipe = component.componentType === 'recipe';
                   return (
                     <div key={index} className="bg-stitch-surface-container-low rounded-xl p-4 sm:p-5 border border-stitch-outline-variant/50">
                       <div className="flex flex-col md:flex-row gap-4 md:items-center">
                         <div className="flex-1 min-w-0">
                           <p className="font-stitch-body-md text-stitch-body-md font-medium text-stitch-on-surface truncate">{displayName}</p>
                           <p className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary font-normal mt-1">
-                            {component.componentType === 'recipe' ? 'Subproducto' : 'Ingrediente'}
-                            {baseCost != null && ` · Costo base: ${formatCurrency(baseCost)} / ${component.unit}`}
+                            {isRecipe ? 'Receta' : 'Ingrediente'}
+                            {baseCost != null && ` · Costo base: ${formatCurrency(baseCost)} / ${isRecipe ? (component.useUnit === 'gram' ? 'gr' : 'porción') : component.unit}`}
                           </p>
                         </div>
                         {readOnly ? (
                           <div className="flex items-center gap-3">
-                            <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{component.quantityUsed} {component.unit}</span>
+                            <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{component.quantityUsed} {isRecipe ? (component.useUnit === 'gram' ? 'gr' : 'porc.') : component.unit}</span>
                             <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{formatCurrency(component.cost)}</span>
                             <button
                               onClick={() => removeComponentFromProduct(index)}
@@ -450,27 +521,50 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
                           </div>
                         ) : (
                           <>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {/* Indicador de unidad (izquierda) */}
+                              {isRecipe ? (
+                                recipeHasBoth ? (
+                                  <select
+                                    className="bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-2 py-2.5 font-stitch-body-md text-stitch-body-md text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
+                                    value={component.useUnit ?? 'portion'}
+                                    onChange={(e) => updateComponentUseUnit(index, e.target.value as 'portion' | 'gram')}
+                                    title="Medir por"
+                                  >
+                                    <option value="portion">Porciones</option>
+                                    <option value="gram">Gramos</option>
+                                  </select>
+                                ) : (
+                                  <span className="px-3 py-2.5 text-sm font-medium text-stitch-secondary bg-stitch-surface-container-lowest rounded-xl border border-stitch-outline-variant whitespace-nowrap">
+                                    {component.useUnit === 'gram' ? 'Gramos' : 'Porciones'}
+                                  </span>
+                                )
+                              ) : (
+                                <select
+                                  className="w-20 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-2 py-2.5 font-stitch-body-md text-stitch-body-md text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
+                                  value={component.unit ?? 'g'}
+                                  onChange={(e) => updateComponentUnit(index, e.target.value as Unit)}
+                                  title="Unidad"
+                                >
+                                  {UNIT_OPTIONS.map(u => (
+                                    <option key={u} value={u}>{u === 'unidad' ? 'un' : u}</option>
+                                  ))}
+                                </select>
+                              )}
+                              {/* Input numérico (centro) */}
                               <input
                                 className="w-24 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-3 py-2.5 font-stitch-numeric-data text-stitch-numeric-data text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
                                 type="number"
                                 min="0.01"
                                 step="any"
-                                placeholder="250"
+                                placeholder={isRecipe ? (component.useUnit === 'gram' ? '250' : '1') : '250'}
                                 value={component.quantityUsed}
                                 onChange={(e) => updateComponentQuantity(index, e.target.value)}
                               />
-                              <select
-                                className="w-24 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-2 py-2.5 font-stitch-body-md text-stitch-body-md text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
-                                value={component.unit}
-                                onChange={(e) => updateComponentUnit(index, e.target.value as Unit)}
-                              >
-                                <option value="kg">kg</option>
-                                <option value="g">g</option>
-                                <option value="l">l</option>
-                                <option value="ml">ml</option>
-                                <option value="unidad">unidad</option>
-                              </select>
+                              {/* Etiqueta de unidad (derecha) */}
+                              <span className="w-8 text-sm text-stitch-secondary font-medium whitespace-nowrap text-left">
+                                {isRecipe ? (component.useUnit === 'gram' ? 'gr' : 'porc.') : (component.unit ?? 'g')}
+                              </span>
                             </div>
                             <div className="flex items-center justify-between md:justify-end gap-3">
                               <span className="font-stitch-numeric-data text-[20px] text-stitch-on-surface whitespace-nowrap">{formatCurrency(component.cost)}</span>

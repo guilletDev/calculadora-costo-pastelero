@@ -1,7 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
 import { Recipe, RecipeIngredient, Unit, SaleType, ExtraCosts } from './types';
 import { RecipeRow, RecipeIngredientRow } from './database.types';
-import { toBaseQuantity, toBaseUnit } from './units';
 
 // Convertir DB Row a Frontend Type
 function rowToRecipe(
@@ -12,14 +11,13 @@ function rowToRecipe(
     id: row.id,
     name: row.name,
     description: row.description ?? '',
-    unitsProduced: row.units_produced,
+    yieldPortions: row.yield_portions,
+    yieldGrams: row.yield_grams,
     saleType: row.sale_type as SaleType,
     extraCosts: row.extra_costs as ExtraCosts,
     profitMargin: row.profit_margin,
     totalCost: row.total_cost,
     costPerUnit: row.cost_per_unit,
-    outputQuantity: row.output_quantity,
-    outputUnit: row.output_unit as Unit | null,
     laborMinutes: row.labor_minutes ?? 0,
     ingredients: ingredientRows.map(ingRow => ({
       id: ingRow.id,
@@ -101,18 +99,17 @@ export async function upsertRecipe(recipeDraft: Omit<Recipe, 'id'>, id?: string)
     user_id: userId,
     name: recipeDraft.name,
     description: recipeDraft.description || '',
-    units_produced: recipeDraft.unitsProduced,
+    yield_portions: recipeDraft.yieldPortions && recipeDraft.yieldPortions > 0
+      ? recipeDraft.yieldPortions
+      : null,
+    yield_grams: recipeDraft.yieldGrams && recipeDraft.yieldGrams > 0
+      ? recipeDraft.yieldGrams
+      : null,
     sale_type: recipeDraft.saleType,
     extra_costs: recipeDraft.extraCosts,
     profit_margin: recipeDraft.profitMargin || 0,
     total_cost: recipeDraft.totalCost,
     cost_per_unit: recipeDraft.costPerUnit,
-    output_quantity: recipeDraft.outputQuantity != null && recipeDraft.outputUnit
-      ? toBaseQuantity(recipeDraft.outputQuantity, recipeDraft.outputUnit)
-      : null,
-    output_unit: recipeDraft.outputUnit
-      ? toBaseUnit(recipeDraft.outputUnit)
-      : null,
     labor_minutes: recipeDraft.laborMinutes || 0,
   };
 

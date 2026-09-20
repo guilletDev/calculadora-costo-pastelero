@@ -15,7 +15,7 @@ export default function NuevaRecetaPage() {
           Nueva Receta
         </h1>
         <p className="font-stitch-body-lg text-stitch-body-lg text-stitch-secondary max-w-2xl">
-          Armá tu receta con insumos y subproductos, sumá mano de obra y packaging, y calculá tu precio de venta.
+          Armá tu receta con ingredientes y recetas base, sumá mano de obra y packaging, y calculá tu precio de venta.
         </p>
       </section>
 

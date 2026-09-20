@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import { Recipe, BaseIngredient, EXTRA_COST_LABELS } from '@/lib/types';
 import { fetchIngredients } from '@/lib/ingredients-db';
 import { fetchRecipeById, deleteRecipe } from '@/lib/recipes-db';
-import { formatCurrency, sumExtraCosts, calculateRawCostPerUnit, costPerOutputUnit as calculateCostPerOutputUnit } from '@/lib/cost';
+import { formatCurrency, sumIngredientCosts, sumExtraCosts, costPerGram, costPerPortion, calculateRawCostPerUnit } from '@/lib/cost';
+import { portionsLabel } from '@/lib/units';
 import { TransitionLink } from '@/components/transition-link';
 import { navigateWithTransition } from '@/lib/view-transition';
 import { useAppBoot } from '@/components/boot/app-boot-context';
@@ -59,7 +60,9 @@ export default function RecetaDetailPage() {
   }, [ready, bootRecipes, bootIngredients, params.id, router]);
 
   const getIngredientName = (ing: Recipe['ingredients'][number]) =>
-    baseIngredients.find(i => i.id === ing.baseIngredientId)?.name ?? ing.ingredientName;
+    ing.componentType === 'subproduct'
+      ? (ing.subproductRecipeName ?? ing.ingredientName)
+      : (baseIngredients.find(i => i.id === ing.baseIngredientId)?.name ?? ing.ingredientName);
 
   const handleDelete = () => {
     if (!recipe) return;
@@ -117,19 +120,15 @@ export default function RecetaDetailPage() {
     );
   }
 
-  const budgetTotal = recipe.costPerUnit * (parseFloat(budgetQty) || 0);
-  const costPerUnitWithoutMargin = calculateRawCostPerUnit(recipe.totalCost, recipe.unitsProduced);
-  const costPerOutputUnit = calculateCostPerOutputUnit(recipe.totalCost, recipe.outputQuantity ?? 0);
-  const budgetNetProfit = budgetTotal - (costPerUnitWithoutMargin * (parseFloat(budgetQty) || 0));
-
+  const ingredientsCost = sumIngredientCosts(recipe.ingredients);
   const extraCostsTotal = sumExtraCosts(recipe.extraCosts);
+  const hasPortions = recipe.yieldPortions != null && recipe.yieldPortions > 0;
+  const hasGrams = recipe.yieldGrams != null && recipe.yieldGrams > 0;
 
   const salePricePerUnit = recipe.costPerUnit;
-  const totalSale = salePricePerUnit * recipe.unitsProduced;
-  const netProfit = totalSale - recipe.totalCost;
-
-  const hasOutput = !!(recipe.outputQuantity && recipe.outputQuantity > 0 && recipe.outputUnit);
-  const hasPorciones = recipe.unitsProduced > 0;
+  const budgetTotal = salePricePerUnit * (parseFloat(budgetQty) || 0);
+  const costPerUnitWithoutMargin = calculateRawCostPerUnit(recipe.totalCost, recipe.yieldPortions ?? 0);
+  const budgetNetProfit = budgetTotal - (costPerUnitWithoutMargin * (parseFloat(budgetQty) || 0));
 
   return (
     <main className="mx-auto w-full max-w-[900px] flex-1 px-5 py-10 space-y-8">
@@ -144,17 +143,19 @@ export default function RecetaDetailPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h2 className="font-stitch-headline-lg text-stitch-headline-lg-mobile md:text-stitch-headline-lg text-stitch-on-surface">{recipe.name}</h2>
-            {recipe.description && (
-              <p className="font-stitch-body-md text-stitch-body-md text-stitch-secondary mt-2 max-w-xl">
-                {recipe.description}
-              </p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2 className="font-stitch-headline-lg text-stitch-headline-lg-mobile md:text-stitch-headline-lg text-stitch-on-surface">{recipe.name}</h2>
+            {(hasPortions || hasGrams) && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#ffd9de] text-[#b80049] text-[11px] leading-[1.4] tracking-[0.05em] font-semibold whitespace-nowrap">
+                {[hasPortions ? portionsLabel(recipe.yieldPortions ?? 0) : '', hasGrams ? `${recipe.yieldGrams} g` : ''].filter(Boolean).join(' • ')}
+              </span>
             )}
-            {hasPorciones && (
-              <p className="font-stitch-body-lg text-stitch-body-lg text-stitch-secondary mt-1">
-                {recipe.unitsProduced} porciones · {recipe.profitMargin ?? 0}% de ganancia
-              </p>
-            )}
+          </div>
+          {recipe.description && (
+            <p className="font-stitch-body-md text-stitch-body-md text-stitch-secondary mt-2 max-w-xl">
+              {recipe.description}
+            </p>
+          )}
         </div>
         <div className="flex gap-3">
           <TransitionLink
@@ -175,138 +176,110 @@ export default function RecetaDetailPage() {
       </div>
 
       {/* Resumen de costos */}
-      {(hasPorciones || hasOutput) && (
-        <div className={`grid gap-6 ${hasPorciones ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1'}`}>
-          {hasPorciones && (
-            <>
-              {[
-                { label: 'Costo Ingredientes', value: formatCurrency(recipe.totalCost - extraCostsTotal), icon: 'egg' },
-                { label: 'Costos Adicionales', value: formatCurrency(extraCostsTotal), icon: 'inventory' },
-              ].map(({ label, value, icon }) => (
-                <div key={label} className="bg-stitch-surface-container-lowest rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary uppercase tracking-widest">{label}</span>
-                    <div className="w-8 h-8 rounded-full bg-stitch-surface-container-low flex items-center justify-center text-stitch-primary">
-                      <span className="material-symbols-outlined text-[18px]">{icon}</span>
-                    </div>
-                  </div>
-                  <div className="font-stitch-numeric-data text-[28px] leading-tight text-stitch-on-surface">{value}</div>
-                </div>
-              ))}
-            </>
-          )}
-          <div className="bg-stitch-surface-container-lowest rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary uppercase tracking-widest">Precio de Costo</span>
-              <div className="w-8 h-8 rounded-full bg-stitch-surface-container-low flex items-center justify-center text-stitch-on-surface-variant">
-                <span className="material-symbols-outlined text-[18px]">receipt</span>
-              </div>
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="bg-stitch-surface-container-lowest rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary uppercase tracking-widest">Costo Insumos</span>
+            <div className="w-8 h-8 rounded-full bg-stitch-surface-container-low flex items-center justify-center text-stitch-primary">
+              <span className="material-symbols-outlined text-[18px]">egg</span>
             </div>
-            <div className={`font-stitch-numeric-data leading-tight text-stitch-on-surface ${!hasPorciones && hasOutput ? 'text-[36px]' : 'text-[28px]'}`}>{formatCurrency(recipe.totalCost)}</div>
           </div>
-          {hasPorciones && (
-            <div className="bg-stitch-primary rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)] flex flex-col justify-between text-white">
-              <div className="flex items-center justify-between mb-4">
-                <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-primary-fixed-dim uppercase tracking-widest">Precio de Venta</span>
-                <div className="w-8 h-8 rounded-full bg-stitch-primary-fixed flex items-center justify-center text-stitch-primary">
-                  <span className="material-symbols-outlined text-[18px]">cake</span>
-                </div>
-              </div>
-              <div className="font-stitch-numeric-data text-[28px] leading-tight">{formatCurrency(recipe.costPerUnit)}</div>
-            </div>
-          )}
+          <div className="font-stitch-numeric-data text-[28px] leading-tight text-stitch-on-surface">{formatCurrency(ingredientsCost)}</div>
         </div>
-      )}
 
-      {/* Precio de venta y ganancia */}
-      {hasPorciones && (
-        <section className="bg-stitch-surface-container-lowest rounded-[32px] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-primary/20">
-          <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface mb-6 flex items-center gap-3">
-            <span className="material-symbols-outlined text-stitch-primary">trending_up</span>
-            Precio de Venta y Ganancia
-          </h3>
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <div className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-1">Porciones</div>
-              <div className="font-stitch-numeric-data text-[24px] text-stitch-on-surface">{recipe.unitsProduced}</div>
-            </div>
-            <div>
-              <div className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-1">Precio x Porción</div>
-              <div className="font-stitch-numeric-data text-[24px] text-stitch-on-surface">{formatCurrency(salePricePerUnit)}</div>
+        <div className="bg-stitch-surface-container-lowest rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary uppercase tracking-widest">Costos Adicionales</span>
+            <div className="w-8 h-8 rounded-full bg-stitch-surface-container-low flex items-center justify-center text-stitch-on-surface-variant">
+              <span className="material-symbols-outlined text-[18px]">inventory</span>
             </div>
           </div>
-          <div className="border-t border-stitch-outline-variant pt-4 mt-2 grid grid-cols-2 gap-6">
-            <div>
-              <div className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-1">Total Venta</div>
-              <div className="font-stitch-numeric-data text-[24px] text-stitch-on-surface">{formatCurrency(totalSale)}</div>
-            </div>
-            <div>
-              <div className="font-stitch-label-sm text-stitch-label-sm text-stitch-primary mb-1">Ganancia Neta</div>
-              <div className={`font-stitch-numeric-data text-[24px] font-bold ${netProfit > 0 ? 'text-emerald-600' : 'text-stitch-on-surface'}`}>{formatCurrency(netProfit)}</div>
+          <div className="font-stitch-numeric-data text-[28px] leading-tight text-stitch-on-surface">{formatCurrency(extraCostsTotal)}</div>
+        </div>
+
+        <div className="bg-stitch-surface-container-lowest rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary uppercase tracking-widest">Costo Total</span>
+            <div className="w-8 h-8 rounded-full bg-stitch-surface-container-low flex items-center justify-center text-stitch-on-surface-variant">
+              <span className="material-symbols-outlined text-[18px]">receipt</span>
             </div>
           </div>
-        </section>
-      )}
+          <div className="font-stitch-numeric-data text-[28px] leading-tight text-stitch-on-surface">{formatCurrency(recipe.totalCost)}</div>
+        </div>
 
-      {/* Subproducto */}
-      {hasOutput && (
+        <div className="bg-stitch-primary rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.08)] flex flex-col justify-between text-white">
+          <div className="flex items-center justify-between mb-4">
+            <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-primary-fixed-dim uppercase tracking-widest">Ganancia</span>
+            <div className="w-8 h-8 rounded-full bg-stitch-primary-fixed flex items-center justify-center text-stitch-primary">
+              <span className="material-symbols-outlined text-[18px]">trending_up</span>
+            </div>
+          </div>
+          <div className="font-stitch-numeric-data text-[28px] leading-tight">{recipe.profitMargin ?? 0}%</div>
+        </div>
+      </div>
+
+      {/* Costo por unidad */}
+      {(hasPortions || hasGrams) && (
         <section className="bg-stitch-surface-container-lowest rounded-[32px] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant">
           <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface mb-6 flex items-center gap-3">
             <span className="material-symbols-outlined text-stitch-primary">monitoring</span>
-            Subproducto
+            Costo por Unidad
           </h3>
-          <div className="space-y-3">
-            <p className="font-stitch-body-md text-stitch-body-md text-stitch-secondary">
-              Esta receta puede utilizarse como componente en Productos.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className={`grid gap-6 ${hasPortions && hasGrams ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+            {hasPortions && (
               <div className="bg-stitch-surface-container-low rounded-xl p-5 border border-stitch-outline-variant/50">
-                <div className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-2">Rendimiento</div>
-                <div className="font-stitch-numeric-data text-[32px] text-stitch-on-surface">
-                  {recipe.outputQuantity}<span className="text-[20px] text-stitch-secondary ml-1">{recipe.outputUnit}</span>
-                </div>
-              </div>
-              <div className="bg-stitch-surface-container-low rounded-xl p-5 border border-stitch-outline-variant/50">
-                <div className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-2">Costo base para Productos</div>
+                <div className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-2">Costo por porción</div>
                 <div className="font-stitch-numeric-data text-[32px] text-stitch-on-surface whitespace-nowrap">
-                  {formatCurrency(costPerOutputUnit)}<span className="text-[20px] text-stitch-secondary ml-1">/ {recipe.outputUnit}</span>
+                  {formatCurrency(costPerPortion(recipe.totalCost, recipe.yieldPortions ?? 0))}
+                  <span className="text-[20px] text-stitch-secondary ml-1">/ porción</span>
                 </div>
               </div>
-            </div>
-            <p className="font-stitch-body-md text-stitch-body-md text-stitch-secondary">
-              Productos calculará automáticamente el costo según la cantidad utilizada.
-            </p>
+            )}
+            {hasGrams && (
+              <div className="bg-stitch-surface-container-low rounded-xl p-5 border border-stitch-outline-variant/50">
+                <div className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-2">Costo por gramo</div>
+                <div className="font-stitch-numeric-data text-[32px] text-stitch-on-surface whitespace-nowrap">
+                  {formatCurrency(costPerGram(recipe.totalCost, recipe.yieldGrams ?? 0))}
+                  <span className="text-[20px] text-stitch-secondary ml-1">/ gr</span>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}
 
-      <div className={`grid gap-8 ${hasPorciones ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-        {/* Ingredientes */}
+      {/* Ingredientes */}
+      <section className="bg-stitch-surface-container-lowest rounded-[32px] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface">Ingredientes y Recetas</h3>
+          <span className="font-stitch-numeric-data text-stitch-numeric-data text-stitch-secondary">{formatCurrency(ingredientsCost)}</span>
+        </div>
+        <div className="divide-y divide-stitch-outline-variant/50">
+          {recipe.ingredients.map((ing) => (
+            <div key={ing.id} className="flex justify-between items-center py-3">
+              <div className="flex flex-col">
+                <span className="font-stitch-body-md text-stitch-body-md font-medium text-stitch-on-surface">
+                  {getIngredientName(ing)}
+                  {ing.componentType === 'subproduct' && (
+                    <span className="inline-flex items-center ml-2 px-2 py-0.5 rounded-full bg-[#ffd9de] text-[#b80049] text-[10px] leading-[1.4] tracking-[0.05em] font-semibold whitespace-nowrap align-middle">
+                      Receta
+                    </span>
+                  )}
+                </span>
+                <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary font-normal mt-1">{ing.quantityUsed} {ing.unit}</span>
+              </div>
+              <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{formatCurrency(ing.cost)}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Costos adicionales desglose */}
+      {extraCostsTotal > 0 && (
         <section className="bg-stitch-surface-container-lowest rounded-[32px] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface">Ingredientes</h3>
-          </div>
-          <div className="divide-y divide-stitch-outline-variant/50">
-            {recipe.ingredients.map((ing) => (
-              <div key={ing.id} className="flex justify-between items-center py-3">
-                <div className="flex flex-col">
-                  <span className="font-stitch-body-md text-stitch-body-md font-medium text-stitch-on-surface">{getIngredientName(ing)}</span>
-                  <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary font-normal mt-1">{ing.quantityUsed} {ing.unit}</span>
-                </div>
-                <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{formatCurrency(ing.cost)}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Costos adicionales */}
-        {hasPorciones && (
-          <section className="bg-stitch-surface-container-lowest rounded-[32px] p-8 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant">
-          <div className="flex justify-between items-center mb-6">
             <h3 className="font-stitch-headline-md text-stitch-headline-md text-stitch-on-surface">Costos Adicionales</h3>
-            {extraCostsTotal > 0 && (
-              <span className="font-stitch-numeric-data text-stitch-numeric-data text-stitch-secondary">{formatCurrency(extraCostsTotal)}</span>
-            )}
+            <span className="font-stitch-numeric-data text-stitch-numeric-data text-stitch-secondary">{formatCurrency(extraCostsTotal)}</span>
           </div>
           <div className="divide-y divide-stitch-outline-variant/50">
             {Object.entries(recipe.extraCosts)
@@ -317,16 +290,12 @@ export default function RecetaDetailPage() {
                   <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{formatCurrency(value)}</span>
                 </div>
               ))}
-            {extraCostsTotal === 0 && (
-              <div className="py-6 text-center font-stitch-body-md text-stitch-secondary">Sin costos adicionales registrados.</div>
-            )}
           </div>
         </section>
-        )}
-      </div>
+      )}
 
-      {/* Presupuesto para pedido */}
-      {hasPorciones && (
+      {/* Presupuesto para pedido (solo con porciones) */}
+      {hasPortions && (
         <section className="bg-stitch-surface-container-low rounded-[32px] p-8 lg:p-12 shadow-sm border border-stitch-outline-variant/30 relative overflow-hidden">
           <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-stitch-primary/5 to-transparent pointer-events-none hidden lg:block"></div>
           <div className="relative z-10">
@@ -369,7 +338,7 @@ export default function RecetaDetailPage() {
                 </div>
                 <div className="bg-stitch-surface-container-lowest rounded-xl p-4 text-center">
                   <p className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary mb-1">Precio por unidad</p>
-                  <p className="font-stitch-numeric-data text-xl md:text-[24px] text-stitch-on-surface">{formatCurrency(recipe.costPerUnit)}</p>
+                  <p className="font-stitch-numeric-data text-xl md:text-[24px] text-stitch-on-surface">{formatCurrency(salePricePerUnit)}</p>
                 </div>
                 <div className="bg-stitch-primary rounded-xl p-4 text-center shadow-[0_10px_40px_rgba(0,0,0,0.08)]">
                   <p className="font-stitch-label-sm text-stitch-label-sm text-stitch-primary-fixed-dim mb-1">Total del Pedido</p>

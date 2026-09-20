@@ -230,7 +230,9 @@ export default function ProductoDetallePage() {
                     {component.recipeName ?? component.ingredientName ?? 'Ítem'}
                   </span>
                   <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary font-normal mt-1">
-                    {component.componentType === 'recipe' ? 'Subproducto' : 'Ingrediente'} · {component.quantityUsed} {component.unit}
+                    {component.componentType === 'recipe'
+                      ? `Receta · ${component.quantityUsed} ${component.useUnit === 'gram' ? 'gr' : 'porc.'}`
+                      : `Ingrediente · ${component.quantityUsed} ${component.unit}`}
                   </span>
                 </div>
                 <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface">{formatCurrency(component.cost)}</span>

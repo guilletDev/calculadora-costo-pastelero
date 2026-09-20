@@ -13,7 +13,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const FREE_BENEFITS = [
   { icon: 'calculate', text: 'Calculadora de costos completa para tus recetas' },
   { icon: 'inventory_2', text: 'Inventario de ingredientes sin límites' },
-  { icon: 'menu_book', text: 'Recetas y subproductos ilimitados' },
+  { icon: 'menu_book', text: 'Recetas ilimitadas' },
   { icon: 'storefront', text: 'Productos ilimitados con márgenes de ganancia' },
 ];
 

@@ -58,13 +58,19 @@ export function calculateRecipeTotals(input: RecipeTotalsInput) {
   return { ingredientsCost, extraCostsTotal, totalCost, totalWithProfit, costPerUnit };
 }
 
-export function costPerOutputUnit(totalCost: number, outputQuantity: number): number {
-  if (!outputQuantity || outputQuantity <= 0) return 0;
-  return totalCost / outputQuantity;
+export function costPerPortion(totalCost: number, portions: number): number {
+  if (!portions || portions <= 0) return 0;
+  return totalCost / portions;
 }
 
-export function proportionalCost(totalCost: number, outputQuantity: number, usedQuantity: number): number {
-  return costPerOutputUnit(totalCost, outputQuantity) * usedQuantity;
+export function costPerGram(totalCost: number, grams: number): number {
+  if (!grams || grams <= 0) return 0;
+  return totalCost / grams;
+}
+
+export function proportionalCost(totalCost: number, yieldQty: number, usedQuantity: number): number {
+  if (!yieldQty || yieldQty <= 0) return 0;
+  return (totalCost / yieldQty) * usedQuantity;
 }
 
 export function calculateSalePrice(totalCost: number, marginPercent: number): number {

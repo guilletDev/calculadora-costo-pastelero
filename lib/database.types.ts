@@ -18,14 +18,13 @@ export interface RecipeRow {
   user_id: string;
   name: string;
   description: string | null;
-  units_produced: number;
+  yield_portions: number | null;
+  yield_grams: number | null;
   sale_type: string;
   extra_costs: Record<string, number>;
   profit_margin: number;
   total_cost: number;
   cost_per_unit: number;
-  output_quantity: number | null;
-  output_unit: string | null;
   labor_minutes: number;
   created_at: string;
   updated_at: string;
@@ -65,8 +64,9 @@ export interface ProductRecipeRow {
   ingredient_id: string | null;
   ingredient_name: string | null;
   quantity_used: number;
-  unit: string;
+  unit: string | null;
   cost: number;
+  use_unit: string | null;
 }
 
 export interface ProfileRow {
