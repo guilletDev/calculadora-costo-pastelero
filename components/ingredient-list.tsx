@@ -22,11 +22,20 @@ interface IngredientListProps {
   onLockChange?: (isLocked: boolean) => void;
   onIngredientsChange?: (ingredients: BaseIngredient[]) => void;
   ingredientsVersion?: number;
+  lockEnabled?: boolean;
+  title?: string;
 }
 
-export function IngredientList({ onLockChange, onIngredientsChange, ingredientsVersion = 0 }: IngredientListProps) {
+export function IngredientList({
+  onLockChange,
+  onIngredientsChange,
+  ingredientsVersion = 0,
+  lockEnabled = true,
+  title = '1. Inventario de Ingredientes',
+}: IngredientListProps) {
   const [ingredients, setIngredients] = useState<BaseIngredient[]>([]);
   const [isLocked, setIsLocked] = useState(false);
+  const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
@@ -44,6 +53,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   });
 
   const handleLockToggle = (locked: boolean) => {
+    if (!lockEnabled) return;
     setIsLocked(locked);
     storage.saveIsLocked(locked);
     onLockChange?.(locked);
@@ -76,10 +86,11 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   }, [applyLocal]);
 
   useEffect(() => {
+    if (!lockEnabled) return;
     const savedLocked = storage.getIsLocked();
     setIsLocked(savedLocked);
     onLockChange?.(savedLocked);
-  }, [onLockChange]);
+  }, [onLockChange, lockEnabled]);
 
   // Seed inicial desde el boot cache (evita el fetch inicial duplicado)
   useEffect(() => {
@@ -95,12 +106,13 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
 
   // Auto-desbloquear si no hay ingredientes (ej: al migrar a DB vacía con localStorage bloqueado)
   useEffect(() => {
+    if (!lockEnabled) return;
     if (!isLoading && ingredients.length === 0 && isLocked) {
       setIsLocked(false);
       storage.saveIsLocked(false);
       onLockChange?.(false);
     }
-  }, [isLoading, ingredients.length, isLocked, onLockChange]);
+  }, [isLoading, ingredients.length, isLocked, onLockChange, lockEnabled]);
 
   useEffect(() => {
     if (ingredientsVersion === 0) return;
@@ -229,14 +241,30 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
   };
 
   const totalInvestment = ingredients.reduce((sum, ing) => sum + ing.totalPrice, 0);
+  const locked = lockEnabled && isLocked;
+  const filteredIngredients = ingredients.filter(ing =>
+    ing.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <>
       <article className="bg-white rounded-[24px] border border-gray-100 overflow-hidden card-animate delay-100" style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.04)' }}>
       <div className="p-8 border-b border-gray-100 flex items-center gap-3">
         <span className="material-symbols-outlined text-[#b80049] text-[28px]">inventory_2</span>
-        <h2 className="font-semibold text-[24px] leading-[1.3] text-[#151c27]" style={{ fontFamily: "'Manrope', sans-serif" }}>1. Inventario de Ingredientes</h2>
+        <h2 className="font-semibold text-[24px] leading-[1.3] text-[#151c27]" style={{ fontFamily: "'Manrope', sans-serif" }}>{title}</h2>
       </div>
+
+      {ingredients.length > 0 && (
+        <div className="px-8 pt-6">
+          <input
+            className="interactive-input w-full sm:w-80 px-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
+            placeholder="Buscar ingrediente..."
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      )}
 
       <div className="overflow-x-auto custom-scrollbar">
         {isLoading ? (
@@ -254,18 +282,24 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
                 <th className="pb-4 pt-8 font-semibold">CANTIDAD</th>
                 <th className="pb-4 pt-8 font-semibold">UNIDAD</th>
                 <th className="pb-4 pt-8 font-semibold text-right pr-8">PRECIO TOTAL</th>
-                {!isLocked && <th className="pb-4 pt-8 w-24"></th>}
+                {!locked && <th className="pb-4 pt-8 w-24"></th>}
               </tr>
             </thead>
             <tbody className="text-[16px] leading-[1.5] text-[#151c27] divide-y divide-gray-50">
               {ingredients.length === 0 ? (
                 <tr>
-                  <td colSpan={!isLocked ? 5 : 4} className="p-8 text-center text-[#5f5e5e] text-[16px]">
+                  <td colSpan={!locked ? 5 : 4} className="p-8 text-center text-[#5f5e5e] text-[16px]">
                     Agrega ingredientes para registrar en el inventario.
                   </td>
                 </tr>
+              ) : filteredIngredients.length === 0 ? (
+                <tr>
+                  <td colSpan={!locked ? 5 : 4} className="p-8 text-center text-[#5f5e5e] text-[16px]">
+                    Sin resultados para &quot;{search}&quot;.
+                  </td>
+                </tr>
               ) : (
-                ingredients.map((ingredient) => (
+                filteredIngredients.map((ingredient) => (
                   editingId === ingredient.id ? (
                     <tr key={ingredient.id} className="interactive-row bg-[#ffd9de]/10">
                       <td className="pl-8 py-3">
@@ -339,7 +373,7 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
                         </span>
                       </td>
                       <td className="py-4 text-right text-[#b80049] text-[20px] leading-[1.2] font-medium pr-8">{formatCurrency(ingredient.totalPrice)}</td>
-                      {!isLocked && (
+                      {!locked && (
                         <td className="py-4 pr-8">
                           <div className="flex gap-1.5 justify-end">
                             <button
@@ -370,8 +404,11 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
       </div>
 
       {/* Formulario para añadir ingrediente nuevo */}
-      {!isLocked && !isLoading && (isAdding ? (
-        <div className="p-8 border-t border-gray-100 bg-[#f0f3ff]">
+      {!locked && !isLoading && (isAdding ? (
+        <form
+          onSubmit={(e) => { e.preventDefault(); handleSave(); }}
+          className="p-8 border-t border-gray-100 bg-[#f0f3ff]"
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-1.5">
               <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Nombre</label>
@@ -418,18 +455,18 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
             </div>
           </div>
           <div className="flex gap-2 justify-end mt-4">
-            <button onClick={handleCancel} className="interactive-btn px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200">
+            <button type="button" onClick={handleCancel} className="interactive-btn px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200">
               Cancelar
             </button>
             <button
-              onClick={handleSave}
+              type="submit"
               disabled={isSaving}
               className="interactive-btn px-6 py-3 bg-[#b80049] text-white rounded-full text-[16px] font-medium disabled:opacity-50"
             >
               {isSaving ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
-        </div>
+        </form>
       ) : (
         <div className="p-8 border-t border-gray-100">
           <button onClick={() => { if (guardUpgrade('ingredients', ingredients.length)) setIsAdding(true); }} className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200">
@@ -445,25 +482,27 @@ export function IngredientList({ onLockChange, onIngredientsChange, ingredientsV
             <p className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase mb-1">Inversión total en ingredientes</p>
             <p className="font-bold text-[28px] md:text-[32px] leading-[1.2] tracking-[-0.01em] text-[#b80049]" style={{ fontFamily: "'Manrope', sans-serif" }}>{formatCurrency(totalInvestment)}</p>
           </div>
-          <div className="flex gap-2">
-            {isLocked ? (
-              <button
-                onClick={() => handleLockToggle(false)}
-                className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200"
-              >
-                <span className="material-symbols-outlined text-[20px]">edit</span>
-                Editar Inventario
-              </button>
-            ) : (
-              <button
-                onClick={() => handleLockToggle(true)}
-                className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#b80049] text-white rounded-full text-[16px] font-medium"
-              >
-                <span className="material-symbols-outlined text-[20px]">check_circle</span>
-                Guardar y Habilitar Recetas
-              </button>
-            )}
-          </div>
+          {lockEnabled && (
+            <div className="flex gap-2">
+              {isLocked ? (
+                <button
+                  onClick={() => handleLockToggle(false)}
+                  className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200"
+                >
+                  <span className="material-symbols-outlined text-[20px]">edit</span>
+                  Editar Inventario
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleLockToggle(true)}
+                  className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#b80049] text-white rounded-full text-[16px] font-medium"
+                >
+                  <span className="material-symbols-outlined text-[20px]">check_circle</span>
+                  Guardar y Habilitar Recetas
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </article>

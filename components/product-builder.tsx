@@ -376,7 +376,10 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
         ) : (
           <>
             {/* Selector combinado */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <form
+              onSubmit={(e) => { e.preventDefault(); addComponentToProduct(); }}
+              className="flex flex-col sm:flex-row gap-4 mb-6"
+            >
               <select
                 className="w-full sm:w-auto flex-1 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-4 py-3 font-stitch-body-md text-stitch-body-md text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
                 value={selectedValue}
@@ -403,14 +406,14 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
                 )}
               </select>
               <button
-                onClick={addComponentToProduct}
+                type="submit"
                 disabled={!selectedValue}
                 className="flex items-center justify-center gap-2 px-6 py-3 bg-stitch-primary text-on-primary rounded-xl font-stitch-label-sm text-stitch-label-sm hover:bg-stitch-surface-tint transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 <span className="material-symbols-outlined text-[18px]">add</span>
                 Agregar
               </button>
-            </div>
+            </form>
 
             {/* Rows */}
             {draft.components.length === 0 ? (

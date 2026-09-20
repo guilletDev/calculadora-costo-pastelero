@@ -158,7 +158,7 @@ export default function RecetaDetailPage() {
         </div>
         <div className="flex gap-3">
           <TransitionLink
-            href={`/calculadora?edit=${recipe.id}#recipe-builder`}
+            href={`/recetas/nueva?edit=${recipe.id}#recipe-builder`}
             className="flex items-center gap-2 px-6 py-3 border border-stitch-outline-variant rounded-xl text-stitch-on-surface hover:bg-stitch-surface-container-low transition-colors font-stitch-label-sm text-stitch-label-sm"
           >
             <span className="material-symbols-outlined text-[18px]">edit</span>

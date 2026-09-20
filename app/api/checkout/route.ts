@@ -24,6 +24,10 @@ export async function POST() {
   }
 
   const externalReference = `${user.id}:${Date.now()}`;
+  console.log('[checkout] Creando preferencia', {
+    userId: user.id,
+    external_reference: externalReference,
+  });
 
   try {
     const preference = await getPreferenceClient().create({

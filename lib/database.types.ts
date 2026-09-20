@@ -26,6 +26,7 @@ export interface RecipeRow {
   cost_per_unit: number;
   output_quantity: number | null;
   output_unit: string | null;
+  labor_minutes: number;
   created_at: string;
   updated_at: string;
 }
@@ -38,6 +39,9 @@ export interface RecipeIngredientRow {
   quantity_used: number;
   unit: string;
   cost: number;
+  component_type: string;
+  subproduct_recipe_id: string | null;
+  subproduct_recipe_name: string | null;
 }
 
 export interface ProductRow {
@@ -69,6 +73,7 @@ export interface ProfileRow {
   id: string;
   plan_type: string;
   pro_valid_until: string | null;
+  hourly_rate: number;
   created_at: string;
   updated_at: string;
 }

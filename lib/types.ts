@@ -16,6 +16,9 @@ export interface RecipeIngredient {
   quantityUsed: number;
   unit: Unit;
   cost: number;
+  componentType?: 'ingredient' | 'subproduct';
+  subproductRecipeId?: string | null;
+  subproductRecipeName?: string | null;
 }
 
 export type ExtraCosts = Record<string, number>;
@@ -51,6 +54,7 @@ export interface Recipe {
   profitMargin?: number;
   outputQuantity: number | null;
   outputUnit: Unit | null;
+  laborMinutes?: number;
 }
 
 export type ComponentType = 'recipe' | 'ingredient';

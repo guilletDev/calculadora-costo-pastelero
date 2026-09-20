@@ -20,6 +20,7 @@ function rowToRecipe(
     costPerUnit: row.cost_per_unit,
     outputQuantity: row.output_quantity,
     outputUnit: row.output_unit as Unit | null,
+    laborMinutes: row.labor_minutes ?? 0,
     ingredients: ingredientRows.map(ingRow => ({
       id: ingRow.id,
       baseIngredientId: ingRow.ingredient_id,
@@ -27,6 +28,9 @@ function rowToRecipe(
       quantityUsed: ingRow.quantity_used,
       unit: ingRow.unit as Unit,
       cost: ingRow.cost,
+      componentType: ingRow.component_type as 'ingredient' | 'subproduct',
+      subproductRecipeId: ingRow.subproduct_recipe_id,
+      subproductRecipeName: ingRow.subproduct_recipe_name,
     })),
   };
 }
@@ -109,6 +113,7 @@ export async function upsertRecipe(recipeDraft: Omit<Recipe, 'id'>, id?: string)
     output_unit: recipeDraft.outputUnit
       ? toBaseUnit(recipeDraft.outputUnit)
       : null,
+    labor_minutes: recipeDraft.laborMinutes || 0,
   };
 
   let recipeId = id;
@@ -161,13 +166,18 @@ export async function upsertRecipe(recipeDraft: Omit<Recipe, 'id'>, id?: string)
         unit = 'ml';
       }
 
+      const isSubproduct = ing.componentType === 'subproduct';
+
       return {
         recipe_id: recipeId,
-        ingredient_id: ing.baseIngredientId,
-        ingredient_name: ing.ingredientName,
+        ingredient_id: isSubproduct ? null : ing.baseIngredientId,
+        ingredient_name: isSubproduct ? (ing.subproductRecipeName ?? ing.ingredientName) : ing.ingredientName,
         quantity_used: quantityUsed,
         unit,
         cost: ing.cost,
+        component_type: isSubproduct ? 'subproduct' : 'ingredient',
+        subproduct_recipe_id: isSubproduct ? ing.subproductRecipeId : null,
+        subproduct_recipe_name: isSubproduct ? (ing.subproductRecipeName ?? null) : null,
       };
     });
 

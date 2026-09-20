@@ -8,6 +8,8 @@ export function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !serviceRoleKey) {
+    console.error('[supabase-admin] Faltan variables de entorno de Supabase (service_role). ' +
+      'Verificá que NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY estén configuradas en Vercel.');
     throw new Error('Faltan variables de entorno de Supabase (service_role)');
   }
 

@@ -97,9 +97,11 @@ export function Navbar() {
   };
 
   const navLinks = [
-    { href: '/calculadora', label: 'Calculadora', icon: 'calculate' },
-    { href: '/recetas',     label: 'Recetas',      icon: 'menu_book' },
-    { href: '/productos',   label: 'Productos',    icon: 'storefront' },
+    { href: '/dashboard',    label: 'Dashboard',    icon: 'dashboard' },
+    { href: '/inventario',   label: 'Inventario',   icon: 'inventory' },
+    { href: '/subproductos', label: 'Subproductos', icon: 'layers' },
+    { href: '/recetas',      label: 'Recetas',      icon: 'menu_book' },
+    { href: '/productos',    label: 'Productos',    icon: 'storefront' },
   ];
 
   const isActive = (href: string) =>
@@ -146,7 +148,7 @@ export function Navbar() {
         <div className="mx-auto flex w-full max-w-[1000px] items-center justify-between px-5 py-3">
 
           {/* Logo */}
-          <TransitionLink href="/calculadora" className="flex items-center gap-2.5 shrink-0">
+          <TransitionLink href="/dashboard" className="flex items-center gap-2.5 shrink-0">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ee2b6c] text-white shrink-0">
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>bakery_dining</span>
             </div>
@@ -208,23 +210,41 @@ export function Navbar() {
                 </div>
               </div>
 
-              {/* Links de navegación */}
-              {navLinks.map(({ href, label, icon }) => (
-                <DropdownMenuItem key={href} asChild>
-                  <TransitionLink
-                    href={href}
-                    onClick={() => setDropdownOpen(false)}
-                    className={`flex items-center gap-2.5 px-2 py-2 rounded-sm text-sm font-semibold transition-colors ${
-                      isActive(href)
-                        ? 'text-[#ee2b6c] bg-[#ee2b6c]/5'
-                        : 'text-slate-600 hover:text-[#ee2b6c] dark:text-slate-400'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{icon}</span>
-                    {label}
-                  </TransitionLink>
-                </DropdownMenuItem>
-              ))}
+              {/* Mi Perfil */}
+              <DropdownMenuItem asChild>
+                <TransitionLink
+                  href="/perfil"
+                  onClick={() => setDropdownOpen(false)}
+                  className={`flex items-center gap-2.5 px-2 py-2 rounded-sm text-sm font-semibold transition-colors ${
+                    pathname === '/perfil'
+                      ? 'text-[#ee2b6c] bg-[#ee2b6c]/5'
+                      : 'text-slate-600 hover:text-[#ee2b6c] dark:text-slate-400'
+                  }`}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>person</span>
+                  Mi Perfil
+                </TransitionLink>
+              </DropdownMenuItem>
+
+              {/* Links de navegación (solo mobile: en desktop ya están en el header) */}
+              <div className="md:hidden">
+                {navLinks.map(({ href, label, icon }) => (
+                  <DropdownMenuItem key={href} asChild>
+                    <TransitionLink
+                      href={href}
+                      onClick={() => setDropdownOpen(false)}
+                      className={`flex items-center gap-2.5 px-2 py-2 rounded-sm text-sm font-semibold transition-colors ${
+                        isActive(href)
+                          ? 'text-[#ee2b6c] bg-[#ee2b6c]/5'
+                          : 'text-slate-600 hover:text-[#ee2b6c] dark:text-slate-400'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{icon}</span>
+                      {label}
+                    </TransitionLink>
+                  </DropdownMenuItem>
+                ))}
+              </div>
 
               <DropdownMenuSeparator />
 

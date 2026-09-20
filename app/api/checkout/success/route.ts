@@ -15,12 +15,23 @@ export async function GET(req: NextRequest) {
   const paymentId = searchParams.get('payment_id');
   const mpStatus = searchParams.get('status');
 
+  console.log('[checkout/success] Retorno de Mercado Pago recibido', {
+    payment_id: paymentId ?? null,
+    status_param: mpStatus ?? null,
+    url: req.url,
+  });
+
   const redirectTo = (result: string) =>
     NextResponse.redirect(buildAppUrl(`/pro/estado?result=${result}`), 303);
 
   // Sin payment_id no hay nada que verificar: el webhook + el polling cubren
   // la activación asincrónica.
   if (!paymentId) {
+    return redirectTo('pending');
+  }
+
+  // Hint temprano del estado: si MP ya avisó que quedó pendiente, no consultamos la API.
+  if (mpStatus === 'pending' || mpStatus === 'in_process') {
     return redirectTo('pending');
   }
 
@@ -39,6 +50,10 @@ export async function GET(req: NextRequest) {
 
   // Seguridad: solo activamos si el pago pertenece al usuario autenticado.
   const paymentUserId = parseUserIdFromExternalReference(payment.external_reference);
+  console.log('[checkout/success] Verificación de pertenencia', {
+    paymentUserId: paymentUserId ?? null,
+    authedUserId: user?.id ?? null,
+  });
   if (!paymentUserId || (user && paymentUserId !== user.id)) {
     console.warn(
       `[checkout/success] payment_id ${paymentId} no corresponde al usuario autenticado`
@@ -57,9 +72,12 @@ export async function GET(req: NextRequest) {
     return redirectTo('pending');
   }
 
+  console.log('[checkout/success] Plan activado correctamente', { paymentId, userId: paymentUserId });
+
   // Invalidar la caché de Next para que el estado PRO se refleje de inmediato
   revalidatePath('/pro/estado', 'layout');
   revalidatePath('/', 'layout');
+  revalidatePath('/dashboard', 'layout');
 
   return redirectTo('success');
 }
