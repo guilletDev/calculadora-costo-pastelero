@@ -66,18 +66,23 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    await activateProPlan(payment);
+    const result = await activateProPlan(payment);
+    console.log('[checkout/success] Resultado de la activación', result);
+
+    // Informar al frontend si el pago fue una extensión de un plan vigente.
+    const wasPro = result.status === 'activated' && result.wasActive ? '1' : '0';
+
+    // Invalidar la caché de Next para que el estado PRO se refleje de inmediato
+    revalidatePath('/pro/estado', 'layout');
+    revalidatePath('/', 'layout');
+    revalidatePath('/dashboard', 'layout');
+
+    return NextResponse.redirect(
+      buildAppUrl(`/pro/estado?result=success&waspro=${wasPro}`),
+      303
+    );
   } catch (error) {
     console.error('[checkout/success] Error activando plan:', error);
     return redirectTo('pending');
   }
-
-  console.log('[checkout/success] Plan activado correctamente', { paymentId, userId: paymentUserId });
-
-  // Invalidar la caché de Next para que el estado PRO se refleje de inmediato
-  revalidatePath('/pro/estado', 'layout');
-  revalidatePath('/', 'layout');
-  revalidatePath('/dashboard', 'layout');
-
-  return redirectTo('success');
 }

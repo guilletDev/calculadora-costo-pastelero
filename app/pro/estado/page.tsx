@@ -14,6 +14,12 @@ const POLL_INTERVAL_MS = 2000;
 function EstadoContent() {
   const searchParams = useSearchParams();
   const result = searchParams.get('result') ?? 'pending';
+  const wasPro = searchParams.get('waspro');
+  const successTitle = wasPro === '1'
+    ? '¡Plan extendido exitosamente!'
+    : wasPro === '0'
+      ? `¡Ya sos ${PRO_PLAN_NAME}!`
+      : '¡Pago exitoso!';
   const [proValidUntil, setProValidUntil] = useState<string | null>(null);
   const [waiting, setWaiting] = useState(true);
 
@@ -68,15 +74,15 @@ function EstadoContent() {
         </div>
         {proValidUntil ? (
           <>
-            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-2">¡Ya sos {PRO_PLAN_NAME}!</h1>
+            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-2">{successTitle}</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">
               Tu plan está activo hasta el <span className="font-semibold text-slate-700 dark:text-slate-200">{formatProValidUntil(proValidUntil)}</span>.
             </p>
             <TransitionLink
-              href="/calculadora"
+              href="/dashboard"
               className="inline-block w-full rounded-full bg-[#ee2b6c] text-white text-sm font-semibold py-3.5 transition-all duration-300 hover:scale-[1.02] hover:bg-[#d4235e]"
             >
-              Volver a la calculadora
+              Volver al inicio
             </TransitionLink>
           </>
         ) : (
@@ -89,10 +95,10 @@ function EstadoContent() {
             </p>
             {!waiting && (
               <TransitionLink
-                href="/calculadora"
+                href="/dashboard"
                 className="inline-block w-full rounded-full bg-[#ee2b6c] text-white text-sm font-semibold py-3.5 transition-all duration-300 hover:scale-[1.02] hover:bg-[#d4235e]"
               >
-                Volver a la calculadora
+                Volver al inicio
               </TransitionLink>
             )}
           </>
@@ -117,10 +123,10 @@ function EstadoContent() {
             className="w-full rounded-full bg-[#ee2b6c] text-white text-sm font-semibold py-3.5 transition-all duration-300 hover:scale-[1.02] hover:bg-[#d4235e]"
           />
           <TransitionLink
-            href="/calculadora"
+            href="/dashboard"
             className="inline-block w-full rounded-full border border-[#e4bdc2] text-slate-700 dark:text-slate-300 text-sm font-semibold py-3.5 transition-all duration-300 hover:bg-[#f0f3ff] dark:hover:bg-slate-800"
           >
-            Seguir con el plan gratuito
+            Volver al inicio
           </TransitionLink>
         </div>
       </div>
@@ -138,10 +144,10 @@ function EstadoContent() {
       </p>
       <div className="flex flex-col gap-3">
         <TransitionLink
-          href="/calculadora"
+          href="/dashboard"
           className="inline-block w-full rounded-full bg-[#ee2b6c] text-white text-sm font-semibold py-3.5 transition-all duration-300 hover:scale-[1.02] hover:bg-[#d4235e]"
         >
-          Volver a la calculadora
+          Volver al inicio
         </TransitionLink>
         <UpgradeButton
           label="Pagar de nuevo"

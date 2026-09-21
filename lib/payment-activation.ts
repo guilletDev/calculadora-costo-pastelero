@@ -22,7 +22,7 @@ export function parseUserIdFromExternalReference(
 }
 
 export type ActivationResult =
-  | { status: 'activated'; userId: string }
+  | { status: 'activated'; userId: string; wasActive: boolean }
   | { status: 'duplicate'; userId: string }
   | { status: 'ignored'; reason: string };
 
@@ -117,6 +117,10 @@ export async function activateProPlan(payment: PaymentLike): Promise<ActivationR
     : Date.now();
   const newValidUntil = new Date(baseMs + DAYS_MS).toISOString();
 
+  // ¿El usuario ya tenía un plan Pro vigente antes de este pago? (extensión)
+  const wasActive = profile?.pro_valid_until != null
+    && new Date(profile.pro_valid_until).getTime() > Date.now();
+
   const { error: updateError } = await admin
     .from('profiles')
     .update({ plan_type: 'pro', pro_valid_until: newValidUntil })
@@ -133,8 +137,9 @@ export async function activateProPlan(payment: PaymentLike): Promise<ActivationR
   console.log('[payment-activation] Perfil actualizado a PRO', {
     userId,
     pro_valid_until: newValidUntil,
+    wasActive,
     profileAnterior: profile?.pro_valid_until ?? null,
   });
 
-  return { status: 'activated', userId };
+  return { status: 'activated', userId, wasActive };
 }

@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 import { TransitionLink } from '@/components/transition-link';
 import { UpgradeButton } from '@/components/upgrade-button';
 import { useAppBoot } from '@/components/boot/app-boot-context';
@@ -170,34 +170,27 @@ function DashboardContent() {
 
       {/* ── Banner Mercado Pago (solo Free) ── */}
       {!loadingPlan && !isPro && (
-        <section className="bg-[#2a313d] text-[#ebf1ff] rounded-[32px] p-8 md:p-12 border border-[#b80049] relative shadow-floating overflow-hidden animate-fade-up">
-          <div className="absolute -top-4 left-8 bg-[#b80049] text-white text-xs px-4 py-1.5 rounded-full flex items-center gap-1.5 font-bold shadow-sm">
-            <span className="material-symbols-outlined text-[14px]">star</span> Más elegido
-          </div>
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mt-4">
+        <section className="bg-[#1e2330] text-white rounded-[24px] p-8 md:p-10 border border-[#b80049]/40 shadow-floating relative overflow-hidden animate-fade-up">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
             <div className="max-w-xl">
-              <h2 className="text-[28px] font-bold tracking-tight mb-3" style={{ fontFamily: "'Manrope', sans-serif" }}>
+              <h2 className="text-[24px] md:text-[28px] font-bold tracking-tight mb-4" style={{ fontFamily: "'Manrope', sans-serif" }}>
                 Desbloqueá el {PRO_PLAN_NAME}
               </h2>
-              <p className="text-[15px] leading-[1.6] opacity-80 mb-4">
-                Recetas e ingredientes ilimitados, cálculo de márgenes y sugerencia de precios para llevar tu
-                pastelería al siguiente nivel.
-              </p>
-              <ul className="space-y-2 text-[14px]">
+              <ul className="space-y-2.5">
                 {[
                   'Recetas e ingredientes ilimitados',
                   'Cálculo de márgenes y sugerencia de precios',
                   'Exportación a PDF/Excel',
                 ].map((benefit) => (
-                  <li key={benefit} className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-[#ffb2be] text-[18px]">check</span>
-                    <span className="opacity-90">{benefit}</span>
+                  <li key={benefit} className="flex items-center gap-2.5 text-[14px] text-slate-200">
+                    <Check className="w-4 h-4 text-[#ffb2be] shrink-0" />
+                    {benefit}
                   </li>
                 ))}
               </ul>
             </div>
             <div className="flex flex-col items-start lg:items-end gap-4 shrink-0">
-              <div className="text-[40px] font-extrabold tracking-tight" style={{ fontFamily: "'Manrope', sans-serif" }}>
+              <div className="text-[36px] font-extrabold tracking-tight" style={{ fontFamily: "'Manrope', sans-serif" }}>
                 {PRO_PLAN_LABEL.split(' / ')[0]}
                 <span className="text-base font-normal opacity-80"> / {PRO_PLAN_LABEL.split(' / ')[1]}</span>
               </div>
