@@ -6,9 +6,9 @@ import { createClient } from '@/utils/supabase/client';
 export default function LoginPage() {
   const handleLogin = async () => {
     const supabase = createClient();
-    const origin = typeof window !== 'undefined'
+    const origin = typeof window !== 'undefined' && window.location.origin
       ? window.location.origin
-      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://costorepostero.com');
+      : 'https://costorepostero.com';
 
     const cleanOrigin = origin.replace(/\/+$/, '');
     const redirectTo = `${cleanOrigin}/auth/callback`;

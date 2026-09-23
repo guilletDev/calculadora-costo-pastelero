@@ -2,6 +2,17 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
+  // Si Supabase hizo fallback a la raíz con el código de OAuth, lo
+  // reenviamos al callback para intercambiar la sesión (evita el
+  // getUser() innecesario al responder antes de crear el cliente).
+  const { pathname, searchParams } = request.nextUrl;
+  if (pathname === '/' && searchParams.has('code')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/auth/callback';
+    url.search = `?code=${searchParams.get('code')}`;
+    return NextResponse.redirect(url);
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
