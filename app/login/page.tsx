@@ -1,9 +1,21 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
 
+type AuthMode = 'login' | 'register';
+
 export default function LoginPage() {
+  const router = useRouter();
+  const [mode, setMode] = useState<AuthMode>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [loading, setLoading] = useState(false);
+
   const handleLogin = async () => {
     const supabase = createClient();
     const origin = typeof window !== 'undefined' && window.location.origin
@@ -21,16 +33,74 @@ export default function LoginPage() {
     });
   };
 
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loading) return;
+    if (!email.trim() || !password) return;
+
+    if (mode === 'register' && password.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    setLoading(true);
+    const supabase = createClient();
+    try {
+      if (mode === 'login') {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (error) {
+          if (error.message.toLowerCase().includes('invalid')) {
+            toast.error('Email o contraseña incorrectos');
+          } else {
+            toast.error(error.message);
+          }
+          return;
+        }
+        toast.success('¡Bienvenido de nuevo!');
+        router.push('/dashboard');
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: { data: { full_name: fullName.trim() } },
+        });
+        if (error) {
+          const msg = error.message.toLowerCase();
+          if (error.code === 'email_exists' || error.code === 'user_already_exists' || msg.includes('already registered') || msg.includes('already exists')) {
+            toast.error('Ya existe una cuenta con ese email. Iniciá sesión.');
+          } else {
+            toast.error(error.message);
+          }
+          return;
+        }
+        if (data.session) {
+          toast.success('¡Cuenta creada!');
+          router.push('/dashboard');
+        } else {
+          toast.success('Revisá tu correo para confirmar la cuenta.');
+          setMode('login');
+        }
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error de autenticación');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-[#f9f9ff] text-[#151c27] h-[100vh] flex flex-col md:flex-row overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Left Panel (Brand/Marketing) */}
       <div className="hidden md:flex flex-col justify-between w-[45%] h-full bg-[#151c27] text-white p-12 lg:p-16 relative overflow-hidden">
         {/* Subtle Radial Gradient */}
-        <div 
+        <div
           className="absolute inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(circle at 50% 0%, rgba(233, 30, 99, 0.15) 0%, transparent 70%)' }}
         ></div>
-        
+
         {/* Logo */}
         <div className="z-10 flex items-center gap-2.5">
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity">
@@ -67,15 +137,15 @@ export default function LoginPage() {
             ))}
           </ul>
         </div>
-        
+
         {/* Footer */}
         <div className="z-10 text-[14px] font-[600] tracking-wide text-[#dce2f3]/50">
           © 2026 CostoRepostero
         </div>
       </div>
 
-      {/* Right Panel (Login Form) */}
-      <div className="flex flex-col items-center justify-center w-full md:w-[55%] h-full bg-white p-6 overflow-hidden relative">
+      {/* Right Panel (Auth Form) */}
+      <div className="min-h-screen w-full md:w-[55%] bg-white p-4 flex flex-col items-center justify-center relative">
         {/* Mobile Logo (Visible only on small screens) */}
         <div className="md:hidden flex items-center gap-2 mb-12">
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity">
@@ -88,19 +158,21 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <div className="w-full max-w-[480px] bg-white rounded-3xl p-8 md:p-12 border border-[#e4bdc2]/30 shadow-sm flex flex-col gap-8 relative">
+        <div className="w-full max-w-[480px] bg-white rounded-3xl p-6 md:p-8 border border-[#e4bdc2]/30 shadow-sm flex flex-col gap-5 relative">
           {/* Header */}
           <div className="text-center md:text-left flex flex-col gap-2">
-            <h2 className="text-[32px] leading-[1.2] font-[700] text-[#151c27] tracking-tight" style={{ fontFamily: "'Manrope', sans-serif" }}>
-              Bienvenido nuevamente
+            <h2 className="text-[28px] leading-[1.2] font-[700] text-[#151c27] tracking-tight" style={{ fontFamily: "'Manrope', sans-serif" }}>
+              {mode === 'login' ? 'Bienvenido nuevamente' : 'Creá tu cuenta'}
             </h2>
-            <p className="text-[16px] text-[#5b3f43]">
-              Inicia sesión para continuar gestionando tus recetas y costos.
+            <p className="text-[15px] text-[#5b3f43]">
+              {mode === 'login'
+                ? 'Inicia sesión para continuar gestionando tus recetas y costos.'
+                : 'Registrate gratis y empezá a calcular el costo real de tus recetas.'}
             </p>
           </div>
-          
+
           {/* Form */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
             {/* Google Sign In */}
             <button
               onClick={handleLogin}
@@ -114,6 +186,104 @@ export default function LoginPage() {
               </svg>
               Continuar con Google
             </button>
+
+            {/* Separador */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-[#e4bdc2]/50" />
+              <span className="text-[11px] text-[#5b3f43] uppercase tracking-widest font-semibold">
+                o ingresá con email
+              </span>
+              <div className="flex-1 h-px bg-[#e4bdc2]/50" />
+            </div>
+
+            {/* Tabs: Iniciar Sesión / Registrarse */}
+            <div className="grid grid-cols-2 gap-1 p-1 bg-[#f0f3ff] rounded-full">
+              <button
+                type="button"
+                onClick={() => setMode('login')}
+                className={`py-2.5 rounded-full text-sm font-semibold transition-all ${
+                  mode === 'login'
+                    ? 'bg-[#b80049] text-white shadow-sm'
+                    : 'text-[#5b3f43] hover:text-[#151c27]'
+                }`}
+              >
+                Iniciar Sesión
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('register')}
+                className={`py-2.5 rounded-full text-sm font-semibold transition-all ${
+                  mode === 'register'
+                    ? 'bg-[#b80049] text-white shadow-sm'
+                    : 'text-[#5b3f43] hover:text-[#151c27]'
+                }`}
+              >
+                Registrarse
+              </button>
+            </div>
+
+            {/* Email / Password form */}
+            <form onSubmit={handleEmailSubmit} className="flex flex-col gap-3">
+              {mode === 'register' && (
+                <div>
+                  <label className="block text-sm font-semibold text-[#5b3f43] mb-1.5">Nombre completo</label>
+                  <input
+                    className="w-full px-4 py-3 rounded-xl border border-[#e4bdc2] bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8] focus:ring-2 focus:ring-[#b80049]/20 focus:border-[#b80049] outline-none transition-all text-[15px]"
+                    placeholder="Ej: María González"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-semibold text-[#5b3f43] mb-1.5">Email</label>
+                <input
+                  className="w-full px-4 py-3 rounded-xl border border-[#e4bdc2] bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8] focus:ring-2 focus:ring-[#b80049]/20 focus:border-[#b80049] outline-none transition-all text-[15px]"
+                  placeholder="tucorreo@ejemplo.com"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[#5b3f43] mb-1.5">Contraseña</label>
+                <input
+                  className="w-full px-4 py-3 rounded-xl border border-[#e4bdc2] bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8] focus:ring-2 focus:ring-[#b80049]/20 focus:border-[#b80049] outline-none transition-all text-[15px]"
+                  placeholder="••••••••"
+                  type="password"
+                  required
+                  minLength={mode === 'register' ? 6 : undefined}
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                {mode === 'login' && (
+                  <div className="flex justify-end mt-2">
+                    <Link
+                      href="/forgot-password"
+                      className="text-[12px] text-[#b80049] font-medium hover:underline"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </Link>
+                  </div>
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full bg-[#b80049] text-white text-[14px] font-bold tracking-wide hover:bg-[#bc004b] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading && (
+                  <span className="material-symbols-outlined animate-spin" style={{ fontSize: 18 }}>progress_activity</span>
+                )}
+                {loading
+                  ? 'Procesando...'
+                  : mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
+              </button>
+            </form>
           </div>
 
           <div className="pt-2 text-center">
