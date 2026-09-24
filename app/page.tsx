@@ -494,7 +494,7 @@ export default function LandingPage() {
               </a>
               <a
                 className="text-sm text-[#5f5e5e] hover:text-[#b80049] transition-colors"
-                href="#"
+                href="/terminos-y-condiciones"
                 style={{ fontFamily: "'Inter', sans-serif" }}
               >
                 Términos y Condiciones

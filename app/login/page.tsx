@@ -286,6 +286,28 @@ export default function LoginPage() {
             </form>
           </div>
 
+          <p className="text-xs text-muted-foreground text-center mt-4">
+            Al continuar con Google o registrarte, aceptás nuestros{' '}
+            <a
+              href="/terminos-y-condiciones"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-[#b80049] transition-colors"
+            >
+              Términos y Condiciones
+            </a>{' '}
+            y nuestra{' '}
+            <a
+              href="/privacidad"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-[#b80049] transition-colors"
+            >
+              Política de Privacidad
+            </a>
+            .
+          </p>
+
           <div className="pt-2 text-center">
             <Link
               href="/"

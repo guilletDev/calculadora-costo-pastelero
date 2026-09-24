@@ -177,7 +177,7 @@ export function Navbar() {
           <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
             <DropdownMenuTrigger asChild>
               <button
-                className="group flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="group flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-offset-0 select-none"
                 aria-label="Perfil de usuario"
                 aria-expanded={dropdownOpen}
               >
