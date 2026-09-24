@@ -7,7 +7,7 @@ import { AppBootProvider } from '@/components/boot/app-boot-context';
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = pathname === '/login' || pathname.startsWith('/auth/');
-  const isLandingPage = pathname === '/';
+  const isLandingPage = pathname === '/' || pathname === '/privacidad';
 
   if (isAuthPage || isLandingPage) {
     return <>{children}</>;

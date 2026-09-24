@@ -487,7 +487,7 @@ export default function LandingPage() {
               <h4 className="text-base text-[#151c27] mb-2 font-bold">Legal</h4>
               <a
                 className="text-sm text-[#5f5e5e] hover:text-[#b80049] transition-colors"
-                href="#"
+                href="/privacidad"
                 style={{ fontFamily: "'Inter', sans-serif" }}
               >
                 Privacidad
