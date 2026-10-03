@@ -17,6 +17,16 @@ import { FREE_TIER_INGREDIENTS_LIMIT } from '@/lib/limits';
 import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
 import { UpgradeModal } from '@/components/upgrade-modal';
 import { useAppBoot } from '@/components/boot/app-boot-context';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface IngredientListProps {
   onLockChange?: (isLocked: boolean) => void;
@@ -42,6 +52,7 @@ export function IngredientList({
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
+  const [deleteTarget, setDeleteTarget] = useState<BaseIngredient | null>(null);
   const { ready, ingredients: bootIngredients, applyLocal } = useAppBoot();
 
   // Estado para edición inline de un ingrediente existente
@@ -226,6 +237,7 @@ export function IngredientList({
       setIngredients(updated);
       applyLocal({ ingredients: updated });
       onIngredientsChange?.(updated);
+      toast.success('Ingrediente eliminado correctamente');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar';
       toast.error(message);
@@ -384,7 +396,7 @@ export function IngredientList({
                               <span className="material-symbols-outlined text-[18px]">edit</span>
                             </button>
                             <button
-                              onClick={() => handleDelete(ingredient.id)}
+                              onClick={() => setDeleteTarget(ingredient)}
                               disabled={isSaving}
                               className="interactive-btn p-1.5 text-[#5f5e5e] hover:text-[#ba1a1a] rounded-lg hover:bg-[#ffdad6]/30 disabled:opacity-50"
                               title="Eliminar"
@@ -512,6 +524,42 @@ export function IngredientList({
         onOpenChange={(open) => { if (!open) closeUpgrade(); }}
         resourceType={upgradeType ?? 'ingredients'}
       />
+
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent className="max-w-sm rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant">
+          <AlertDialogHeader>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#ffdad6]">
+              <span className="material-symbols-outlined text-[#ba1a1a]" style={{ fontSize: 24 }}>delete</span>
+            </div>
+            <AlertDialogTitle className="text-center text-base font-bold text-stitch-on-surface">
+              ¿Eliminar ingrediente?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-sm text-stitch-secondary leading-relaxed">
+              ¿Estás seguro de que querés eliminar &quot;{deleteTarget?.name}&quot;? Esta acción no se
+              puede deshacer y puede afectar las recetas o productos que utilicen este insumo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-2 sm:flex-row gap-2">
+            <AlertDialogCancel
+              className="flex-1 rounded-md border border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface font-semibold text-sm py-2.5 hover:bg-stitch-surface-container-low transition-colors"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!deleteTarget) return;
+                const id = deleteTarget.id;
+                setDeleteTarget(null);
+                await handleDelete(id);
+              }}
+              disabled={isSaving}
+              className="flex-1 rounded-md bg-[#ba1a1a] text-white font-semibold text-sm py-2.5 hover:bg-[#a31313] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? 'Eliminando...' : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
