@@ -130,6 +130,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const [hourlyRate, setHourlyRate] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
+  const didInitRef = useRef(false);
 
   const searchParams = useSearchParams();
 
@@ -177,7 +178,11 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   }, [searchParams]);
 
   useEffect(() => {
-    if (!ready) return;
+    // Prefill una sola vez por montaje: evita que applyLocal() (que cambia
+    // bootRecipes) re-aplique el ?edit= o el draft tras guardar y deje el
+    // formulario pegado en "modo edición".
+    if (!ready || didInitRef.current) return;
+    didInitRef.current = true;
 
     setBaseIngredients([...bootIngredients].sort((a, b) =>
       a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })

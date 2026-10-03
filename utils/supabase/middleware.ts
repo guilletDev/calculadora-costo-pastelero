@@ -13,6 +13,11 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // La landing es pública: no hace falta sesión ni refrescar cookies.
+  if (pathname === '/') {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })

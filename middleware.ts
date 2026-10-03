@@ -12,9 +12,12 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - login (auth page we'll create)
+     * - api/ (route handlers: no corren Supabase Auth)
+     * - auth/ (callback y páginas de auth)
+     * - páginas públicas (privacidad, terminos, forgot-password)
+     * - assets estáticos (svg/png/jpg/jpeg/gif/webp)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|auth/|privacidad|terminos-y-condiciones|forgot-password|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

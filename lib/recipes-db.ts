@@ -2,11 +2,10 @@ import { createClient } from '@/utils/supabase/client';
 import { Recipe, RecipeIngredient, Unit, SaleType, ExtraCosts } from './types';
 import { RecipeRow, RecipeIngredientRow } from './database.types';
 
-// Convertir DB Row a Frontend Type
-function rowToRecipe(
-  row: RecipeRow,
-  ingredientRows: RecipeIngredientRow[]
-): Recipe {
+// Convertir DB Row (con recipe_ingredients embebido) a Frontend Type
+type RecipeRowWithIngredients = RecipeRow & { recipe_ingredients: RecipeIngredientRow[] | null };
+
+function rowToRecipe(row: RecipeRowWithIngredients): Recipe {
   return {
     id: row.id,
     name: row.name,
@@ -19,7 +18,7 @@ function rowToRecipe(
     totalCost: row.total_cost,
     costPerUnit: row.cost_per_unit,
     laborMinutes: row.labor_minutes ?? 0,
-    ingredients: ingredientRows.map(ingRow => ({
+    ingredients: (row.recipe_ingredients ?? []).map(ingRow => ({
       id: ingRow.id,
       baseIngredientId: ingRow.ingredient_id,
       ingredientName: ingRow.ingredient_name,
@@ -36,33 +35,18 @@ function rowToRecipe(
 export async function fetchRecipes(): Promise<Recipe[]> {
   const supabase = createClient();
   
+  // recipe_ingredients tiene DOS FKs hacia recipes (recipe_id y
+  // subproduct_recipe_id de la migración 013): el hint desambigua el embed.
   const { data: recipesData, error: recipesError } = await supabase
     .from('recipes')
-    .select('*')
+    .select('*, recipe_ingredients!recipe_ingredients_recipe_id_fkey(*)')
     .order('created_at', { ascending: false });
 
   if (recipesError) throw new Error(`Error al cargar recetas: ${recipesError.message}`);
 
   if (!recipesData || recipesData.length === 0) return [];
 
-  const recipeIds = recipesData.map(r => r.id);
-
-  const { data: ingredientsData, error: ingredientsError } = await supabase
-    .from('recipe_ingredients')
-    .select('*')
-    .in('recipe_id', recipeIds);
-
-  if (ingredientsError) throw new Error(`Error al cargar ingredientes de recetas: ${ingredientsError.message}`);
-
-  const ingredientsByRecipe = (ingredientsData || []).reduce((acc, curr) => {
-    if (!acc[curr.recipe_id]) acc[curr.recipe_id] = [];
-    acc[curr.recipe_id].push(curr);
-    return acc;
-  }, {} as Record<string, RecipeIngredientRow[]>);
-
-  return (recipesData as RecipeRow[]).map(row => 
-    rowToRecipe(row, ingredientsByRecipe[row.id] || [])
-  );
+  return (recipesData as RecipeRowWithIngredients[]).map(rowToRecipe);
 }
 
 export async function fetchRecipeById(id: string): Promise<Recipe | null> {
@@ -70,7 +54,7 @@ export async function fetchRecipeById(id: string): Promise<Recipe | null> {
   
   const { data: recipeData, error: recipeError } = await supabase
     .from('recipes')
-    .select('*')
+    .select('*, recipe_ingredients!recipe_ingredients_recipe_id_fkey(*)')
     .eq('id', id)
     .single();
 
@@ -79,14 +63,7 @@ export async function fetchRecipeById(id: string): Promise<Recipe | null> {
     throw new Error(`Error al cargar receta: ${recipeError.message}`);
   }
 
-  const { data: ingredientsData, error: ingredientsError } = await supabase
-    .from('recipe_ingredients')
-    .select('*')
-    .eq('recipe_id', id);
-
-  if (ingredientsError) throw new Error(`Error al cargar ingredientes de receta: ${ingredientsError.message}`);
-
-  return rowToRecipe(recipeData as RecipeRow, ingredientsData as RecipeIngredientRow[]);
+  return rowToRecipe(recipeData as RecipeRowWithIngredients);
 }
 
 export async function upsertRecipe(recipeDraft: Omit<Recipe, 'id'>, id?: string): Promise<Recipe> {

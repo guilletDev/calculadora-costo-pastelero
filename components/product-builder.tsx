@@ -479,9 +479,9 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
             <form
               noValidate
               onSubmit={(e) => { e.preventDefault(); addComponentToProduct(); }}
-              className="flex flex-col sm:flex-row gap-4 mb-6"
+              className="flex flex-col md:flex-row items-center gap-3 mb-6"
             >
-              <div className="flex-1 min-w-0">
+              <div className="w-full md:flex-1 md:min-w-0">
                 <Select
                   key={selectKey}
                   value={selectedValue || undefined}
@@ -502,10 +502,10 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
                     }
                   }}
                 >
-                  <SelectTrigger className="interactive-input w-full truncate rounded-lg border border-gray-200 bg-white px-4 py-3 text-[16px] text-[#5f5e5e] justify-between gap-2">
+                  <SelectTrigger className="interactive-input h-10 data-[size=default]:h-10 w-full truncate rounded-lg border border-gray-200 bg-white px-4 text-[16px] text-[#5f5e5e] justify-between gap-2">
                     <SelectValue placeholder="Seleccionar ingrediente o receta..." />
                   </SelectTrigger>
-                  <SelectContent position="popper" side="bottom" className="bg-white border border-gray-200 rounded-xl shadow-lg max-w-[min(26rem,calc(100vw-2rem))]">
+                  <SelectContent position="popper" side="bottom" sideOffset={4} className="bg-white border border-gray-200 rounded-xl shadow-lg max-h-[300px] z-50 max-w-[min(26rem,calc(100vw-2rem))]">
                     {(() => {
                       const availableIngredients = baseIngredients.filter(ing =>
                         !draft.components.some(c => c.componentType === 'ingredient' && c.ingredientId === ing.id)
@@ -547,9 +547,9 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex flex-wrap items-end gap-2">
+              <div className="w-full md:w-auto flex items-center justify-between md:justify-end gap-2">
                 <input
-                  className="w-24 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-3 py-2.5 font-stitch-numeric-data text-stitch-numeric-data text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
+                  className="h-10 w-24 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-3 font-stitch-numeric-data text-stitch-numeric-data text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
                   type="number"
                   min={newUnit === 'porc.' ? 1 : 0.01}
                   step={newUnit === 'porc.' ? 1 : 'any'}
@@ -558,7 +558,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
                   onChange={(e) => setNewQuantity(e.target.value)}
                 />
                 <select
-                  className="w-24 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-2 py-2.5 font-stitch-body-md text-stitch-body-md text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
+                  className="h-10 w-20 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-2 font-stitch-body-md text-stitch-body-md text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
                   value={newUnit}
                   onChange={(e) => {
                     const val = e.target.value as Unit | 'porc.';
@@ -570,13 +570,13 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
                     <option key={u} value={u}>{u === 'porc.' ? 'porc.' : u}</option>
                   ))}
                 </select>
-                <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface whitespace-nowrap">
+                <span className="font-stitch-numeric-data text-sm font-semibold text-stitch-on-surface whitespace-nowrap">
                   {formatCurrency(previewAddCost)}
                 </span>
                 <button
                   type="submit"
                   disabled={!selectedValue || !newQuantity}
-                  className="interactive-btn text-[#b80049] hover:text-[#900038] w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#ffd9de] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="interactive-btn text-[#b80049] hover:text-[#900038] h-10 w-10 shrink-0 flex items-center justify-center rounded-full hover:bg-[#ffd9de] disabled:opacity-40 disabled:cursor-not-allowed"
                   title="Agregar"
                 >
                   <span className="material-symbols-outlined text-[24px]">add_circle</span>

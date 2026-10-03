@@ -2,11 +2,10 @@ import { createClient } from '@/utils/supabase/client';
 import { Product, ProductComponent, ComponentType, Unit, ExtraCosts } from './types';
 import { ProductRow, ProductRecipeRow } from './database.types';
 
-// Convertir DB Row a Frontend Type
-function rowToProduct(
-  row: ProductRow,
-  componentRows: ProductRecipeRow[]
-): Product {
+// Convertir DB Row (con product_recipes embebido) a Frontend Type
+type ProductRowWithComponents = ProductRow & { product_recipes: ProductRecipeRow[] | null };
+
+function rowToProduct(row: ProductRowWithComponents): Product {
   return {
     id: row.id,
     name: row.name,
@@ -14,7 +13,7 @@ function rowToProduct(
     profitMargin: row.profit_margin,
     extraCosts: row.extra_costs as ExtraCosts,
     totalCost: row.total_cost,
-    components: componentRows.map(componentRow => ({
+    components: (row.product_recipes ?? []).map(componentRow => ({
       id: componentRow.id,
       componentType: componentRow.component_type as ComponentType,
       recipeId: componentRow.recipe_id,
@@ -34,31 +33,14 @@ export async function fetchProducts(): Promise<Product[]> {
 
   const { data: productsData, error: productsError } = await supabase
     .from('products')
-    .select('*')
+    .select('*, product_recipes(*)')
     .order('created_at', { ascending: false });
 
   if (productsError) throw new Error(`Error al cargar productos: ${productsError.message}`);
 
   if (!productsData || productsData.length === 0) return [];
 
-  const productIds = productsData.map(p => p.id);
-
-  const { data: componentsData, error: componentsError } = await supabase
-    .from('product_recipes')
-    .select('*')
-    .in('product_id', productIds);
-
-  if (componentsError) throw new Error(`Error al cargar componentes de productos: ${componentsError.message}`);
-
-  const componentsByProduct = (componentsData || []).reduce((acc, curr) => {
-    if (!acc[curr.product_id]) acc[curr.product_id] = [];
-    acc[curr.product_id].push(curr);
-    return acc;
-  }, {} as Record<string, ProductRecipeRow[]>);
-
-  return (productsData as ProductRow[]).map(row =>
-    rowToProduct(row, componentsByProduct[row.id] || [])
-  );
+  return (productsData as ProductRowWithComponents[]).map(rowToProduct);
 }
 
 export async function fetchProductById(id: string): Promise<Product | null> {
@@ -66,7 +48,7 @@ export async function fetchProductById(id: string): Promise<Product | null> {
 
   const { data: productData, error: productError } = await supabase
     .from('products')
-    .select('*')
+    .select('*, product_recipes(*)')
     .eq('id', id)
     .single();
 
@@ -75,14 +57,7 @@ export async function fetchProductById(id: string): Promise<Product | null> {
     throw new Error(`Error al cargar producto: ${productError.message}`);
   }
 
-  const { data: componentsData, error: componentsError } = await supabase
-    .from('product_recipes')
-    .select('*')
-    .eq('product_id', id);
-
-  if (componentsError) throw new Error(`Error al cargar componentes de producto: ${componentsError.message}`);
-
-  return rowToProduct(productData as ProductRow, componentsData as ProductRecipeRow[]);
+  return rowToProduct(productData as ProductRowWithComponents);
 }
 
 export async function upsertProduct(productDraft: Omit<Product, 'id'>, id?: string): Promise<Product> {
