@@ -49,35 +49,34 @@ interface ProductBuilderProps {
 const QUICK_MARGINS = [10, 20, 30, 40];
 
 const CUSTOM_EXTRA_COST_KEY = 'others';
-const CUSTOM_EXTRA_COST_OPTION = '__custom__';
 
-const EXTRA_COST_PRESETS = [
-  { key: 'packaging', label: EXTRA_COST_LABELS.packaging },
-  { key: 'bags', label: EXTRA_COST_LABELS.bags },
-  { key: 'shipping', label: EXTRA_COST_LABELS.shipping },
-  { key: 'labels', label: EXTRA_COST_LABELS.labels },
-  { key: 'labor', label: EXTRA_COST_LABELS.labor },
+const DEFAULT_ADDITIONAL_COSTS = [
+  'Cajas / Packaging',
+  'Etiquetas / Stickers',
+  'Cintas / Decoración',
+  'Mano de Obra',
 ];
 
-function buildDefaultAdditionalCosts(): AdditionalCost[] {
-  return [
-    ...EXTRA_COST_PRESETS.map(p => ({ key: p.key, label: p.label, value: '', isCustom: false })),
-    { key: CUSTOM_EXTRA_COST_KEY, label: '', value: '', isCustom: true },
-  ];
+function defaultAdditionalCosts(): AdditionalCost[] {
+  return DEFAULT_ADDITIONAL_COSTS.map(label => ({
+    key: CUSTOM_EXTRA_COST_KEY,
+    label,
+    value: '',
+    isCustom: true,
+  }));
 }
 
 function buildAdditionalCostsFromExtraCosts(extraCosts: Record<string, number>): AdditionalCost[] {
   const rows: AdditionalCost[] = [];
   for (const [key, value] of Object.entries(extraCosts || {})) {
-    if (key === CUSTOM_EXTRA_COST_KEY) {
-      rows.push({ key, label: '', value: String(value || ''), isCustom: true });
-    } else if (EXTRA_COST_LABELS[key]) {
-      rows.push({ key, label: EXTRA_COST_LABELS[key], value: String(value || ''), isCustom: false });
-    } else {
-      rows.push({ key, label: key, value: String(value || ''), isCustom: true });
-    }
+    rows.push({
+      key: CUSTOM_EXTRA_COST_KEY,
+      label: EXTRA_COST_LABELS[key] ?? key,
+      value: String(value || ''),
+      isCustom: true,
+    });
   }
-  return rows.length > 0 ? rows : buildDefaultAdditionalCosts();
+  return rows;
 }
 
 function additionalCostsToExtraCosts(rows: AdditionalCost[]): Record<string, number> {
@@ -85,7 +84,7 @@ function additionalCostsToExtraCosts(rows: AdditionalCost[]): Record<string, num
   for (const row of rows) {
     const value = parseFloat(row.value) || 0;
     if (value <= 0) continue;
-    const key = row.isCustom ? (row.label.trim() || CUSTOM_EXTRA_COST_KEY) : row.key;
+    const key = row.label.trim() || CUSTOM_EXTRA_COST_KEY;
     result[key] = value;
   }
   return result;
@@ -109,12 +108,15 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
   const [selectedValue, setSelectedValue] = useState('');
+  const [newQuantity, setNewQuantity] = useState('');
+  const [newUnit, setNewUnit] = useState<Unit | 'porc.'>('g');
+  const [selectKey, setSelectKey] = useState(0);
 
   const defaultDraft: ProductDraft = {
     name: '',
     description: '',
     components: [],
-    additionalCosts: buildDefaultAdditionalCosts(),
+    additionalCosts: defaultAdditionalCosts(),
     profitMargin: '',
   };
 
@@ -142,6 +144,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
             navigateWithTransition(router, '/productos');
             return;
           }
+          const existingCosts = buildAdditionalCostsFromExtraCosts(product.extraCosts);
           setDraft({
             name: product.name,
             description: product.description,
@@ -156,7 +159,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
               cost: c.cost,
               useUnit: c.useUnit ?? null,
             })),
-            additionalCosts: buildAdditionalCostsFromExtraCosts(product.extraCosts),
+            additionalCosts: existingCosts.length > 0 ? existingCosts : defaultAdditionalCosts(),
             profitMargin: String(product.profitMargin || ''),
           });
         }
@@ -186,24 +189,62 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     return proportionalCost(recipe.totalCost, recipe.yieldPortions, qty);
   };
 
+  const addUnitOptions: string[] = (() => {
+    if (!selectedValue) return ['g'];
+    const [type, id] = selectedValue.split(':');
+    if (type === 'recipe') {
+      const recipe = eligibleRecipes.find(r => r.id === id);
+      if (!recipe) return ['g'];
+      const opts: string[] = [];
+      if (recipe.yieldGrams != null && recipe.yieldGrams > 0) opts.push('g', 'kg');
+      if (recipe.yieldPortions != null && recipe.yieldPortions > 0) opts.push('porc.');
+      return opts.length > 0 ? opts : ['g'];
+    }
+    return UNIT_OPTIONS;
+  })();
+
+  const previewAddCost = (() => {
+    if (!selectedValue || !newQuantity) return 0;
+    const qty = parseFloat(newQuantity);
+    if (!qty || qty <= 0) return 0;
+    const [type, id] = selectedValue.split(':');
+    if (type === 'recipe') {
+      const recipe = eligibleRecipes.find(r => r.id === id);
+      if (!recipe) return 0;
+      if (newUnit === 'porc.') {
+        if (recipe.yieldPortions == null) return 0;
+        return proportionalCost(recipe.totalCost, recipe.yieldPortions, qty);
+      }
+      if (recipe.yieldGrams == null) return 0;
+      return proportionalCost(recipe.totalCost, recipe.yieldGrams, toBaseQuantity(qty, newUnit));
+    }
+    const ingredient = baseIngredients.find(i => i.id === id);
+    if (!ingredient) return 0;
+    return calculateIngredientCost(ingredient.pricePerUnit, qty, newUnit as Unit);
+  })();
+
   const addComponentToProduct = () => {
-    if (!selectedValue) return;
+    if (!selectedValue || !newQuantity) return;
+    const qty = parseFloat(newQuantity);
+    if (!qty || qty <= 0) return;
+
     const [type, id] = selectedValue.split(':');
     if (type === 'recipe') {
       const recipe = eligibleRecipes.find(r => r.id === id);
       if (!recipe) return;
-      const hasPortions = recipe.yieldPortions != null && recipe.yieldPortions > 0;
-      const hasGrams = recipe.yieldGrams != null && recipe.yieldGrams > 0;
+      const isPortions = newUnit === 'porc.';
       const row: ProductComponentDraft = {
         componentType: 'recipe',
         recipeId: recipe.id,
         recipeName: recipe.name,
         ingredientId: null,
         ingredientName: null,
-        quantityUsed: '',
-        unit: null,
-        cost: 0,
-        useUnit: hasPortions ? 'portion' : 'gram',
+        quantityUsed: String(isPortions ? qty : toBaseQuantity(qty, newUnit)),
+        unit: isPortions ? null : 'g',
+        cost: isPortions
+          ? (recipe.yieldPortions != null ? proportionalCost(recipe.totalCost, recipe.yieldPortions, qty) : 0)
+          : (recipe.yieldGrams != null ? proportionalCost(recipe.totalCost, recipe.yieldGrams, toBaseQuantity(qty, newUnit)) : 0),
+        useUnit: isPortions ? 'portion' : 'gram',
       };
       setDraft(prev => ({ ...prev, components: [row, ...prev.components] }));
     } else if (type === 'ingredient') {
@@ -215,22 +256,31 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
         recipeName: null,
         ingredientId: ingredient.id,
         ingredientName: ingredient.name,
-        quantityUsed: '',
-        unit: ingredient.unit,
-        cost: 0,
+        quantityUsed: newQuantity,
+        unit: newUnit as Unit,
+        cost: calculateIngredientCost(ingredient.pricePerUnit, qty, newUnit as Unit),
         useUnit: null,
       };
       setDraft(prev => ({ ...prev, components: [row, ...prev.components] }));
     }
+
+    // Reset del selector: vuelve al placeholder vacío (no confunde al usuario)
     setSelectedValue('');
+    setNewQuantity('');
+    setNewUnit('g');
+    setSelectKey(k => k + 1);
   };
 
   const updateComponentQuantity = (index: number, quantityUsed: string) => {
     setDraft(prev => {
       const components = prev.components.map((component, i) => {
         if (i !== index) return component;
-        const cost = computeCost(component, quantityUsed, component.cost);
-        return { ...component, quantityUsed, cost };
+        // Las porciones se mantienen como enteros
+        const formatted = component.componentType === 'recipe' && component.useUnit === 'portion'
+          ? String(Math.round(parseFloat(quantityUsed) || 0))
+          : quantityUsed;
+        const cost = computeCost(component, formatted, component.cost);
+        return { ...component, quantityUsed: formatted, cost };
       });
       return { ...prev, components };
     });
@@ -272,25 +322,27 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     }));
   };
 
-  const updateAdditionalCostPreset = (index: number, option: string) => {
-    setDraft(prev => ({
-      ...prev,
-      additionalCosts: prev.additionalCosts.map((row, i) => {
-        if (i !== index) return row;
-        if (option === CUSTOM_EXTRA_COST_OPTION) {
-          return { ...row, key: CUSTOM_EXTRA_COST_KEY, label: '', isCustom: true };
-        }
-        const preset = EXTRA_COST_PRESETS.find(p => p.key === option);
-        if (!preset) return row;
-        return { ...row, key: preset.key, label: preset.label, isCustom: false };
-      }),
-    }));
-  };
-
   const updateAdditionalCostLabel = (index: number, label: string) => {
     setDraft(prev => ({
       ...prev,
       additionalCosts: prev.additionalCosts.map((row, i) => i === index ? { ...row, label } : row),
+    }));
+  };
+
+  const addCostRow = () => {
+    setDraft(prev => ({
+      ...prev,
+      additionalCosts: [
+        ...prev.additionalCosts,
+        { key: CUSTOM_EXTRA_COST_KEY, label: '', value: '', isCustom: true },
+      ],
+    }));
+  };
+
+  const removeCostRow = (index: number) => {
+    setDraft(prev => ({
+      ...prev,
+      additionalCosts: prev.additionalCosts.filter((_, i) => i !== index),
     }));
   };
 
@@ -429,54 +481,107 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
               onSubmit={(e) => { e.preventDefault(); addComponentToProduct(); }}
               className="flex flex-col sm:flex-row gap-4 mb-6"
             >
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <Select
+                  key={selectKey}
                   value={selectedValue || undefined}
-                  onValueChange={(val) => setSelectedValue(val)}
+                  onValueChange={(val) => {
+                    setSelectedValue(val);
+                    const [type, id] = val.split(':');
+                    if (type === 'recipe') {
+                      const recipe = eligibleRecipes.find(r => r.id === id);
+                      if (recipe?.yieldGrams != null && recipe.yieldGrams > 0) {
+                        setNewUnit('g');
+                      } else if (recipe?.yieldPortions != null && recipe.yieldPortions > 0) {
+                        setNewUnit('porc.');
+                        setNewQuantity('1');
+                      }
+                    } else {
+                      const ingredient = baseIngredients.find(i => i.id === id);
+                      setNewUnit(ingredient?.unit ?? 'g');
+                    }
+                  }}
                 >
                   <SelectTrigger className="interactive-input w-full truncate rounded-lg border border-gray-200 bg-white px-4 py-3 text-[16px] text-[#5f5e5e] justify-between gap-2">
                     <SelectValue placeholder="Seleccionar ingrediente o receta..." />
                   </SelectTrigger>
                   <SelectContent position="popper" side="bottom" className="bg-white border border-gray-200 rounded-xl shadow-lg max-w-[min(26rem,calc(100vw-2rem))]">
-                    {baseIngredients.length > 0 && (
-                      <SelectGroup>
-                        <SelectLabel className="text-[#b80049] font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Ingredientes</SelectLabel>
-                        {baseIngredients.map(ingredient => (
-                          <SelectItem
-                            key={`ingredient:${ingredient.id}`}
-                            value={`ingredient:${ingredient.id}`}
-                            className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
-                          >
-                            {ingredient.name} — {formatCurrency(ingredient.pricePerUnit)} / {ingredient.unit}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    )}
-                    {eligibleRecipes.length > 0 && (
-                      <SelectGroup>
-                        <SelectLabel className="text-[#b80049] font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Recetas</SelectLabel>
-                        {eligibleRecipes.map(recipe => (
-                          <SelectItem
-                            key={`recipe:${recipe.id}`}
-                            value={`recipe:${recipe.id}`}
-                            className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
-                          >
-                            {recipe.name} — {yieldLabel(recipe)}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    )}
+                    {(() => {
+                      const availableIngredients = baseIngredients.filter(ing =>
+                        !draft.components.some(c => c.componentType === 'ingredient' && c.ingredientId === ing.id)
+                      );
+                      return availableIngredients.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel className="text-[#b80049] font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Ingredientes</SelectLabel>
+                          {availableIngredients.map(ingredient => (
+                            <SelectItem
+                              key={`ingredient:${ingredient.id}`}
+                              value={`ingredient:${ingredient.id}`}
+                              className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
+                            >
+                              {ingredient.name} — {formatCurrency(ingredient.pricePerUnit)} / {ingredient.unit}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      );
+                    })()}
+                    {(() => {
+                      const availableRecipes = eligibleRecipes.filter(r =>
+                        !draft.components.some(c => c.componentType === 'recipe' && c.recipeId === r.id)
+                      );
+                      return availableRecipes.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel className="text-[#b80049] font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Recetas</SelectLabel>
+                          {availableRecipes.map(recipe => (
+                            <SelectItem
+                              key={`recipe:${recipe.id}`}
+                              value={`recipe:${recipe.id}`}
+                              className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
+                            >
+                              {recipe.name} — {yieldLabel(recipe)}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      );
+                    })()}
                   </SelectContent>
                 </Select>
               </div>
-              <button
-                type="submit"
-                disabled={!selectedValue}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-stitch-primary text-on-primary rounded-xl font-stitch-label-sm text-stitch-label-sm hover:bg-stitch-surface-tint transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-              >
-                <span className="material-symbols-outlined text-[18px]">add</span>
-                Agregar
-              </button>
+              <div className="flex flex-wrap items-end gap-2">
+                <input
+                  className="w-24 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-3 py-2.5 font-stitch-numeric-data text-stitch-numeric-data text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
+                  type="number"
+                  min={newUnit === 'porc.' ? 1 : 0.01}
+                  step={newUnit === 'porc.' ? 1 : 'any'}
+                  placeholder={newUnit === 'porc.' ? '1' : '250'}
+                  value={newQuantity}
+                  onChange={(e) => setNewQuantity(e.target.value)}
+                />
+                <select
+                  className="w-24 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-2 py-2.5 font-stitch-body-md text-stitch-body-md text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
+                  value={newUnit}
+                  onChange={(e) => {
+                    const val = e.target.value as Unit | 'porc.';
+                    setNewUnit(val);
+                    if (val === 'porc.') setNewQuantity('1');
+                  }}
+                >
+                  {addUnitOptions.map(u => (
+                    <option key={u} value={u}>{u === 'porc.' ? 'porc.' : u}</option>
+                  ))}
+                </select>
+                <span className="font-stitch-numeric-data text-[18px] text-stitch-on-surface whitespace-nowrap">
+                  {formatCurrency(previewAddCost)}
+                </span>
+                <button
+                  type="submit"
+                  disabled={!selectedValue || !newQuantity}
+                  className="interactive-btn text-[#b80049] hover:text-[#900038] w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#ffd9de] disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Agregar"
+                >
+                  <span className="material-symbols-outlined text-[24px]">add_circle</span>
+                </button>
+              </div>
             </form>
 
             {/* Rows */}
@@ -555,8 +660,8 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
                               <input
                                 className="w-24 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-3 py-2.5 font-stitch-numeric-data text-stitch-numeric-data text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
                                 type="number"
-                                min="0.01"
-                                step="any"
+                                min={isRecipe && component.useUnit === 'portion' ? 1 : 0.01}
+                                step={isRecipe && component.useUnit === 'portion' ? 1 : 'any'}
                                 placeholder={isRecipe ? (component.useUnit === 'gram' ? '250' : '1') : '250'}
                                 value={component.quantityUsed}
                                 onChange={(e) => updateComponentQuantity(index, e.target.value)}
@@ -595,49 +700,49 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
           Costos Adicionales
         </h3>
         <div className="space-y-4">
-          {draft.additionalCosts.map((row, index) => {
-            const usedKeys = draft.additionalCosts
-              .filter((r, i) => i !== index && !r.isCustom)
-              .map(r => r.key);
-            return (
-              <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3">
-                  <select
-                    className="w-full sm:w-56 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-3 py-2.5 font-stitch-body-md text-stitch-body-md text-stitch-on-surface focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
-                    value={row.isCustom ? CUSTOM_EXTRA_COST_OPTION : row.key}
-                    onChange={(e) => updateAdditionalCostPreset(index, e.target.value)}
-                  >
-                    {EXTRA_COST_PRESETS.map(preset => (
-                      <option key={preset.key} value={preset.key} disabled={usedKeys.includes(preset.key)}>
-                        {preset.label}
-                      </option>
-                    ))}
-                    <option value={CUSTOM_EXTRA_COST_OPTION}>Otro...</option>
-                  </select>
-                  {row.isCustom && (
-                    <input
-                      className="w-full sm:w-56 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-3 py-2.5 font-stitch-body-md text-stitch-body-md text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
-                      placeholder="Ej: Envase especial"
-                      type="text"
-                      value={row.label}
-                      onChange={(e) => updateAdditionalCostLabel(index, e.target.value)}
-                    />
-                  )}
-                </div>
-                <div className="relative w-full sm:w-32">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-stitch-tertiary-fixed-dim pointer-events-none">$</span>
-                  <input
-                    className="w-full pl-8 pr-4 py-2.5 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl text-right font-stitch-numeric-data text-stitch-numeric-data text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
-                    placeholder="0"
-                    type="number"
-                    min="0"
-                    value={row.value}
-                    onChange={(e) => updateAdditionalCostValue(index, e.target.value)}
-                  />
-                </div>
+          {draft.additionalCosts.map((row, index) => (
+            <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <input
+                className="flex-1 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl px-3 py-2.5 font-stitch-body-md text-stitch-body-md text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
+                placeholder="Nombre / Concepto (ej: Caja de cartón)"
+                type="text"
+                value={row.label}
+                onChange={(e) => updateAdditionalCostLabel(index, e.target.value)}
+              />
+              <div className="relative w-full sm:w-32">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-stitch-tertiary-fixed-dim pointer-events-none">$</span>
+                <input
+                  className="w-full pl-8 pr-4 py-2.5 bg-stitch-surface-container-lowest border border-stitch-outline-variant rounded-xl text-right font-stitch-numeric-data text-stitch-numeric-data text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim focus:outline-none focus:border-stitch-primary focus:ring-1 focus:ring-stitch-primary shadow-sm"
+                  placeholder="0"
+                  type="number"
+                  min="0"
+                  value={row.value}
+                  onChange={(e) => updateAdditionalCostValue(index, e.target.value)}
+                />
               </div>
-            );
-          })}
+              <button
+                type="button"
+                onClick={() => removeCostRow(index)}
+                className="text-stitch-error hover:bg-stitch-error-container w-8 h-8 flex items-center justify-center rounded-full transition-colors shrink-0"
+                title="Quitar costo"
+              >
+                <span className="material-symbols-outlined text-[20px]">delete</span>
+              </button>
+            </div>
+          ))}
+          {draft.additionalCosts.length === 0 && (
+            <p className="font-stitch-body-md text-stitch-body-md text-stitch-secondary text-sm">
+              No cargaste costos adicionales todavía. Agregá cajas, etiquetas, moños y todo lo que necesites.
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={addCostRow}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-stitch-surface-container-low border border-stitch-outline-variant rounded-xl font-stitch-label-sm text-stitch-label-sm text-stitch-primary hover:bg-stitch-surface-container-lowest transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            Añadir otro costo adicional
+          </button>
         </div>
       </article>
 
