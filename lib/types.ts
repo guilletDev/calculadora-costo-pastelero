@@ -7,6 +7,7 @@ export interface BaseIngredient {
   unit: Unit;
   totalPrice: number;
   pricePerUnit: number;
+  deletedAt?: string | null;
 }
 
 export interface RecipeIngredient {

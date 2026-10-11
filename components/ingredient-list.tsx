@@ -6,8 +6,10 @@ import { BaseIngredient, Unit } from '@/lib/types';
 import { storage } from '@/lib/storage';
 import {
   fetchIngredients,
+  fetchDeletedIngredients,
   updateIngredient,
-  deleteIngredient,
+  softDeleteIngredient,
+  restoreIngredient,
   upsertIngredient,
 } from '@/lib/ingredients-db';
 import { formatCurrency } from '@/lib/cost';
@@ -53,6 +55,8 @@ export function IngredientList({
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
   const [deleteTarget, setDeleteTarget] = useState<BaseIngredient | null>(null);
+  const [view, setView] = useState<'active' | 'trash'>('active');
+  const [deletedIngredients, setDeletedIngredients] = useState<BaseIngredient[]>([]);
   const { ready, ingredients: bootIngredients, applyLocal } = useAppBoot();
 
   // Estado para edición inline de un ingrediente existente
@@ -114,6 +118,15 @@ export function IngredientList({
     }
     setIsLoading(false);
   }, [ready, bootIngredients, ingredients.length]);
+
+  // Cargar la papelera (soft delete) para el contador y la vista Papelera
+  useEffect(() => {
+    let cancelled = false;
+    fetchDeletedIngredients()
+      .then(data => { if (!cancelled) setDeletedIngredients(data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   // Auto-desbloquear si no hay ingredientes (ej: al migrar a DB vacía con localStorage bloqueado)
   useEffect(() => {
@@ -232,14 +245,48 @@ export function IngredientList({
     savingRef.current = true;
     setIsSaving(true);
     try {
-      await deleteIngredient(id);
+      await softDeleteIngredient(id);
+      const removed = ingredients.find(ing => ing.id === id);
       const updated = ingredients.filter(ing => ing.id !== id);
       setIngredients(updated);
       applyLocal({ ingredients: updated });
       onIngredientsChange?.(updated);
-      toast.success('Ingrediente eliminado correctamente');
+      if (removed) {
+        setDeletedIngredients(prev => [
+          { ...removed, deletedAt: new Date().toISOString() },
+          ...prev,
+        ]);
+      }
+      toast.success('Ingrediente enviado a la papelera');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar';
+      toast.error(message);
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
+    }
+  };
+
+  const handleRestore = async (id: string) => {
+    if (savingRef.current || isSaving) return;
+    savingRef.current = true;
+    setIsSaving(true);
+    try {
+      await restoreIngredient(id);
+      const removed = deletedIngredients.find(ing => ing.id === id);
+      setDeletedIngredients(prev => prev.filter(ing => ing.id !== id));
+      if (removed) {
+        const restored: BaseIngredient = { ...removed, deletedAt: null };
+        const next = [...ingredients, restored].sort((a, b) =>
+          a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+        );
+        setIngredients(next);
+        applyLocal({ ingredients: next });
+        onIngredientsChange?.(next);
+      }
+      toast.success('Ingrediente restaurado correctamente');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al restaurar';
       toast.error(message);
     } finally {
       savingRef.current = false;
@@ -257,6 +304,9 @@ export function IngredientList({
   const filteredIngredients = ingredients.filter(ing =>
     ing.name.toLowerCase().includes(search.toLowerCase())
   );
+  const filteredDeleted = deletedIngredients.filter(ing =>
+    ing.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <>
@@ -266,11 +316,37 @@ export function IngredientList({
         <h2 className="font-semibold text-[24px] leading-[1.3] text-[#151c27]" style={{ fontFamily: "'Manrope', sans-serif" }}>{title}</h2>
       </div>
 
-      {ingredients.length > 0 && (
-        <div className="px-8 pt-6">
+      {/* Tabs: Activos / Papelera */}
+      <div className="px-8 pt-6 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setView('active')}
+          className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
+            view === 'active'
+              ? 'bg-[#b80049] text-white shadow-sm'
+              : 'bg-[#f0f3ff] text-[#5b3f43] hover:text-[#151c27]'
+          }`}
+        >
+          Activos ({ingredients.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setView('trash')}
+          className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
+            view === 'trash'
+              ? 'bg-[#b80049] text-white shadow-sm'
+              : 'bg-[#f0f3ff] text-[#5b3f43] hover:text-[#151c27]'
+          }`}
+        >
+          Papelera ({deletedIngredients.length})
+        </button>
+      </div>
+
+      {(view === 'active' ? ingredients.length > 0 : deletedIngredients.length > 0) && (
+        <div className="px-8 pt-4">
           <input
             className="interactive-input w-full sm:w-80 px-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
-            placeholder="Buscar ingrediente..."
+            placeholder={view === 'trash' ? 'Buscar en papelera...' : 'Buscar ingrediente...'}
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -286,6 +362,59 @@ export function IngredientList({
               <span className="text-sm font-medium">Cargando ingredientes...</span>
             </div>
           </div>
+        ) : view === 'trash' ? (
+          <table className="w-full min-w-[600px] text-left border-collapse">
+            <thead>
+              <tr className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase border-b-2 border-[#e2e8f8]">
+                <th className="pb-4 pt-8 pl-8 font-semibold">INGREDIENTE</th>
+                <th className="pb-4 pt-8 font-semibold">UNIDAD</th>
+                <th className="pb-4 pt-8 font-semibold">ELIMINADO</th>
+                <th className="pb-4 pt-8 w-32"></th>
+              </tr>
+            </thead>
+            <tbody className="text-[16px] leading-[1.5] text-[#151c27] divide-y divide-gray-50">
+              {deletedIngredients.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-8 text-center text-[#5f5e5e] text-[16px]">
+                    La papelera está vacía. Los insumos que elimines aparecerán acá y podrás restaurarlos.
+                  </td>
+                </tr>
+              ) : filteredDeleted.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-8 text-center text-[#5f5e5e] text-[16px]">
+                    Sin resultados para &quot;{search}&quot;.
+                  </td>
+                </tr>
+              ) : (
+                filteredDeleted.map((ing) => (
+                  <tr key={ing.id} className="interactive-row">
+                    <td className="pl-8 py-4 font-medium">{ing.name}</td>
+                    <td className="py-4">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#dce2f3] text-[#5b3f43]">
+                        {ing.unit}
+                      </span>
+                    </td>
+                    <td className="py-4 text-[#5f5e5e] text-sm">
+                      {ing.deletedAt ? new Date(ing.deletedAt).toLocaleDateString('es-AR') : '—'}
+                    </td>
+                    <td className="py-4 pr-8">
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => handleRestore(ing.id)}
+                          disabled={isSaving}
+                          className="interactive-btn flex items-center gap-1.5 px-3 py-2 text-[#b80049] hover:text-[#900038] rounded-lg hover:bg-[#ffd9de] text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Restaurar"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">undo</span>
+                          Restaurar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         ) : (
           <table className="w-full min-w-[600px] text-left border-collapse">
             <thead>
@@ -416,7 +545,7 @@ export function IngredientList({
       </div>
 
       {/* Formulario para añadir ingrediente nuevo */}
-      {!locked && !isLoading && (isAdding ? (
+      {view === 'active' && !locked && !isLoading && (isAdding ? (
         <form
           onSubmit={(e) => { e.preventDefault(); handleSave(); }}
           className="p-8 border-t border-gray-100 bg-[#f0f3ff]"
@@ -488,7 +617,7 @@ export function IngredientList({
       ))}
 
       {/* Tarjeta de Resumen y Guardado */}
-      {ingredients.length > 0 && !isLoading && (
+      {view === 'active' && ingredients.length > 0 && !isLoading && (
         <div className="bg-[#ffd9de]/20 p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 rounded-b-[24px]">
           <div>
             <p className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase mb-1">Inversión total en ingredientes</p>
@@ -535,8 +664,8 @@ export function IngredientList({
               ¿Eliminar ingrediente?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center text-sm text-stitch-secondary leading-relaxed">
-              ¿Estás seguro de que querés eliminar &quot;{deleteTarget?.name}&quot;? Esta acción no se
-              puede deshacer y puede afectar las recetas o productos que utilicen este insumo.
+              ¿Estás seguro de que querés eliminar &quot;{deleteTarget?.name}&quot;? Se moverá a la
+              papelera y podrás restaurarlo cuando quieras.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-2 sm:flex-row gap-2">

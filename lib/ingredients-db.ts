@@ -12,6 +12,7 @@ function rowToIngredient(row: IngredientRow): BaseIngredient {
     unit: row.unit as Unit,
     totalPrice: Number(row.total_price),
     pricePerUnit: Number(row.price_per_unit),
+    deletedAt: row.deleted_at,
   };
 }
 
@@ -22,10 +23,46 @@ export async function fetchIngredients(): Promise<BaseIngredient[]> {
   const { data, error } = await supabase
     .from('ingredients')
     .select('*')
+    .is('deleted_at', null)
     .order('created_at', { ascending: true });
 
   if (error) throw new Error(`Error al cargar ingredientes: ${error.message}`);
   return (data as IngredientRow[]).map(rowToIngredient);
+}
+
+// Ingredientes en la papelera (soft delete): solo para la vista Papelera.
+export async function fetchDeletedIngredients(): Promise<BaseIngredient[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('ingredients')
+    .select('*')
+    .not('deleted_at', 'is', null)
+    .order('deleted_at', { ascending: false });
+
+  if (error) throw new Error(`Error al cargar la papelera: ${error.message}`);
+  return (data as IngredientRow[]).map(rowToIngredient);
+}
+
+// Soft delete: marca deleted_at en lugar de borrar físicamente.
+export async function softDeleteIngredient(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('ingredients')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) throw new Error(`Error al enviar a la papelera: ${error.message}`);
+}
+
+// Restaura un ingrediente de la papelera (deleted_at = null).
+export async function restoreIngredient(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('ingredients')
+    .update({ deleted_at: null })
+    .eq('id', id);
+
+  if (error) throw new Error(`Error al restaurar ingrediente: ${error.message}`);
 }
 
 export async function createIngredient(

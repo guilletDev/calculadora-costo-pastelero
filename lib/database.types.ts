@@ -9,6 +9,7 @@ export interface IngredientRow {
   unit: string;
   total_price: number;
   price_per_unit: number;
+  deleted_at: string | null;
   created_at: string;
   updated_at: string;
 }
