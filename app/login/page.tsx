@@ -92,9 +92,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="bg-[#f9f9ff] text-[#151c27] h-[100vh] flex flex-col md:flex-row overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="bg-[#f9f9ff] text-[#151c27] min-h-screen md:h-screen flex flex-col md:flex-row overflow-x-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Left Panel (Brand/Marketing) */}
-      <div className="hidden md:flex flex-col justify-between w-[45%] h-full bg-[#151c27] text-white p-12 lg:p-16 relative overflow-hidden">
+      <div className="hidden md:flex flex-col justify-between w-[45%] h-full bg-[#151c27] text-white py-10 px-8 md:px-12 relative overflow-hidden">
         {/* Subtle Radial Gradient */}
         <div
           className="absolute inset-0 pointer-events-none"
@@ -145,9 +145,9 @@ export default function LoginPage() {
       </div>
 
       {/* Right Panel (Auth Form) */}
-      <div className="min-h-screen w-full md:w-[55%] bg-white p-4 flex flex-col items-center justify-center relative">
+      <div className="flex flex-col w-full md:w-[55%] bg-white py-10 px-8 md:px-12 relative">
         {/* Mobile Logo (Visible only on small screens) */}
-        <div className="md:hidden flex items-center gap-2 mb-12">
+        <div className="md:hidden flex items-center gap-2 mb-8 shrink-0">
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ee2b6c] text-white shrink-0">
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>bakery_dining</span>
@@ -158,7 +158,8 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <div className="w-full max-w-[480px] bg-white rounded-3xl p-6 md:p-8 border border-[#e4bdc2]/30 shadow-sm flex flex-col gap-5 relative">
+        <div className="flex-1 flex flex-col">
+          <div className="w-full max-w-[480px] bg-white rounded-3xl p-6 md:p-7 border border-[#e4bdc2]/30 shadow-sm flex flex-col gap-3.5 m-auto relative">
           {/* Header */}
           <div className="text-center md:text-left flex flex-col gap-2">
             <h2 className="text-[28px] leading-[1.2] font-[700] text-[#151c27] tracking-tight" style={{ fontFamily: "'Manrope', sans-serif" }}>
@@ -286,7 +287,7 @@ export default function LoginPage() {
             </form>
           </div>
 
-          <p className="text-xs text-muted-foreground text-center mt-4">
+          <p className="text-xs text-muted-foreground text-center mt-2">
             Al continuar con Google o registrarte, aceptás nuestros{' '}
             <a
               href="/terminos-y-condiciones"
@@ -307,15 +308,6 @@ export default function LoginPage() {
             </a>
             .
           </p>
-
-          <div className="pt-2 text-center">
-            <Link
-              href="/"
-              className="text-xs text-[#5b3f43] opacity-80 hover:text-[#b80049] hover:opacity-100 transition-colors inline-flex items-center gap-1 font-medium"
-            >
-              <span className="material-symbols-outlined text-[14px]">arrow_back</span>
-              Volver al inicio
-            </Link>
           </div>
         </div>
       </div>
