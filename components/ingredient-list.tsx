@@ -50,7 +50,7 @@ export function IngredientList({
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
-  const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
+  const { upgradeType, closeUpgrade, guardUpgrade, loading: guardLoading } = useUpgradeGuard();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
@@ -610,7 +610,7 @@ export function IngredientList({
         </form>
       ) : (
         <div className="p-8 border-t border-gray-100">
-          <button onClick={() => { if (guardUpgrade('ingredients', ingredients.length)) setIsAdding(true); }} className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200">
+          <button onClick={() => { if (guardLoading) return; if (guardUpgrade('ingredients', ingredients.length)) setIsAdding(true); }} className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200">
             <span className="material-symbols-outlined text-[20px]">add</span> Añadir Ingrediente
           </button>
         </div>
@@ -664,8 +664,8 @@ export function IngredientList({
               ¿Eliminar ingrediente?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center text-sm text-stitch-secondary leading-relaxed">
-              ¿Estás seguro de que querés eliminar &quot;{deleteTarget?.name}&quot;? Se moverá a la
-              papelera y podrás restaurarlo cuando quieras.
+              ¿Estás seguro de que querés eliminar &quot;{deleteTarget?.name}&quot;? Esta acción puede
+              afectar o desconfigurar las recetas y productos que utilicen este insumo.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-2 sm:flex-row gap-2">

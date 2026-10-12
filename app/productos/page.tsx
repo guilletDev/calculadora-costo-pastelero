@@ -14,7 +14,7 @@ export default function ProductosPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const { ready, products: bootProducts } = useAppBoot();
-  const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
+  const { upgradeType, closeUpgrade, guardUpgrade, loading } = useUpgradeGuard();
 
   useEffect(() => {
     if (ready) setProducts(bootProducts);
@@ -65,7 +65,7 @@ export default function ProductosPage() {
           {/* Nuevo Producto button */}
           <Link
             href="/productos/nuevo"
-            onClick={(e) => { if (!guardUpgrade('products', products.length)) e.preventDefault(); }}
+            onClick={(e) => { if (loading) { e.preventDefault(); return; } if (!guardUpgrade('products', products.length)) e.preventDefault(); }}
             className="bg-[#b80049] text-white px-8 py-3 rounded-full text-[14px] leading-[1.4] tracking-[0.05em] font-semibold uppercase flex items-center justify-center gap-2 hover:bg-[#bc004b] hover:shadow-lg transition-all hover:-translate-y-0.5 active:scale-95 duration-150 whitespace-nowrap"
           >
             <span className="material-symbols-outlined text-xl">add</span>
@@ -95,7 +95,7 @@ export default function ProductosPage() {
           {!search && (
             <Link
               href="/productos/nuevo"
-              onClick={(e) => { if (!guardUpgrade('products', products.length)) e.preventDefault(); }}
+              onClick={(e) => { if (loading) { e.preventDefault(); return; } if (!guardUpgrade('products', products.length)) e.preventDefault(); }}
               className="bg-[#b80049] text-white px-8 py-3 rounded-full text-[14px] leading-[1.4] tracking-[0.05em] font-semibold uppercase flex items-center gap-2 hover:bg-[#bc004b] transition-all hover:shadow-lg"
             >
               <span className="material-symbols-outlined text-xl">add</span>

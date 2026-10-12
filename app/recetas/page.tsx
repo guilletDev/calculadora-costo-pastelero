@@ -15,7 +15,7 @@ export default function RecetasPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [search, setSearch] = useState('');
   const { ready, recipes: bootRecipes } = useAppBoot();
-  const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
+  const { upgradeType, closeUpgrade, guardUpgrade, loading } = useUpgradeGuard();
 
   useEffect(() => {
     if (ready) setRecipes(bootRecipes);
@@ -66,7 +66,7 @@ export default function RecetasPage() {
           {/* Nueva Receta button */}
           <Link
             href="/recetas/nueva"
-            onClick={(e) => { if (!guardUpgrade('recipes', recipes.length)) e.preventDefault(); }}
+            onClick={(e) => { if (loading) { e.preventDefault(); return; } if (!guardUpgrade('recipes', recipes.length)) e.preventDefault(); }}
             className="bg-[#b80049] text-white px-8 py-3 rounded-full text-[14px] leading-[1.4] tracking-[0.05em] font-semibold uppercase flex items-center justify-center gap-2 hover:bg-[#bc004b] hover:shadow-lg transition-all hover:-translate-y-0.5 active:scale-95 duration-150 whitespace-nowrap"
           >
             <span className="material-symbols-outlined text-xl">add</span>
@@ -96,7 +96,7 @@ export default function RecetasPage() {
           {!search && (
             <Link
               href="/recetas/nueva"
-              onClick={(e) => { if (!guardUpgrade('recipes', recipes.length)) e.preventDefault(); }}
+              onClick={(e) => { if (loading) { e.preventDefault(); return; } if (!guardUpgrade('recipes', recipes.length)) e.preventDefault(); }}
               className="bg-[#b80049] text-white px-8 py-3 rounded-full text-[14px] leading-[1.4] tracking-[0.05em] font-semibold uppercase flex items-center gap-2 hover:bg-[#bc004b] transition-all hover:shadow-lg"
             >
               <span className="material-symbols-outlined text-xl">add</span>

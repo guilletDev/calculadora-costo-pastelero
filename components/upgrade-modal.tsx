@@ -39,7 +39,7 @@ export function UpgradeModal({ open, onOpenChange, resourceType }: UpgradeModalP
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-sm rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant">
+      <AlertDialogContent className="max-w-md w-full p-6 rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant">
         <AlertDialogHeader>
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-stitch-primary-fixed">
             <span className="material-symbols-outlined text-stitch-primary" style={{ fontSize: 24 }}>workspace_premium</span>
@@ -51,16 +51,16 @@ export function UpgradeModal({ open, onOpenChange, resourceType }: UpgradeModalP
             {content.description}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="mt-2 sm:flex-row gap-2">
+        <AlertDialogFooter className="flex flex-col sm:flex-row gap-3 mt-6 items-center justify-end">
           <AlertDialogCancel
-            className="flex-1 rounded-md border border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface font-semibold text-sm py-2.5 hover:bg-stitch-surface-container-low transition-colors"
+            className="w-full sm:w-auto text-sm py-2.5 px-4 h-auto rounded-md border border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface font-semibold hover:bg-stitch-surface-container-low transition-colors"
           >
             Quizás más tarde
           </AlertDialogCancel>
           <UpgradeButton
             onCheckoutStart={() => onOpenChange(false)}
             label={`Desbloquear Plan Pro · ${PRO_PLAN_LABEL}`}
-            className="flex-1 rounded-md bg-stitch-primary text-on-primary font-semibold text-sm py-2.5 hover:bg-stitch-surface-tint transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto text-sm font-semibold py-2.5 px-4 h-auto whitespace-normal sm:whitespace-nowrap rounded-md bg-stitch-primary text-on-primary hover:bg-stitch-surface-tint transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           />
         </AlertDialogFooter>
       </AlertDialogContent>

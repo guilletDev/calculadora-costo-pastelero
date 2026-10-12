@@ -51,6 +51,13 @@ interface RecipeBuilderProps {
 
 const UNIT_OPTIONS: Unit[] = ['kg', 'g', 'l', 'ml', 'unidad'];
 
+const QUICK_TIME_PRESETS = [
+  { label: '30 min', minutes: 30 },
+  { label: '1 hora', minutes: 60 },
+  { label: '1 h 30 min', minutes: 90 },
+  { label: '2 horas', minutes: 120 },
+];
+
 const CUSTOM_EXTRA_COST_KEY = 'others';
 const CUSTOM_EXTRA_COST_OPTION = '__custom__';
 
@@ -131,6 +138,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
   const didInitRef = useRef(false);
+  const [selectKey, setSelectKey] = useState(0);
 
   const searchParams = useSearchParams();
 
@@ -317,6 +325,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     setNewUnit('g');
     setManualName('');
     setManualPricePerUnit('');
+    setSelectKey(k => k + 1);
   };
 
   const removeComponentFromRecipe = (id: string) => {
@@ -581,13 +590,29 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Minutos de trabajo activo (opcional)</label>
               <input
                 className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
-                placeholder="Ej: 45"
+                placeholder="Ej: 45 (minutos)"
                 type="number"
                 min="0"
                 step="any"
                 value={currentRecipe.laborMinutes ?? ''}
                 onChange={(e) => setCurrentRecipe({ ...currentRecipe, laborMinutes: e.target.value })}
               />
+              <div className="flex flex-wrap gap-2 pt-1">
+                {QUICK_TIME_PRESETS.map(preset => (
+                  <button
+                    key={preset.minutes}
+                    type="button"
+                    onClick={() => setCurrentRecipe({ ...currentRecipe, laborMinutes: String(preset.minutes) })}
+                    className={`interactive-btn px-3.5 py-1.5 rounded-full transition-colors text-[13px] leading-[1.4] font-semibold ${
+                      String(currentRecipe.laborMinutes) === String(preset.minutes)
+                        ? 'bg-[#ffd9de] text-[#400014]'
+                        : 'bg-[#ffd9de]/30 text-[#b80049] hover:bg-[#ffd9de]'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <p className="text-xs text-[#5a5c5d] -mt-2">
@@ -704,6 +729,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                   />
                 ) : (
                   <Select
+                    key={selectKey}
                     value={selectedValue || undefined}
                     onValueChange={(val) => {
                       setSelectedValue(val);

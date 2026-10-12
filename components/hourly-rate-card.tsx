@@ -8,6 +8,7 @@ export function HourlyRateCard() {
   const [hourlyRate, setHourlyRate] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasSavedValue, setHasSavedValue] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -22,23 +23,27 @@ export function HourlyRateCard() {
       if (cancelled) return;
       if (profile?.hourly_rate != null && profile.hourly_rate > 0) {
         setHourlyRate(String(profile.hourly_rate));
+        setHasSavedValue(true);
       }
       setIsLoading(false);
     });
     return () => { cancelled = true; };
   }, []);
 
+  const parsedRate = parseFloat(hourlyRate);
+  const isValid = hourlyRate.trim() !== '' && !isNaN(parsedRate) && parsedRate > 0;
+
   const handleSave = async () => {
-    const rate = parseFloat(hourlyRate);
-    if (isNaN(rate) || rate < 0) {
+    if (!isValid) {
       toast.error('Ingresá un valor hora válido');
       return;
     }
     setIsSaving(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase.rpc('update_user_hourly_rate', { p_rate: rate });
+      const { error } = await supabase.rpc('update_user_hourly_rate', { p_rate: parsedRate });
       if (error) throw new Error(error.message);
+      setHasSavedValue(true);
       toast.success('Valor hora guardado');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al guardar el valor hora');
@@ -86,7 +91,7 @@ export function HourlyRateCard() {
                   type="number"
                   min="0"
                   step="any"
-                  placeholder="4000"
+                  placeholder="Ej: 4000"
                   value={hourlyRate}
                   onChange={(e) => setHourlyRate(e.target.value)}
                 />
@@ -94,11 +99,11 @@ export function HourlyRateCard() {
             </div>
             <button
               onClick={handleSave}
-              disabled={isSaving}
-              className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#b80049] text-white rounded-full text-[16px] font-medium disabled:opacity-50"
+              disabled={isSaving || !isValid}
+              className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#b80049] text-white rounded-full text-[16px] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="material-symbols-outlined text-[20px]">save</span>
-              {isSaving ? 'Guardando...' : 'Guardar Valor Hora'}
+              {isSaving ? 'Guardando...' : hasSavedValue ? 'Actualizar Valor Hora' : 'Guardar Valor Hora'}
             </button>
           </div>
         )}
