@@ -31,9 +31,9 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section
           id="inicio"
-          className="max-w-[1200px] mx-auto px-6 lg:px-[10%] pt-16 pb-24 grid md:grid-cols-2 gap-16 items-center animate-fade-in-up scroll-mt-24"
+          className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 py-16 lg:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center animate-fade-in-up scroll-mt-24"
         >
-          <div className="flex flex-col gap-8 z-10">
+          <div className="flex flex-col gap-8 z-10 lg:col-span-6">
 
             <h1
               className="text-4xl md:text-[56px] leading-[1.1] tracking-tight font-[800]"
@@ -76,7 +76,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="relative hidden md:block">
+          <div className="relative hidden md:block lg:col-span-6">
             <div className="relative w-full aspect-[4/3] rounded-2xl bg-white p-2 shadow-floating border border-[#e4bdc2]/20 overflow-hidden transform rotate-2 hover:rotate-0 transition-transform duration-500">
               <img alt="App Screenshot" className="w-full h-full object-cover rounded-xl shadow-inner" src="/costo-calculadora-imagen.webp" />
             </div>
@@ -85,7 +85,7 @@ export default function LandingPage() {
 
         {/* Trust Section */}
         <section
-          className="max-w-[1200px] mx-auto px-6 lg:px-[10%] py-12 border-y border-[#e4bdc2]/10 animate-fade-in-up"
+          className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 py-12 border-y border-[#e4bdc2]/10 animate-fade-in-up"
           style={{ animationDelay: '0.1s', backgroundColor: 'rgba(255,255,255,0.3)' }}
         >
           <p
@@ -111,10 +111,9 @@ export default function LandingPage() {
         </section>
 
         {/* Benefits Section */}
-        <section
+<section
           id="beneficios"
-          className="max-w-[1200px] mx-auto px-6 lg:px-[10%] py-24 animate-fade-in-up scroll-mt-24"
-          style={{ animationDelay: '0.2s' }}
+          className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 py-24 animate-fade-in-up scroll-mt-24"
         >
           <div className="text-center max-w-2xl mx-auto mb-20">
             <h2 className="text-4xl font-bold text-[#151c27] mb-6 tracking-tight">
@@ -124,7 +123,7 @@ export default function LandingPage() {
               Una interfaz minimalista enfocada en los datos que realmente importan para tu negocio artesanal.
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Benefit 1 */}
             <div className="bg-white p-8 rounded-2xl border border-[#e4bdc2]/20 shadow-card hover:shadow-ambient-hover hover:-translate-y-1 transition-all duration-300 group">
               <div className="w-12 h-12 rounded-xl bg-[#ffd9de]/50 mb-6 flex items-center justify-center text-[#b80049] group-hover:scale-105 transition-transform duration-300">
@@ -169,10 +168,9 @@ export default function LandingPage() {
         </section>
 
         {/* Cómo Funciona Section - Adapted from previous landing to Stitch design */}
-        <section
+<section
           id="como-funciona"
-          className="max-w-[1200px] mx-auto px-6 lg:px-[10%] py-24 animate-fade-in-up scroll-mt-24"
-          style={{ animationDelay: '0.25s' }}
+          className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 py-24 animate-fade-in-up scroll-mt-24"
         >
           <div className="text-center max-w-2xl mx-auto mb-20">
             <h2 className="text-4xl font-bold text-[#151c27] mb-6 tracking-tight">
@@ -185,7 +183,7 @@ export default function LandingPage() {
           <div className="relative">
             {/* Connecting dotted line (desktop only) */}
             <div className="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 -translate-y-1/2 z-0 border-t-2 border-dashed border-[#e4bdc2]/40"></div>
-            <div className="grid md:grid-cols-3 gap-12 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch relative z-10">
               {/* Step 1 */}
               <div className="bg-white rounded-2xl p-8 border border-[#e4bdc2]/20 shadow-card hover:shadow-ambient-hover hover:-translate-y-1 transition-all duration-300 text-center relative group">
                 <div className="w-14 h-14 mx-auto bg-white rounded-full flex items-center justify-center border-4 border-[#f9f9ff] shadow-sm absolute -top-7 left-1/2 -translate-x-1/2 group-hover:scale-110 transition-transform">
@@ -230,10 +228,9 @@ export default function LandingPage() {
         </section>
 
         {/* Pricing Section */}
-        <section
+<section
           id="precios"
-          className="max-w-[1200px] mx-auto px-6 lg:px-[10%] py-24 rounded-3xl border border-[#e4bdc2]/10 animate-fade-in-up scroll-mt-24"
-          style={{ animationDelay: '0.3s', backgroundColor: 'rgba(249,249,255,0.5)' }}
+          className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 py-24 rounded-3xl border border-[#e4bdc2]/10 animate-fade-in-up scroll-mt-24"
         >
           <div className="text-center max-w-2xl mx-auto mb-20">
             <h2 className="text-4xl font-bold text-[#151c27] mb-6 tracking-tight">
@@ -328,10 +325,9 @@ export default function LandingPage() {
         </section>
 
         {/* FAQ Section */}
-        <section
+<section
           id="preguntas"
-          className="max-w-[1200px] mx-auto px-6 lg:px-[10%] py-24 animate-fade-in-up scroll-mt-24"
-          style={{ animationDelay: '0.4s' }}
+          className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 py-24 animate-fade-in-up scroll-mt-24"
         >
           <div className="text-center max-w-2xl mx-auto mb-20">
             <h2 className="text-4xl font-bold text-[#151c27] mb-6 tracking-tight">
@@ -410,9 +406,8 @@ export default function LandingPage() {
         </section>
 
         {/* Final CTA Section */}
-        <section
-          className="max-w-[1200px] mx-auto px-6 lg:px-[10%] pb-24 animate-fade-in-up"
-          style={{ animationDelay: '0.5s' }}
+<section
+          className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 pb-24 animate-fade-in-up"
         >
           <div className="bg-[#2a313d] rounded-[2rem] py-24 px-6 md:px-12 text-center relative overflow-hidden shadow-floating">
             <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center">
@@ -443,7 +438,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="w-full py-16 md:py-24 border-t border-[#e4bdc2]/20" style={{ backgroundColor: '#ffffff' }}>
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 px-6 lg:px-[10%] max-w-[1200px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 max-w-7xl mx-auto px-6 md:px-12 lg:px-16">
           <div className="md:col-span-5 flex flex-col items-start gap-6">
             <a href="#inicio" className="flex items-center gap-2.5 shrink-0 cursor-pointer">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ee2b6c] text-white shrink-0">
@@ -521,7 +516,7 @@ export default function LandingPage() {
         </div>
         
         {/* Copyright */}
-        <div className="px-6 lg:px-[10%] max-w-[1200px] mx-auto mt-16 pt-8 border-t border-[#e4bdc2]/20 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+        <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-[#e4bdc2]/20 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left px-6 md:px-12 lg:px-16">
           <p className="text-xs text-[#5f5e5e] opacity-70" style={{ fontFamily: "'Inter', sans-serif" }}>
             © 2026 CostoRepostero. Todos los derechos reservados.
           </p>

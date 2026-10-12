@@ -38,8 +38,8 @@ export function LandingNavbar() {
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-[#f9f9ff]/90 backdrop-blur-lg border-b border-[#e4bdc2]/20 shadow-sm transition-all duration-300 ease-in-out">
-      <div className="flex justify-between items-center px-6 lg:px-8 max-w-[1200px] mx-auto h-20">
-        {/* Logo */}
+      <div className="w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-16 h-20 flex items-center">
+        {/* Izquierda: Logo */}
         <button onClick={scrollToTop} className="flex items-center gap-2.5 shrink-0 cursor-pointer">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ee2b6c] text-white shrink-0">
             <span className="material-symbols-outlined" style={{ fontSize: 20 }}>bakery_dining</span>
@@ -49,8 +49,8 @@ export function LandingNavbar() {
           </span>
         </button>
 
-        {/* Desktop Nav Links */}
-        <div className="hidden lg:flex items-center gap-8">
+        {/* Centro: Menú de navegación */}
+        <div className="hidden lg:flex flex-1 justify-center items-center gap-8">
           {links.map((link) => (
             <a
               key={link.href}
@@ -64,8 +64,8 @@ export function LandingNavbar() {
           ))}
         </div>
 
-        {/* Desktop Auth Buttons */}
-        <div className="hidden lg:flex items-center gap-6">
+        {/* Derecha: Botones de CTA */}
+        <div className="hidden lg:flex items-center justify-end gap-3">
           <TransitionLink
             href="/login"
             className="text-sm font-semibold tracking-[0.02em] border border-[#b80049] text-[#b80049] px-4 py-2.5 rounded-full font-medium hover:bg-[#b80049]/10 transition-colors whitespace-nowrap"
@@ -81,7 +81,7 @@ export function LandingNavbar() {
         </div>
 
         {/* Mobile Menu Button */}
-        <button className="lg:hidden text-[#b80049]" onClick={() => setIsOpen(!isOpen)}>
+        <button className="lg:hidden ml-auto text-[#b80049]" onClick={() => setIsOpen(!isOpen)}>
           <span className="material-symbols-outlined text-3xl">{isOpen ? 'close' : 'menu'}</span>
         </button>
       </div>
