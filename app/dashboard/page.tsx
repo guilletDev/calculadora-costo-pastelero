@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowRight, Check } from 'lucide-react';
 import { TransitionLink } from '@/components/transition-link';
@@ -15,6 +15,7 @@ const PAYMENT_POLL_ATTEMPTS = 12;
 const PAYMENT_POLL_INTERVAL_MS = 2000;
 
 function DashboardContent() {
+  const router = useRouter();
   const { ready, ingredients, recipes, products } = useAppBoot();
 
   const [isPro, setIsPro] = useState(false);
@@ -100,6 +101,14 @@ function DashboardContent() {
     };
   }, [paymentSuccess]);
 
+  // Onboarding: si el usuario aún no cargó al menos 2 ingredientes, lo llevamos
+  // al inventario para completar la carga inicial (excepto al volver de un pago).
+  useEffect(() => {
+    if (ready && !paymentSuccess && ingredients.length < 2) {
+      router.replace('/inventario');
+    }
+  }, [ready, ingredients.length, paymentSuccess, router]);
+
   const totalRecetas = recipes.length;
   const totalIngredientes = ingredients.length;
   const totalProductos = products.length;
@@ -116,7 +125,7 @@ function DashboardContent() {
     { href: '/inventario', label: 'Inventario de Insumos', description: 'Actualizar precios de ingredientes y empaques', icon: 'inventory', cta: 'Ver' },
   ];
 
-  if (!ready || loadingPlan) {
+  if (!ready || loadingPlan || (ready && !paymentSuccess && ingredients.length < 2)) {
     return (
       <main className="flex-grow w-full max-w-[1200px] mx-auto px-6 md:px-[10%] py-12 flex flex-col items-center justify-center gap-2 text-[#5f5e5e]">
         <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>

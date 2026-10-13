@@ -69,7 +69,7 @@ export default function LandingPage() {
                 Comenzar prueba gratis
               </TransitionLink>
 <a
-                href="#como-funciona"
+                href="#demo"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3 rounded-full border-2 border-slate-200 hover:border-rose-300 text-slate-900 bg-white font-semibold shadow-sm hover:bg-rose-50/50 transition-all active:scale-[0.98] text-sm"
               >
                 <svg className="w-5 h-5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -88,32 +88,12 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Trust Section */}
+        {/* Ancla del video demo (placeholder para el iframe futuro) */}
         <section
-          className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 py-12 border-y border-[#e4bdc2]/10 animate-fade-in-up"
-          style={{ animationDelay: '0.1s', backgroundColor: 'rgba(255,255,255,0.3)' }}
-        >
-          <p
-            className="text-center text-xs text-[#151c27] mb-10 tracking-widest uppercase font-semibold"
-            style={{ fontFamily: 'var(--font-inter), sans-serif' }}
-          >
-            Más de 5,000 pastelerías confían en nosotros
-          </p>
-          <div className="flex flex-wrap justify-center gap-12 md:gap-24 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-            <span className="text-xl text-[#151c27] font-bold tracking-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
-              L&apos;Artisan
-            </span>
-            <span className="text-xl text-[#151c27] italic" style={{ fontFamily: "serif" }}>
-              Dulce Miga
-            </span>
-            <span className="text-xl text-[#151c27] tracking-tighter" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
-              BAKERY CO.
-            </span>
-            <span className="text-xl text-[#151c27] font-light" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
-              Le Petit Four
-            </span>
-          </div>
-        </section>
+          id="demo"
+          aria-label="Demo"
+          className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 py-16 scroll-mt-24"
+        />
 
         {/* Benefits Section */}
 <section

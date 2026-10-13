@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { BaseIngredient, Unit } from '@/lib/types';
 import { storage } from '@/lib/storage';
@@ -38,6 +39,8 @@ interface IngredientListProps {
   title?: string;
 }
 
+const WELCOME_DISMISSED_KEY = 'cr-onboarding-welcome-dismissed';
+
 export function IngredientList({
   onLockChange,
   onIngredientsChange,
@@ -57,7 +60,11 @@ export function IngredientList({
   const [deleteTarget, setDeleteTarget] = useState<BaseIngredient | null>(null);
   const [view, setView] = useState<'active' | 'trash'>('active');
   const [deletedIngredients, setDeletedIngredients] = useState<BaseIngredient[]>([]);
-  const { ready, ingredients: bootIngredients, applyLocal } = useAppBoot();
+  const { ready, ingredients: bootIngredients, recipes: bootRecipes, applyLocal } = useAppBoot();
+  const router = useRouter();
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+  const prevIngredientsCountRef = useRef<number | null>(null);
+  const recipeToastShownRef = useRef(false);
 
   // Estado para edición inline de un ingrediente existente
   const [editInlineData, setEditInlineData] = useState({
@@ -127,6 +134,51 @@ export function IngredientList({
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
+
+  // Onboarding: recordar si el usuario ya cerró el modal de bienvenida
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (localStorage.getItem(WELCOME_DISMISSED_KEY)) setWelcomeDismissed(true);
+  }, []);
+
+  // Onboarding: al detectar el 2º ingrediente (y sin recetas), mostrar toast de éxito
+  useEffect(() => {
+    if (isLoading || bootRecipes.length >= 1) return;
+    const prev = prevIngredientsCountRef.current;
+    prevIngredientsCountRef.current = ingredients.length;
+    if (
+      prev != null && prev < 2 && ingredients.length >= 2 &&
+      !recipeToastShownRef.current
+    ) {
+      recipeToastShownRef.current = true;
+      toast.custom((t) => (
+        <div className="w-[380px] max-w-[90vw] rounded-2xl bg-white shadow-xl border border-gray-100 overflow-hidden" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+          <div className="p-4 flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#ffd9de] text-[#b80049]">
+              <span className="material-symbols-outlined text-[20px]">celebration</span>
+            </div>
+            <p className="flex-1 text-sm leading-[1.5] text-[#151c27] min-w-0">
+              ¡Excelente! Ya tenés la base. Ya podés ir a crear tu primera receta o seguir agregando más ingredientes.
+            </p>
+          </div>
+          <div className="flex border-t border-gray-100">
+            <button
+              onClick={() => { toast.dismiss(t); router.push('/recetas/nueva'); }}
+              className="flex-1 px-4 py-2.5 text-sm font-bold text-white bg-[#b80049] hover:bg-[#bc004b] transition-colors"
+            >
+              Ir a Recetas
+            </button>
+            <button
+              onClick={() => toast.dismiss(t)}
+              className="flex-1 px-4 py-2.5 text-sm font-bold text-[#5f5e5e] hover:bg-[#f0f3ff] transition-colors border-l border-gray-100"
+            >
+              Seguir agregando
+            </button>
+          </div>
+        </div>
+      ), { duration: 12000 });
+    }
+  }, [ingredients.length, isLoading, bootRecipes.length, router]);
 
   // Auto-desbloquear si no hay ingredientes (ej: al migrar a DB vacía con localStorage bloqueado)
   useEffect(() => {
@@ -307,6 +359,8 @@ export function IngredientList({
   const filteredDeleted = deletedIngredients.filter(ing =>
     ing.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const showWelcome = !isLoading && view === 'active' && ingredients.length < 2 && bootRecipes.length < 1 && !welcomeDismissed;
 
   return (
     <>
@@ -653,6 +707,40 @@ export function IngredientList({
         onOpenChange={(open) => { if (!open) closeUpgrade(); }}
         resourceType={upgradeType ?? 'ingredients'}
       />
+
+      {/* Onboarding: modal de bienvenida (se muestra una vez, persistido en localStorage) */}
+      <AlertDialog open={showWelcome} onOpenChange={(open) => {
+        if (!open) {
+          setWelcomeDismissed(true);
+          if (typeof window !== 'undefined') localStorage.setItem(WELCOME_DISMISSED_KEY, '1');
+        }
+      }}>
+        <AlertDialogContent className="max-w-sm rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant">
+          <AlertDialogHeader>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-stitch-primary-fixed">
+              <span className="material-symbols-outlined text-stitch-primary" style={{ fontSize: 24 }}>bakery_dining</span>
+            </div>
+            <AlertDialogTitle className="text-center text-base font-bold text-stitch-on-surface">
+              ¡Te damos la bienvenida!
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-sm text-stitch-secondary leading-relaxed">
+              ¡Bienvenido a Costo Repostero! 🎂 Para comenzar a calcular costos, cargá al menos 2
+              ingredientes en tu inventario.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-2">
+            <AlertDialogAction
+              onClick={() => {
+                setWelcomeDismissed(true);
+                if (typeof window !== 'undefined') localStorage.setItem(WELCOME_DISMISSED_KEY, '1');
+              }}
+              className="w-full rounded-full bg-[#b80049] text-white font-semibold text-sm py-3 hover:bg-[#bc004b] transition-colors"
+            >
+              Entendido
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent className="max-w-sm rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant">
