@@ -313,7 +313,7 @@ export function IngredientList({
       <article className="bg-white rounded-[24px] border border-gray-100 overflow-hidden card-animate delay-100" style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.04)' }}>
       <div className="p-8 border-b border-gray-100 flex items-center gap-3">
         <span className="material-symbols-outlined text-[#b80049] text-[28px]">inventory_2</span>
-        <h2 className="font-semibold text-[24px] leading-[1.3] text-[#151c27]" style={{ fontFamily: "'Manrope', sans-serif" }}>{title}</h2>
+        <h2 className="font-semibold text-[24px] leading-[1.3] text-[#151c27]" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>{title}</h2>
       </div>
 
       {/* Tabs: Activos / Papelera */}
@@ -621,7 +621,7 @@ export function IngredientList({
         <div className="bg-[#ffd9de]/20 p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 rounded-b-[24px]">
           <div>
             <p className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase mb-1">Inversión total en ingredientes</p>
-            <p className="font-bold text-[28px] md:text-[32px] leading-[1.2] tracking-[-0.01em] text-[#b80049]" style={{ fontFamily: "'Manrope', sans-serif" }}>{formatCurrency(totalInvestment)}</p>
+            <p className="font-bold text-[28px] md:text-[32px] leading-[1.2] tracking-[-0.01em] text-[#b80049]" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>{formatCurrency(totalInvestment)}</p>
           </div>
           {lockEnabled && (
             <div className="flex gap-2">

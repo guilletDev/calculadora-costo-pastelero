@@ -132,7 +132,7 @@ function DashboardContent() {
         <div>
           <h1
             className="text-[28px] md:text-[32px] leading-[1.2] md:tracking-[-0.01em] font-bold text-[#151c27] mb-2"
-            style={{ fontFamily: "'Manrope', sans-serif" }}
+            style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
           >
             Hola, {userName || 'pastelero'}
           </h1>
@@ -173,7 +173,7 @@ function DashboardContent() {
         <section className="bg-[#1e2330] text-white rounded-[24px] p-8 md:p-10 border border-[#b80049]/40 shadow-floating relative overflow-hidden animate-fade-up">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
             <div className="max-w-xl">
-              <h2 className="text-[24px] md:text-[28px] font-bold tracking-tight mb-4" style={{ fontFamily: "'Manrope', sans-serif" }}>
+              <h2 className="text-[24px] md:text-[28px] font-bold tracking-tight mb-4" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
                 Desbloqueá el {PRO_PLAN_NAME}
               </h2>
               <ul className="space-y-2.5">
@@ -190,7 +190,7 @@ function DashboardContent() {
               </ul>
             </div>
             <div className="flex flex-col items-start lg:items-end gap-4 shrink-0">
-              <div className="text-[36px] font-extrabold tracking-tight" style={{ fontFamily: "'Manrope', sans-serif" }}>
+              <div className="text-[36px] font-extrabold tracking-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
                 {PRO_PLAN_LABEL.split(' / ')[0]}
                 <span className="text-base font-normal opacity-80"> / {PRO_PLAN_LABEL.split(' / ')[1]}</span>
               </div>
@@ -207,7 +207,7 @@ function DashboardContent() {
       <section className="space-y-6">
         <h2
           className="text-[24px] leading-[1.3] font-semibold text-[#151c27]"
-          style={{ fontFamily: "'Manrope', sans-serif" }}
+          style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
         >
           Crea y Calcula
         </h2>

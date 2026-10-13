@@ -23,7 +23,7 @@ export function FullPageLoader({ exiting }: { exiting?: boolean }) {
         />
       </div>
       <div className="text-center">
-        <p className="text-2xl font-extrabold tracking-tight text-[#151c27]" style={{ fontFamily: "'Manrope', sans-serif" }}>
+        <p className="text-2xl font-extrabold tracking-tight text-[#151c27]" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
           costo repostero
         </p>
         <p className="mt-2 text-sm text-[#5f5e5e] animate-[pulse_2s_ease-in-out_infinite] motion-reduce:animate-none">

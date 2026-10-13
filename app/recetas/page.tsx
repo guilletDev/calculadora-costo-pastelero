@@ -9,7 +9,7 @@ import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
 import { UpgradeModal } from '@/components/upgrade-modal';
 import { useAppBoot } from '@/components/boot/app-boot-context';
 
-const stitchFontManrope = { fontFamily: "'Manrope', sans-serif" } as const;
+const stitchFontManrope = { fontFamily: 'var(--font-manrope), sans-serif' } as const;
 
 export default function RecetasPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);

@@ -25,7 +25,7 @@ export default function PrivacidadPage() {
   return (
     <div
       className="min-h-screen bg-[#f9f9ff] text-[#151c27] antialiased"
-      style={{ fontFamily: "'Inter', sans-serif" }}
+      style={{ fontFamily: 'var(--font-inter), sans-serif' }}
     >
       {/* Mini header */}
       <header className="w-full border-b border-[#e4bdc2]/20 bg-white/80 backdrop-blur-sm sticky top-0 z-40">
@@ -34,7 +34,7 @@ export default function PrivacidadPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ee2b6c] text-white shrink-0">
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>bakery_dining</span>
             </div>
-            <span className="text-lg font-extrabold tracking-tight text-[#151c27] whitespace-nowrap" style={{ fontFamily: "'Manrope', sans-serif" }}>
+            <span className="text-lg font-extrabold tracking-tight text-[#151c27] whitespace-nowrap" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
               costo repostero
             </span>
           </Link>
@@ -47,7 +47,7 @@ export default function PrivacidadPage() {
         </p>
         <h1
           className="text-[28px] md:text-[40px] leading-[1.15] tracking-tight font-[800] mb-4"
-          style={{ fontFamily: "'Manrope', sans-serif" }}
+          style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
         >
           Política de Privacidad - Costo Repostero
         </h1>
@@ -61,7 +61,7 @@ export default function PrivacidadPage() {
             <section key={section.title} className="bg-white rounded-[24px] border border-[#e4bdc2]/30 p-8 shadow-sm">
               <h2
                 className="text-[20px] font-bold text-[#151c27] mb-3 flex items-center gap-3"
-                style={{ fontFamily: "'Manrope', sans-serif" }}
+                style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
               >
                 <span className="w-8 h-8 rounded-full bg-[#ffd9de]/50 text-[#b80049] flex items-center justify-center text-sm font-bold shrink-0">
                   {index + 1}
@@ -77,7 +77,7 @@ export default function PrivacidadPage() {
           <section className="bg-white rounded-[24px] border border-[#e4bdc2]/30 p-8 shadow-sm">
             <h2
               className="text-[20px] font-bold text-[#151c27] mb-3 flex items-center gap-3"
-              style={{ fontFamily: "'Manrope', sans-serif" }}
+              style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
             >
               <span className="w-8 h-8 rounded-full bg-[#ffd9de]/50 text-[#b80049] flex items-center justify-center text-sm font-bold shrink-0">
                 5

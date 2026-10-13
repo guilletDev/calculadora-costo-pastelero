@@ -100,7 +100,7 @@ function additionalCostsToExtraCosts(rows: AdditionalCost[]): Record<string, num
   return result;
 }
 
-const stitchFontManrope = { fontFamily: "'Manrope', sans-serif" } as const;
+const stitchFontManrope = { fontFamily: 'var(--font-manrope), sans-serif' } as const;
 const stitchShadow = { boxShadow: '0 10px 40px rgba(0,0,0,0.04)' } as const;
 
 export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion = 0, standalone = false, sandbox = false }: RecipeBuilderProps) {
@@ -849,20 +849,20 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
           style={{ boxShadow: '0 20px 50px rgba(184, 0, 73, 0.3)' }}
         >
           <h2 className="font-bold text-[28px] mb-8" style={stitchFontManrope}>Resumen de Costos</h2>
-          <div className="space-y-4 text-sm text-[#ffb2be]" style={{ fontFamily: "'Inter', sans-serif", fontSize: '16px', lineHeight: '1.5' }}>
+          <div className="space-y-4 text-sm text-[#ffb2be]" style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: '16px', lineHeight: '1.5' }}>
             <div className="flex justify-between items-center border-b border-white/20 pb-4">
               <span>Subtotal Ingredientes:</span>
-              <span className="text-white font-medium" style={{ fontSize: '20px', lineHeight: '1.2', fontWeight: '500', fontFamily: "'Inter', sans-serif" }}>{formatCurrency(componentsCost)}</span>
+              <span className="text-white font-medium" style={{ fontSize: '20px', lineHeight: '1.2', fontWeight: '500', fontFamily: 'var(--font-inter), sans-serif' }}>{formatCurrency(componentsCost)}</span>
             </div>
             {minutes > 0 && (
               <div className="flex justify-between items-center border-b border-white/20 pb-4">
                 <span>Mano de Obra ({minutes} min × {formatCurrency(hourlyRate)}/h):</span>
-                <span className="text-white font-medium" style={{ fontSize: '20px', lineHeight: '1.2', fontWeight: '500', fontFamily: "'Inter', sans-serif" }}>{formatCurrency(laborCost)}</span>
+                <span className="text-white font-medium" style={{ fontSize: '20px', lineHeight: '1.2', fontWeight: '500', fontFamily: 'var(--font-inter), sans-serif' }}>{formatCurrency(laborCost)}</span>
               </div>
             )}
             <div className="flex justify-between items-center border-b border-white/20 pb-4">
               <span>Costo Base:</span>
-              <span className="text-white font-medium" style={{ fontSize: '20px', lineHeight: '1.2', fontWeight: '500', fontFamily: "'Inter', sans-serif" }}>{formatCurrency(baseCost)}</span>
+              <span className="text-white font-medium" style={{ fontSize: '20px', lineHeight: '1.2', fontWeight: '500', fontFamily: 'var(--font-inter), sans-serif' }}>{formatCurrency(baseCost)}</span>
             </div>
           </div>
 
@@ -875,22 +875,22 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
           <div className="mt-8 pt-6 border-t border-white/20 grid grid-cols-1 sm:grid-cols-2 gap-6">
             {portions > 0 && (
               <div>
-                <p className="uppercase tracking-widest text-[#ffd9de] mb-1 text-[10px] font-bold" style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: "'Inter', sans-serif" }}>
+                <p className="uppercase tracking-widest text-[#ffd9de] mb-1 text-[10px] font-bold" style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: 'var(--font-inter), sans-serif' }}>
                   COSTO POR PORCIÓN
                 </p>
                 <div className="flex items-baseline gap-2">
-                  <span className="font-extrabold text-[34px] leading-none" style={{ fontFamily: "'Manrope', sans-serif", fontWeight: '800' }}>{formatCurrency(costPerPortionNet)}</span>
+                  <span className="font-extrabold text-[34px] leading-none" style={{ fontFamily: 'var(--font-manrope), sans-serif', fontWeight: '800' }}>{formatCurrency(costPerPortionNet)}</span>
                   <span className="text-[#ffb2be] text-sm">/ porción</span>
                 </div>
               </div>
             )}
             {grams > 0 && (
               <div>
-                <p className="uppercase tracking-widest text-[#ffd9de] mb-1 text-[10px] font-bold" style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: "'Inter', sans-serif" }}>
+                <p className="uppercase tracking-widest text-[#ffd9de] mb-1 text-[10px] font-bold" style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: 'var(--font-inter), sans-serif' }}>
                   COSTO POR GRAMO
                 </p>
                 <div className="flex items-baseline gap-2">
-                  <span className="font-extrabold text-[34px] leading-none" style={{ fontFamily: "'Manrope', sans-serif", fontWeight: '800' }}>{formatCurrency(costPerGramNet)}</span>
+                  <span className="font-extrabold text-[34px] leading-none" style={{ fontFamily: 'var(--font-manrope), sans-serif', fontWeight: '800' }}>{formatCurrency(costPerGramNet)}</span>
                   <span className="text-[#ffb2be] text-sm">/ gr</span>
                 </div>
               </div>
@@ -902,7 +902,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               onClick={saveRecipe}
               disabled={!canSave || isSaving}
               className="interactive-btn w-full py-4 bg-white text-[#b80049] rounded-full font-bold tracking-wider hover:bg-[#ffd9de] hover:text-[#400014] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: "'Inter', sans-serif" }}
+              style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: 'var(--font-inter), sans-serif' }}
             >
               {isSaving ? 'GUARDANDO...' : (editingRecipeId ? 'ACTUALIZAR RECETA' : sandbox ? 'GUARDAR COMO RECETA OFICIAL' : 'GUARDAR RECETA')}
             </button>
@@ -915,7 +915,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               <button
                 onClick={cancelEdit}
                 className="interactive-btn mt-2 w-full py-2.5 bg-transparent border border-white text-white rounded-full font-bold hover:bg-white/10 transition-colors"
-                style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: "'Inter', sans-serif" }}
+                style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: 'var(--font-inter), sans-serif' }}
               >
                 CANCELAR
               </button>
@@ -926,7 +926,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
         {/* ── Costos Adicionales + Precio de Venta (acordeón opcional) ── */}
         <Accordion type="single" collapsible className="bg-white rounded-[24px] border border-gray-100 overflow-hidden card-animate delay-400" style={stitchShadow}>
           <AccordionItem value="costos" className="border-b-0">
-            <AccordionTrigger className="px-8 py-6 text-left text-[18px] font-semibold text-[#151c27] hover:no-underline hover:text-[#b80049] transition-colors" style={{ fontFamily: "'Manrope', sans-serif" }}>
+            <AccordionTrigger className="px-8 py-6 text-left text-[18px] font-semibold text-[#151c27] hover:no-underline hover:text-[#b80049] transition-colors" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
               <span className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-[#b80049] text-[24px]">local_shipping</span>
                 ¿Querés calcular costos adicionales y precio de venta?

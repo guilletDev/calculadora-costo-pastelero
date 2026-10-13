@@ -61,7 +61,7 @@ export function HourlyRateCard() {
         <span className="material-symbols-outlined text-[#b80049] text-[28px]">schedule</span>
         <h2
           className="font-semibold text-[24px] leading-[1.3] text-[#151c27]"
-          style={{ fontFamily: "'Manrope', sans-serif" }}
+          style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
         >
           Configuración de Mano de Obra
         </h2>

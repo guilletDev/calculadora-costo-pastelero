@@ -258,10 +258,10 @@ html {
     font-family: 'Plus Jakarta Sans', sans-serif;
   }
   .font-body {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-inter), sans-serif;
   }
   .font-label {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-inter), sans-serif;
   }
   .gradient-text {
     background: linear-gradient(135deg, #b80040, #ff7389);
@@ -318,12 +318,30 @@ html {
 }
 
 .animate-fade-in-up {
-  animation: stitchFadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: stitchFadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
   transform: translateY(20px);
 }
 
 @keyframes stitchFadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Entrada premium del Navbar: efecto visual suave, pero sin bloquear la
+   interacción (opacity/transform no afectan pointer-events y no hay delay). */
+.animate-nav-fade-down {
+  animation: stitchNavDown 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  pointer-events: auto;
+}
+
+@keyframes stitchNavDown {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
   to {
     opacity: 1;
     transform: translateY(0);

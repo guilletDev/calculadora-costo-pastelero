@@ -92,7 +92,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="bg-[#f9f9ff] text-[#151c27] min-h-screen md:h-screen flex flex-col md:flex-row overflow-x-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="bg-[#f9f9ff] text-[#151c27] min-h-screen md:h-screen flex flex-col md:flex-row overflow-x-hidden" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
       {/* Left Panel (Brand/Marketing) */}
       <div className="hidden md:flex flex-col justify-between w-[45%] h-full bg-[#151c27] text-white py-10 px-8 md:px-12 relative overflow-hidden">
         {/* Subtle Radial Gradient */}
@@ -107,7 +107,7 @@ export default function LoginPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ee2b6c] text-white shrink-0">
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>bakery_dining</span>
             </div>
-            <span className="text-xl font-extrabold tracking-tight text-white whitespace-nowrap" style={{ fontFamily: "'Manrope', sans-serif" }}>
+            <span className="text-xl font-extrabold tracking-tight text-white whitespace-nowrap" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
               costo repostero
             </span>
           </Link>
@@ -115,7 +115,7 @@ export default function LoginPage() {
 
         {/* Content */}
         <div className="z-10 flex flex-col gap-8 max-w-[480px]">
-          <h1 className="text-[48px] leading-[1.1] tracking-tight font-[800] text-white" style={{ fontFamily: "'Manrope', sans-serif" }}>
+          <h1 className="text-[48px] leading-[1.1] tracking-tight font-[800] text-white" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
             Convierte cada receta en un negocio rentable
           </h1>
           <p className="text-[18px] leading-[1.6] text-[#dce2f3] opacity-90">
@@ -152,7 +152,7 @@ export default function LoginPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ee2b6c] text-white shrink-0">
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>bakery_dining</span>
             </div>
-            <span className="text-2xl font-extrabold tracking-tight text-[#151c27] whitespace-nowrap" style={{ fontFamily: "'Manrope', sans-serif" }}>
+            <span className="text-2xl font-extrabold tracking-tight text-[#151c27] whitespace-nowrap" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
               costo repostero
             </span>
           </Link>
@@ -162,7 +162,7 @@ export default function LoginPage() {
           <div className="w-full max-w-[480px] bg-white rounded-3xl p-6 md:p-7 border border-[#e4bdc2]/30 shadow-sm flex flex-col gap-3.5 m-auto relative">
           {/* Header */}
           <div className="text-center md:text-left flex flex-col gap-2">
-            <h2 className="text-[28px] leading-[1.2] font-[700] text-[#151c27] tracking-tight" style={{ fontFamily: "'Manrope', sans-serif" }}>
+            <h2 className="text-[28px] leading-[1.2] font-[700] text-[#151c27] tracking-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
               {mode === 'login' ? 'Bienvenido nuevamente' : 'Creá tu cuenta'}
             </h2>
             <p className="text-[15px] text-[#5b3f43]">

@@ -67,7 +67,7 @@ export default function RecetaDetailPage() {
   const handleDelete = () => {
     if (!recipe) return;
     toast.custom((t) => (
-      <div className="w-[360px] rounded-xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden" style={{ fontFamily: "'Manrope', sans-serif" }}>
+      <div className="w-[360px] rounded-xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
         <div className="p-4 flex items-start gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500">
             <span className="material-symbols-outlined text-[20px]">delete</span>

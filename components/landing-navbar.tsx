@@ -38,13 +38,13 @@ export function LandingNavbar() {
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-[#f9f9ff]/90 backdrop-blur-lg border-b border-[#e4bdc2]/20 shadow-sm transition-all duration-300 ease-in-out">
-      <div className="w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-16 h-20 flex items-center">
+      <div className="animate-nav-fade-down w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-16 h-20 flex items-center">
         {/* Izquierda: Logo */}
         <button onClick={scrollToTop} className="flex items-center gap-2.5 shrink-0 cursor-pointer">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ee2b6c] text-white shrink-0">
             <span className="material-symbols-outlined" style={{ fontSize: 20 }}>bakery_dining</span>
           </div>
-          <span className="text-lg font-extrabold tracking-tight text-[#151c27] whitespace-nowrap" style={{ fontFamily: "'Manrope', sans-serif" }}>
+          <span className="text-lg font-extrabold tracking-tight text-[#151c27] whitespace-nowrap" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
             costo repostero
           </span>
         </button>
@@ -57,7 +57,7 @@ export function LandingNavbar() {
               href={link.href}
               onClick={(e) => handleNavClick(e, link.href)}
               className="stitch-nav-link text-sm font-semibold tracking-[0.02em] text-[#5f5e5e] hover:text-[#151c27] transition-colors duration-200"
-              style={{ fontFamily: "'Inter', sans-serif" }}
+              style={{ fontFamily: 'var(--font-inter), sans-serif' }}
             >
               {link.label}
             </a>
@@ -80,9 +80,23 @@ export function LandingNavbar() {
           </TransitionLink>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button className="lg:hidden ml-auto text-[#b80049]" onClick={() => setIsOpen(!isOpen)}>
-          <span className="material-symbols-outlined text-3xl">{isOpen ? 'close' : 'menu'}</span>
+        {/* Mobile Menu Button: fuera del wrapper animado para ser visible
+            e interactivo desde el frame 0 en mobile */}
+        <button
+          className="lg:hidden absolute top-0 right-6 md:right-12 h-20 flex items-center text-[#b80049] opacity-100"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={isOpen}
+        >
+          {isOpen ? (
+            <svg className="w-8 h-8 text-[#b80049]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-8 h-8 text-[#b80049]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
         </button>
       </div>
 
@@ -100,7 +114,7 @@ export function LandingNavbar() {
             href={link.href}
             onClick={(e) => handleNavClick(e, link.href)}
             className="text-base font-semibold text-[#151c27] hover:text-[#b80049] transition-colors py-2 border-b border-[#e4bdc2]/10"
-            style={{ fontFamily: "'Manrope', sans-serif" }}
+            style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
           >
             {link.label}
           </a>

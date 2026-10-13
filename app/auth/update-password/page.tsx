@@ -58,7 +58,7 @@ export default function UpdatePasswordPage() {
     return (
       <div
         className="min-h-screen bg-[#f9f9ff] text-[#151c27] flex items-center justify-center px-6"
-        style={{ fontFamily: "'Inter', sans-serif" }}
+        style={{ fontFamily: 'var(--font-inter), sans-serif' }}
       >
         <p className="text-[#5b3f43] flex items-center gap-2">
           <span className="material-symbols-outlined animate-spin" style={{ fontSize: 20 }}>progress_activity</span>
@@ -71,7 +71,7 @@ export default function UpdatePasswordPage() {
   return (
     <div
       className="min-h-screen bg-[#f9f9ff] text-[#151c27] flex items-center justify-center px-6"
-      style={{ fontFamily: "'Inter', sans-serif" }}
+      style={{ fontFamily: 'var(--font-inter), sans-serif' }}
     >
       <div className="w-full max-w-[440px] bg-white rounded-3xl p-8 md:p-10 border border-[#e4bdc2]/30 shadow-sm flex flex-col gap-6">
         {hasSession ? (
@@ -80,7 +80,7 @@ export default function UpdatePasswordPage() {
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ffd9de]/50 text-[#b80049]">
                 <span className="material-symbols-outlined" style={{ fontSize: 28 }}>password</span>
               </div>
-              <h1 className="text-[26px] leading-[1.2] font-[700] text-[#151c27] tracking-tight" style={{ fontFamily: "'Manrope', sans-serif" }}>
+              <h1 className="text-[26px] leading-[1.2] font-[700] text-[#151c27] tracking-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
                 Nueva contraseña
               </h1>
               <p className="text-[14px] text-[#5b3f43] mt-2">
@@ -132,7 +132,7 @@ export default function UpdatePasswordPage() {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ffdad6] text-[#ba1a1a]">
               <span className="material-symbols-outlined" style={{ fontSize: 28 }}>error</span>
             </div>
-            <h1 className="text-[24px] leading-[1.2] font-[700] text-[#151c27] tracking-tight" style={{ fontFamily: "'Manrope', sans-serif" }}>
+            <h1 className="text-[24px] leading-[1.2] font-[700] text-[#151c27] tracking-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
               Enlace inválido o vencido
             </h1>
             <p className="text-[14px] text-[#5b3f43] leading-[1.6]">
