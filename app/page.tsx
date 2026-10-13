@@ -2,7 +2,7 @@ import { LandingNavbar } from '@/components/landing-navbar';
 import { TransitionLink } from '@/components/transition-link';
 import { UpgradeButton } from '@/components/upgrade-button';
 import { Reveal, Stagger } from '@/components/landing-scroll-reveal';
-import { FREE_TIER_RECIPES_LIMIT, FREE_TIER_INGREDIENTS_LIMIT } from '@/lib/limits';
+import { FREE_TIER_RECIPES_LIMIT, FREE_TIER_INGREDIENTS_LIMIT, FREE_TIER_PRODUCTS_LIMIT } from '@/lib/limits';
 import { PRO_PLAN_NAME, PRO_PLAN_LABEL } from '@/lib/pricing';
 
 export default function LandingPage() {
@@ -245,9 +245,9 @@ export default function LandingPage() {
               Comienza gratis y mejora cuando tu negocio lo necesite.
             </p>
           </Reveal>
-          <Reveal className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto items-center">
+          <Reveal className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto items-stretch">
             {/* Plan Gratis */}
-            <div className="bg-white p-8 md:p-12 rounded-3xl border border-[#e4bdc2]/20 shadow-card flex flex-col h-full">
+            <div className="bg-white p-8 md:p-12 rounded-3xl border-2 border-slate-200 shadow-md flex flex-col h-full justify-between">
               <div className="mb-8">
                 <span
                   className="text-xs text-[#5f5e5e] font-semibold uppercase tracking-widest block mb-4"
@@ -268,27 +268,31 @@ export default function LandingPage() {
               <ul className="space-y-5 mb-12 flex-1">
                 <li className="flex items-start gap-3">
                   <span className="material-symbols-outlined text-[#b80049] text-[20px]">check</span>
-                  <span className="text-sm text-[#5f5e5e]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Hasta {FREE_TIER_RECIPES_LIMIT} recetas completas</span>
+                  <span className="text-sm text-[#5f5e5e]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Hasta {FREE_TIER_RECIPES_LIMIT} recetas</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="material-symbols-outlined text-[#b80049] text-[20px]">check</span>
-                  <span className="text-sm text-[#5f5e5e]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Base de datos de {FREE_TIER_INGREDIENTS_LIMIT} ingredientes</span>
+                  <span className="text-sm text-[#5f5e5e]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Hasta {FREE_TIER_INGREDIENTS_LIMIT} ingredientes</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="material-symbols-outlined text-[#b80049] text-[20px]">check</span>
-                  <span className="text-sm text-[#5f5e5e]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Cálculo de costo básico</span>
+                  <span className="text-sm text-[#5f5e5e]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Hasta {FREE_TIER_PRODUCTS_LIMIT} producto</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="material-symbols-outlined text-[#b80049] text-[20px]">check</span>
+                  <span className="text-sm text-[#5f5e5e]" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Cálculo completo de costos y márgenes de ganancia</span>
                 </li>
               </ul>
               <TransitionLink
                 href="/login"
-                className="w-full text-center bg-[#f0f3ff] text-[#151c27] text-sm py-4 rounded-full btn-hover-effect font-semibold hover:bg-[#e7eefe] transition-all duration-300 hover:scale-105 block"
+                className="w-full py-3.5 px-6 rounded-full border-2 border-slate-300 font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 transition-all text-center block"
               >
                 Empezar gratis
               </TransitionLink>
             </div>
 
             {/* Plan Pro */}
-            <div className="bg-[#2a313d] text-[#ebf1ff] p-8 md:p-12 rounded-3xl border border-[#b80049] relative shadow-floating flex flex-col h-full transform md:-translate-y-4">
+            <div className="bg-[#2a313d] text-[#ebf1ff] p-8 md:p-12 rounded-3xl border border-[#b80049] relative shadow-floating flex flex-col h-full justify-between">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#b80049] text-white text-xs px-4 py-1.5 rounded-full flex items-center gap-1.5 font-bold shadow-sm">
                 <span className="material-symbols-outlined text-[14px]">star</span> Más elegido
               </div>
@@ -306,19 +310,23 @@ export default function LandingPage() {
               <ul className="space-y-5 mb-12 flex-1">
                 <li className="flex items-start gap-3">
                   <span className="material-symbols-outlined text-[#ffb2be] text-[20px]">check</span>
-                  <span className="text-sm opacity-90" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Recetas e ingredientes ilimitados</span>
+                  <span className="text-sm opacity-90" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Recetas ilimitadas</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="material-symbols-outlined text-[#ffb2be] text-[20px]">check</span>
-                  <span className="text-sm opacity-90" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Cálculo de márgenes y sugerencia de precios</span>
+                  <span className="text-sm opacity-90" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Ingredientes ilimitados</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="material-symbols-outlined text-[#ffb2be] text-[20px]">check</span>
-                  <span className="text-sm opacity-90" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Exportación a PDF/Excel</span>
+                  <span className="text-sm opacity-90" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Productos ilimitados</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="material-symbols-outlined text-[#ffb2be] text-[20px]">check</span>
-                  <span className="text-sm opacity-90" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Soporte prioritario 24/7</span>
+                  <span className="text-sm opacity-90" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Cálculo completo de costos y márgenes de ganancia</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="material-symbols-outlined text-[#ffb2be] text-[20px]">check</span>
+                  <span className="text-sm opacity-90" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>Soporte prioritario</span>
                 </li>
               </ul>
               <UpgradeButton
