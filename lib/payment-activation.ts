@@ -8,6 +8,7 @@
 
 import { createAdminClient } from '@/lib/supabase-admin';
 import { PRO_PLAN_PRICE, PRO_PLAN_DAYS } from '@/lib/pricing';
+import { isEmailConfigured, sendProConfirmationEmail } from '@/lib/email';
 
 const DAYS_MS = PRO_PLAN_DAYS * 24 * 60 * 60 * 1000;
 
@@ -140,6 +141,22 @@ export async function activateProPlan(payment: PaymentLike): Promise<ActivationR
     wasActive,
     profileAnterior: profile?.pro_valid_until ?? null,
   });
+
+  // Email de confirmación del Plan Pro (no rompe la activación si falla)
+  try {
+    if (isEmailConfigured()) {
+      const { data: userData } = await admin.auth.admin.getUserById(userId);
+      const user = userData?.user;
+      if (user?.email) {
+        const meta = user.user_metadata ?? {};
+        const name = (meta.full_name || meta.name || user.email.split('@')[0] || 'pastelero') as string;
+        await sendProConfirmationEmail({ to: user.email, name, validUntil: newValidUntil });
+        console.log('[payment-activation] Email Pro enviado a', user.email);
+      }
+    }
+  } catch (emailError) {
+    console.error('[payment-activation] Error enviando email Pro:', emailError);
+  }
 
   return { status: 'activated', userId, wasActive };
 }

@@ -261,6 +261,46 @@ export function IngredientList({
     const converted = convertToBaseUnit(rawQuantity, formData.unit);
     const pricePerUnit = price / converted.quantity;
 
+    // ── Optimistic UI: la tabla se actualiza al instante ──
+    const snapshot = ingredients;
+    const existing = ingredients.find(ing => ing.name.toLowerCase().trim() === normalizedName);
+    const tempId = `temp-${crypto.randomUUID()}`;
+
+    let optimisticNext: BaseIngredient[];
+    if (existing) {
+      // Predicción del merge idéntico al RPC upsert_ingredient (ON CONFLICT DO UPDATE)
+      const mergedQty = existing.purchasedQuantity + converted.quantity;
+      const mergedTotal = existing.totalPrice + price;
+      const mergedRow: BaseIngredient = {
+        ...existing,
+        purchasedQuantity: mergedQty,
+        totalPrice: mergedTotal,
+        pricePerUnit: mergedTotal / mergedQty,
+      };
+      optimisticNext = ingredients.map(ing => ing.id === existing.id ? mergedRow : ing);
+    } else {
+      const optimisticRow: BaseIngredient = {
+        id: tempId,
+        name: formData.name,
+        purchasedQuantity: converted.quantity,
+        unit: converted.unit,
+        totalPrice: price,
+        pricePerUnit,
+        deletedAt: null,
+      };
+      optimisticNext = [...ingredients, optimisticRow];
+    }
+
+    const optimisticSorted = [...optimisticNext].sort((a, b) =>
+      a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+    );
+    setIngredients(optimisticSorted);
+    applyLocal({ ingredients: optimisticSorted });
+    onIngredientsChange?.(optimisticSorted);
+    setFormData({ name: '', purchasedQuantity: '', unit: 'kg', totalPrice: '' });
+    setIsAdding(false);
+
+    // ── Persistencia en background + reconciliación con el server ──
     savingRef.current = true;
     setIsSaving(true);
     try {
@@ -272,18 +312,34 @@ export function IngredientList({
         pricePerUnit,
       });
 
-      const isNew = !ingredients.some(ing => ing.id === savedIngredient.id);
-      const raw = isNew
-        ? [...ingredients, savedIngredient]
-        : ingredients.map(ing => ing.id === savedIngredient.id ? savedIngredient : ing);
-      const sorted = [...raw].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
-      setIngredients(sorted);
-      applyLocal({ ingredients: sorted });
-      onIngredientsChange?.(sorted);
+      let replaced = false;
+      const reconciled = optimisticSorted.map(ing => {
+        if (ing.id === tempId || (existing && ing.id === existing.id)) {
+          replaced = true;
+          return savedIngredient;
+        }
+        return ing;
+      });
+      if (!replaced) reconciled.push(savedIngredient);
 
-      setFormData({ name: '', purchasedQuantity: '', unit: 'kg', totalPrice: '' });
-      setIsAdding(false);
+      const reconciledSorted = [...reconciled].sort((a, b) =>
+        a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+      );
+      setIngredients(reconciledSorted);
+      applyLocal({ ingredients: reconciledSorted });
+      onIngredientsChange?.(reconciledSorted);
     } catch (err) {
+      // Rollback al estado previo y devolución de los datos al formulario
+      setIngredients(snapshot);
+      applyLocal({ ingredients: snapshot });
+      onIngredientsChange?.(snapshot);
+      setFormData({
+        name: formData.name,
+        purchasedQuantity: formData.purchasedQuantity,
+        unit: formData.unit,
+        totalPrice: formData.totalPrice,
+      });
+      setIsAdding(true);
       const message = err instanceof Error ? err.message : 'Error al guardar';
       toast.error(message);
     } finally {

@@ -37,9 +37,9 @@ export function isSandboxToken(): boolean {
 }
 
 export function buildAppUrl(path: string): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL;
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL;
   if (!base) {
-    throw new Error('Falta la variable de entorno NEXT_PUBLIC_APP_URL');
+    throw new Error('Falta la variable de entorno NEXT_PUBLIC_APP_URL (o su alternativa NEXT_PUBLIC_SITE_URL)');
   }
   return new URL(path, base).toString();
 }
