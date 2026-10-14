@@ -33,14 +33,13 @@ function getAppUrl(): string {
 }
 
 function emailLayout(content: string): string {
+  const appUrl = getAppUrl();
   return `<!DOCTYPE html>
 <html lang="es">
   <body style="margin:0;padding:0;background-color:#f9f9ff;font-family:Arial,Helvetica,sans-serif;color:#151c27;">
     <div style="max-width:560px;margin:0 auto;padding:32px 20px;">
       <div style="text-align:center;margin-bottom:24px;">
-        <span style="display:inline-block;background-color:#ee2b6c;color:#ffffff;font-weight:bold;font-size:16px;padding:10px 18px;border-radius:10px;">
-          🎂 costo repostero
-        </span>
+        <img src="${appUrl}/logo-120.png" alt="Costo Repostero" width="120" style="display: block; margin: 0 auto; border: 0; outline: none;" />
       </div>
       <div style="background-color:#ffffff;border:1px solid #e4bdc2;border-radius:24px;padding:32px;">
         ${content}
