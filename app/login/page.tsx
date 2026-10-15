@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 type AuthMode = 'login' | 'register';
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Link de autenticación vencido/inválido: mensaje claro y limpieza de la URL
   useEffect(() => {
@@ -263,16 +265,26 @@ export default function LoginPage() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-[#5b3f43] mb-1.5">Contraseña</label>
-                <input
-                  className="w-full px-4 py-3 rounded-xl border border-[#e4bdc2] bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8] focus:ring-2 focus:ring-[#b80049]/20 focus:border-[#b80049] outline-none transition-all text-[15px]"
-                  placeholder="••••••••"
-                  type="password"
-                  required
-                  minLength={mode === 'register' ? 6 : undefined}
-                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+                <div className="relative">
+                  <input
+                    className="w-full px-4 py-3 pr-12 rounded-xl border border-[#e4bdc2] bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8] focus:ring-2 focus:ring-[#b80049]/20 focus:border-[#b80049] outline-none transition-all text-[15px]"
+                    placeholder="••••••••"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={mode === 'register' ? 6 : undefined}
+                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(v => !v)}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#5b3f43] hover:text-[#151c27] transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
                 {mode === 'login' && (
                   <div className="flex justify-end mt-2">
                     <Link
