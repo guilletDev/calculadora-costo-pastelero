@@ -16,48 +16,24 @@ const PAYMENT_POLL_INTERVAL_MS = 2000;
 
 function DashboardContent() {
   const router = useRouter();
-  const { ready, ingredients, recipes, products } = useAppBoot();
+  const { ready, ingredients, recipes, products, user, isPro: bootIsPro, refreshProfile } = useAppBoot();
 
-  const [isPro, setIsPro] = useState(false);
-  const [userName, setUserName] = useState('');
-  const [loadingPlan, setLoadingPlan] = useState(true);
+  // override local para reflejar el plan al instante al confirmar el pago,
+  // sin esperar a que el contexto vuelva a consultar.
+  const [paymentVerified, setPaymentVerified] = useState(false);
+  const isPro = paymentVerified || bootIsPro;
 
   const searchParams = useSearchParams();
   const paymentSuccess = searchParams.get('payment') === 'success';
 
-  useEffect(() => {
-    let cancelled = false;
-    const finish = () => { if (!cancelled) setLoadingPlan(false); };
-    const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (cancelled) return;
-      const user = data.user;
-      if (!user) {
-        finish();
-        return;
-      }
-
-      const meta = user.user_metadata ?? {};
-      setUserName(
-        (meta.full_name || meta.name || user.email?.split('@')[0] || 'Usuario') as string
-      );
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('plan_type, pro_valid_until')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (cancelled) return;
-      setIsPro(isProUser(user.email, profile?.plan_type ?? null, profile?.pro_valid_until ?? null));
-      finish();
-    });
-    return () => { cancelled = true; };
-  }, []);
+  const meta = user?.user_metadata ?? {};
+  const userName = (meta.full_name || meta.name || user?.email?.split('@')[0] || '') as string;
 
   // Si llegamos con ?payment=success (el webhook puede tardar unos segundos),
   // mostramos un aviso y hacemos polling del perfil hasta ver el plan activo.
+  // Usamos el user_id del contexto: 1 sola consulta a profiles por intento.
   useEffect(() => {
-    if (!paymentSuccess) return;
+    if (!paymentSuccess || !user) return;
     let cancelled = false;
     let attempts = 0;
 
@@ -71,22 +47,17 @@ function DashboardContent() {
       attempts += 1;
       try {
         const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('plan_type, pro_valid_until')
-            .eq('id', user.id)
-            .maybeSingle();
-          if (profile && isProUser(user.email, profile.plan_type, profile.pro_valid_until)) {
-            setIsPro(true);
-            setLoadingPlan(false);
-            toast.dismiss('payment-verify');
-            toast.success('¡Tu plan Pro está activo!');
-            return;
-          }
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('plan_type, pro_valid_until')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (profile && isProUser(user.email, profile.plan_type, profile.pro_valid_until)) {
+          setPaymentVerified(true);
+          toast.dismiss('payment-verify');
+          toast.success('¡Tu plan Pro está activo!');
+          void refreshProfile();
+          return;
         }
       } catch {
         // reintentar en la próxima iteración
@@ -99,7 +70,7 @@ function DashboardContent() {
       cancelled = true;
       toast.dismiss('payment-verify');
     };
-  }, [paymentSuccess]);
+  }, [paymentSuccess, user, refreshProfile]);
 
   // Onboarding: si el usuario aún no cargó al menos 2 ingredientes, lo llevamos
   // al inventario para completar la carga inicial (excepto al volver de un pago).
@@ -125,7 +96,7 @@ function DashboardContent() {
     { href: '/inventario', label: 'Inventario de Insumos', description: 'Actualizar precios de ingredientes y empaques', icon: 'inventory', cta: 'Ver' },
   ];
 
-  if (!ready || loadingPlan || (ready && !paymentSuccess && ingredients.length < 2)) {
+  if (!ready || (ready && !paymentSuccess && ingredients.length < 2)) {
     return (
       <main className="flex-grow w-full max-w-[1200px] mx-auto px-6 md:px-[10%] py-12 flex flex-col items-center justify-center gap-2 text-[#5f5e5e]">
         <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
@@ -178,7 +149,7 @@ function DashboardContent() {
       </section>
 
       {/* ── Banner Mercado Pago (solo Free) ── */}
-      {!loadingPlan && !isPro && (
+      {!isPro && (
         <section className="bg-[#1e2330] text-white rounded-[24px] p-8 md:p-10 border border-[#b80049]/40 shadow-floating relative overflow-hidden animate-fade-up">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
             <div className="max-w-xl">

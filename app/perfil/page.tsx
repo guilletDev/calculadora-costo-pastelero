@@ -1,12 +1,19 @@
-import { redirect } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
-import { createAdminClient } from '@/lib/supabase-admin';
-import { isProUser } from '@/lib/limits';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAppBoot } from '@/components/boot/app-boot-context';
 import { PRO_PLAN_NAME, PRO_PLAN_DESCRIPTION, formatProValidUntil } from '@/lib/pricing';
 import { formatCurrency } from '@/lib/cost';
 import { UpgradeButton } from '@/components/upgrade-button';
 
-export const dynamic = 'force-dynamic';
+interface PaymentRow {
+  id: string;
+  payment_id: number | string;
+  amount: number | string;
+  currency: string;
+  created_at: string;
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -17,41 +24,44 @@ const FREE_BENEFITS = [
   { icon: 'storefront', text: 'Productos ilimitados con márgenes de ganancia' },
 ];
 
-export default async function PerfilPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default function PerfilPage() {
+  const router = useRouter();
+  // Usuario + plan ya vienen del contexto de boot: la vista renderiza al
+  // instante, sin consultas bloqueantes al entrar.
+  const { ready, user, isPro, profile } = useAppBoot();
+  const [payments, setPayments] = useState<PaymentRow[] | null>(null);
 
-  if (!user) {
-    redirect('/login');
+  // Seguridad extra (el middleware ya protege la ruta): sin sesión → login.
+  useEffect(() => {
+    if (ready && !user) router.replace('/login');
+  }, [ready, user, router]);
+
+  // Historial de pagos en segundo plano: la página no espera esta llamada.
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/perfil/payments')
+      .then((res) => (res.ok ? res.json() : { payments: [] }))
+      .then((data) => {
+        if (!cancelled) setPayments(Array.isArray(data.payments) ? data.payments : []);
+      })
+      .catch(() => {
+        if (!cancelled) setPayments([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!ready) {
+    return (
+      <main className="mx-auto w-full max-w-[900px] flex-1 px-5 py-10 flex flex-col items-center justify-center gap-2 text-slate-500">
+        <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
+        <p className="text-[16px]">Cargando tu perfil...</p>
+      </main>
+    );
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan_type, pro_valid_until')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  // payment_events no expone policies de RLS (solo el backend escribe/lee):
-  // se consulta con el cliente service_role filtrando por el user_id de la
-  // sesión, exclusivamente desde este Server Component.
-  const admin = createAdminClient();
-  const { data: payments, error: paymentsError } = await admin
-    .from('payment_events')
-    .select('id, payment_id, amount, currency, created_at')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  if (paymentsError) {
-    console.error('[perfil] Error consultando payment_events:', paymentsError);
-  }
-
-  const isPro = isProUser(user.email, profile?.plan_type, profile?.pro_valid_until);
-  const validUntil = profile?.pro_valid_until ?? null;
-  const daysLeft = validUntil
-    ? Math.max(0, Math.ceil((new Date(validUntil).getTime() - Date.now()) / DAY_MS))
-    : null;
+  if (!user) return null;
 
   const meta = user.user_metadata ?? {};
   const name = (meta.full_name || meta.name || user.email?.split('@')[0] || 'Usuario') as string;
@@ -65,6 +75,11 @@ export default async function PerfilPage() {
     .slice(0, 2)
     .join('')
     .toUpperCase();
+
+  const validUntil = profile.proValidUntil;
+  const daysLeft = validUntil
+    ? Math.max(0, Math.ceil((new Date(validUntil).getTime() - Date.now()) / DAY_MS))
+    : null;
 
   return (
     <main className="mx-auto w-full max-w-[900px] flex-1 px-5 py-10 space-y-8">
@@ -167,7 +182,14 @@ export default async function PerfilPage() {
         <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">
           Historial de Pagos
         </h2>
-        {!payments || payments.length === 0 ? (
+        {payments === null ? (
+          <div className="py-10 flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400">
+            <span className="material-symbols-outlined animate-spin" style={{ fontSize: 22 }}>
+              progress_activity
+            </span>
+            <span className="text-sm">Cargando historial...</span>
+          </div>
+        ) : payments.length === 0 ? (
           <div className="py-10 text-center">
             <span className="material-symbols-outlined text-slate-300 dark:text-slate-600" style={{ fontSize: 40 }}>
               receipt_long

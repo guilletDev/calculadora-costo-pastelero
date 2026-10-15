@@ -1,11 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Product, Recipe, BaseIngredient, ComponentType, Unit, AdditionalCost, EXTRA_COST_LABELS } from '@/lib/types';
-import { fetchRecipes } from '@/lib/recipes-db';
-import { fetchIngredients } from '@/lib/ingredients-db';
 import { fetchProductById, upsertProduct } from '@/lib/products-db';
 import { formatCurrency, proportionalCost, costPerGram, costPerPortion, calculateTotalCost, sumIngredientCosts, calculateSalePrice, calculateIngredientCost } from '@/lib/cost';
 import { toBaseQuantity } from '@/lib/units';
@@ -101,12 +99,19 @@ function yieldLabel(recipe: Recipe): string {
 
 export function ProductBuilder({ productId }: ProductBuilderProps) {
   const router = useRouter();
-  const { products: bootProducts, applyLocal } = useAppBoot();
+  const {
+    ready,
+    recipes: bootRecipes,
+    ingredients: bootIngredients,
+    products: bootProducts,
+    applyLocal,
+  } = useAppBoot();
   const [eligibleRecipes, setEligibleRecipes] = useState<Recipe[]>([]);
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
+  const didInitRef = useRef(false);
   const [selectedValue, setSelectedValue] = useState('');
   const [newQuantity, setNewQuantity] = useState('');
   const [newUnit, setNewUnit] = useState<Unit | 'porc.'>('g');
@@ -122,55 +127,76 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
 
   const [draft, setDraft] = useState<ProductDraft>(defaultDraft);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [recipes, ingredients] = await Promise.all([
-          fetchRecipes(),
-          fetchIngredients(),
-        ]);
-        const eligible = recipes
-          .filter(r => (r.yieldPortions != null && r.yieldPortions > 0) || (r.yieldGrams != null && r.yieldGrams > 0))
-          .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
-        const sortedIngredients = [...ingredients].sort((a, b) =>
-          a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
-        );
-        setEligibleRecipes(eligible);
-        setBaseIngredients(sortedIngredients);
+  const applyProductDraft = useCallback((product: Product) => {
+    const existingCosts = buildAdditionalCostsFromExtraCosts(product.extraCosts);
+    setDraft({
+      name: product.name,
+      description: product.description,
+      components: product.components.map(c => ({
+        componentType: c.componentType,
+        recipeId: c.recipeId,
+        recipeName: c.recipeName,
+        ingredientId: c.ingredientId,
+        ingredientName: c.ingredientName,
+        quantityUsed: String(c.quantityUsed),
+        unit: c.unit,
+        cost: c.cost,
+        useUnit: c.useUnit ?? null,
+      })),
+      additionalCosts: existingCosts.length > 0 ? existingCosts : defaultAdditionalCosts(),
+      profitMargin: String(product.profitMargin || ''),
+    });
+  }, []);
 
-        if (productId) {
-          const product = await fetchProductById(productId);
-          if (!product) {
-            navigateWithTransition(router, '/productos');
-            return;
-          }
-          const existingCosts = buildAdditionalCostsFromExtraCosts(product.extraCosts);
-          setDraft({
-            name: product.name,
-            description: product.description,
-            components: product.components.map(c => ({
-              componentType: c.componentType,
-              recipeId: c.recipeId,
-              recipeName: c.recipeName,
-              ingredientId: c.ingredientId,
-              ingredientName: c.ingredientName,
-              quantityUsed: String(c.quantityUsed),
-              unit: c.unit,
-              cost: c.cost,
-              useUnit: c.useUnit ?? null,
-            })),
-            additionalCosts: existingCosts.length > 0 ? existingCosts : defaultAdditionalCosts(),
-            profitMargin: String(product.profitMargin || ''),
-          });
+  // Catálogo de recetas elegibles + ingredientes desde el boot cache (sin fetch).
+  useEffect(() => {
+    if (!ready) return;
+    setEligibleRecipes(
+      bootRecipes
+        .filter(r => (r.yieldPortions != null && r.yieldPortions > 0) || (r.yieldGrams != null && r.yieldGrams > 0))
+        .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
+    );
+    setBaseIngredients(
+      [...bootIngredients].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
+    );
+  }, [ready, bootRecipes, bootIngredients]);
+
+  // Modo edición: draft desde el boot cache; si el producto no está en caché,
+  // un fetch puntual (una sola vez).
+  useEffect(() => {
+    if (!ready || didInitRef.current) return;
+    didInitRef.current = true;
+
+    if (!productId) {
+      setIsLoading(false);
+      return;
+    }
+
+    const cached = bootProducts.find(p => p.id === productId);
+    if (cached) {
+      applyProductDraft(cached);
+      setIsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const product = await fetchProductById(productId);
+        if (cancelled) return;
+        if (!product) {
+          navigateWithTransition(router, '/productos');
+          return;
         }
+        applyProductDraft(product);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Error al cargar datos');
+        if (!cancelled) toast.error(err instanceof Error ? err.message : 'Error al cargar datos');
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
-    };
-    loadData();
-  }, [productId, router]);
+    })();
+    return () => { cancelled = true; };
+  }, [ready, productId, bootProducts, router, applyProductDraft]);
 
   const computeCost = (component: ProductComponentDraft, quantityUsed: string, fallback?: number): number => {
     const qty = parseFloat(quantityUsed) || 0;

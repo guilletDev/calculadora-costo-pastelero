@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import type { User } from '@supabase/supabase-js';
+import { useAppBoot } from '@/components/boot/app-boot-context';
 
 interface UserProfileProps {
   /** Tamaño del avatar en px */
@@ -12,21 +10,8 @@ interface UserProfileProps {
 }
 
 export function UserProfile({ size = 36, showDetails = false }: UserProfileProps) {
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const supabase = createClient();
-
-    // Carga inicial
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
-
-    // Escucha cambios de sesión (login / logout / refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  // El usuario se reutiliza del contexto de boot (sin consultas propias).
+  const { user } = useAppBoot();
 
   if (!user) return null;
 

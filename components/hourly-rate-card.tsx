@@ -3,32 +3,28 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
+import { useAppBoot } from '@/components/boot/app-boot-context';
 
 export function HourlyRateCard() {
+  // Valor hora desde el contexto de boot (sin consultas propias de sesión/perfil).
+  const { ready, profile, refreshProfile } = useAppBoot();
   const [hourlyRate, setHourlyRate] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasSavedValue, setHasSavedValue] = useState(false);
 
+  // Seed del input desde el contexto, una sola vez al terminar el boot.
   useEffect(() => {
-    let cancelled = false;
-    const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('hourly_rate')
-        .eq('id', data.user.id)
-        .maybeSingle();
-      if (cancelled) return;
-      if (profile?.hourly_rate != null && profile.hourly_rate > 0) {
-        setHourlyRate(String(profile.hourly_rate));
-        setHasSavedValue(true);
-      }
-      setIsLoading(false);
-    });
-    return () => { cancelled = true; };
-  }, []);
+    if (!ready || initialized) return;
+    const saved = profile.hourlyRate;
+    if (saved != null && saved > 0) {
+      setHourlyRate(String(saved));
+      setHasSavedValue(true);
+    }
+    setInitialized(true);
+  }, [ready, initialized, profile.hourlyRate]);
+
+  const isLoading = !ready || !initialized;
 
   const parsedRate = parseFloat(hourlyRate);
   const isValid = hourlyRate.trim() !== '' && !isNaN(parsedRate) && parsedRate > 0;
@@ -45,6 +41,7 @@ export function HourlyRateCard() {
       if (error) throw new Error(error.message);
       setHasSavedValue(true);
       toast.success('Valor hora guardado');
+      void refreshProfile();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al guardar el valor hora');
     } finally {

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { TransitionLink } from '@/components/transition-link';
 import { createClient } from '@/utils/supabase/client';
+import { useAppBoot } from '@/components/boot/app-boot-context';
 import { UserProfile } from '@/components/user-profile';
 import {
   AlertDialog,
@@ -22,8 +23,6 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import type { User } from '@supabase/supabase-js';
-import { isProUser } from '@/lib/limits';
 import { formatProValidUntil } from '@/lib/pricing';
 import { UpgradeButton } from '@/components/upgrade-button';
 
@@ -31,46 +30,14 @@ export function Navbar() {
   const [logoutOpen, setLogoutOpen]     = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [proStatus, setProStatus] = useState<{ planType: string | null; proValidUntil: string | null }>({
-    planType: null,
-    proValidUntil: null,
-  });
+
+  // Usuario + plan vienen del contexto de boot (una sola consulta por sesión),
+  // sin re-fetch por navegación. El badge PRO/FREE se actualiza vía
+  // refreshProfile() tras un pago o cambio de plan.
+  const { user, isPro, profile } = useAppBoot();
 
   const pathname = usePathname();
   const router   = useRouter();
-
-  // ── Cargar usuario autenticado + perfil (re-fetch al navegar) ──────────────
-  // El re-fetch por pathname hace que el badge PRO/FREE se actualice al volver
-  // del pago (o tras cualquier navegación) sin necesidad de F5.
-  useEffect(() => {
-    let cancelled = false;
-    const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (cancelled) return;
-      setUser(data.user);
-      if (!data.user) return;
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('plan_type, pro_valid_until')
-        .eq('id', data.user.id)
-        .maybeSingle();
-      if (cancelled) return;
-      setProStatus({
-        planType: profile?.plan_type ?? null,
-        proValidUntil: profile?.pro_valid_until ?? null,
-      });
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => {
-      cancelled = true;
-      subscription.unsubscribe();
-    };
-  }, [pathname]);
-
-  const isPro = isProUser(user?.email, proStatus.planType, proStatus.proValidUntil);
 
   // ── Datos del usuario ───────────────────────────────────────────────────────
   const meta      = user?.user_metadata ?? {};
@@ -110,7 +77,10 @@ export function Navbar() {
     <>
       {/* ── Modal de confirmación logout ───────────────────────────────────── */}
       <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
-        <AlertDialogContent className="max-w-sm rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant">
+        <AlertDialogContent
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="max-w-sm rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant"
+        >
           <AlertDialogHeader>
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-stitch-primary-fixed">
               <span className="material-symbols-outlined text-stitch-primary" style={{ fontSize: 24 }}>logout</span>
@@ -125,14 +95,14 @@ export function Navbar() {
           <AlertDialogFooter className="mt-2 sm:flex-row gap-2">
             <AlertDialogCancel
               disabled={isLoggingOut}
-              className="flex-1 rounded-md border border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface font-semibold text-sm py-2.5 hover:bg-stitch-surface-container-low transition-colors"
+              className="flex-1 rounded-full border border-gray-300 bg-white text-gray-700 font-medium text-sm py-2.5 hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus-visible:ring-0 shadow-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => { e.preventDefault(); handleLogout(); }}
               disabled={isLoggingOut}
-              className="flex-1 rounded-md bg-stitch-primary text-on-primary font-semibold text-sm py-2.5 hover:bg-stitch-surface-tint transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 rounded-full bg-[#b80049] hover:bg-[#bc004b] text-white font-medium text-sm py-2.5 focus:outline-none focus-visible:ring-0 shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isLoggingOut ? 'Cerrando...' : 'Cerrar sesión'}
             </AlertDialogAction>
@@ -254,8 +224,8 @@ export function Navbar() {
                     Pro
                   </span>
                   <span className="text-xs text-slate-500 dark:text-slate-400">
-                    {proStatus.proValidUntil
-                      ? `Vence el ${formatProValidUntil(proStatus.proValidUntil)}`
+                    {profile.proValidUntil
+                      ? `Vence el ${formatProValidUntil(profile.proValidUntil)}`
                       : 'Plan activo'}
                   </span>
                 </div>

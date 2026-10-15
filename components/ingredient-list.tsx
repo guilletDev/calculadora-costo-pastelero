@@ -63,8 +63,9 @@ export function IngredientList({
   const { ready, ingredients: bootIngredients, recipes: bootRecipes, applyLocal } = useAppBoot();
   const router = useRouter();
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+  const [milestoneOpen, setMilestoneOpen] = useState(false);
   const prevIngredientsCountRef = useRef<number | null>(null);
-  const recipeToastShownRef = useRef(false);
+  const milestoneShownRef = useRef(false);
 
   // Estado para edición inline de un ingrediente existente
   const [editInlineData, setEditInlineData] = useState({
@@ -141,42 +142,19 @@ export function IngredientList({
     if (localStorage.getItem(WELCOME_DISMISSED_KEY)) setWelcomeDismissed(true);
   }, []);
 
-  // Onboarding: al detectar el 2º ingrediente (y sin recetas), mostrar toast de éxito
+  // Onboarding: al detectar el 2º ingrediente (y sin recetas), abrir el modal de hito
   useEffect(() => {
     if (isLoading || bootRecipes.length >= 1) return;
     const prev = prevIngredientsCountRef.current;
     prevIngredientsCountRef.current = ingredients.length;
     if (
       prev != null && prev < 2 && ingredients.length >= 2 &&
-      !recipeToastShownRef.current
+      !milestoneShownRef.current
     ) {
-      recipeToastShownRef.current = true;
-      toast.custom((t) => (
-        <div className="w-[380px] max-w-[90vw] rounded-2xl bg-white shadow-xl border border-gray-100 overflow-hidden" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
-          <div className="p-4 flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#ffd9de] text-[#b80049]">
-              <span className="material-symbols-outlined text-[20px]">celebration</span>
-            </div>
-            <p className="flex-1 text-sm leading-[1.5] text-[#151c27] min-w-0">
-              ¡Excelente! Ya tenés la base. Ya podés ir a crear tu primera receta o seguir agregando más ingredientes.
-            </p>
-          </div>
-          <div className="flex border-t border-gray-100">
-            <button
-              onClick={() => { toast.dismiss(t); router.push('/recetas/nueva'); }}
-              className="flex-1 px-4 py-2.5 text-sm font-bold text-white bg-[#b80049] hover:bg-[#bc004b] transition-colors"
-            >
-              Ir a Recetas
-            </button>
-            <button
-              onClick={() => toast.dismiss(t)}
-              className="flex-1 px-4 py-2.5 text-sm font-bold text-[#5f5e5e] hover:bg-[#f0f3ff] transition-colors border-l border-gray-100"
-            >
-              Seguir agregando
-            </button>
-          </div>
-        </div>
-      ), { duration: 12000 });
+      milestoneShownRef.current = true;
+      // Pre-cargar el builder de recetas mientras el usuario decide en el modal.
+      router.prefetch('/recetas/nueva');
+      setMilestoneOpen(true);
     }
   }, [ingredients.length, isLoading, bootRecipes.length, router]);
 
@@ -417,6 +395,11 @@ export function IngredientList({
   );
 
   const showWelcome = !isLoading && view === 'active' && ingredients.length < 2 && bootRecipes.length < 1 && !welcomeDismissed;
+
+  const dismissWelcome = () => {
+    setWelcomeDismissed(true);
+    if (typeof window !== 'undefined') localStorage.setItem(WELCOME_DISMISSED_KEY, '1');
+  };
 
   return (
     <>
@@ -764,39 +747,82 @@ export function IngredientList({
         resourceType={upgradeType ?? 'ingredients'}
       />
 
-      {/* Onboarding: modal de bienvenida (se muestra una vez, persistido en localStorage) */}
-      <AlertDialog open={showWelcome} onOpenChange={(open) => {
-        if (!open) {
-          setWelcomeDismissed(true);
-          if (typeof window !== 'undefined') localStorage.setItem(WELCOME_DISMISSED_KEY, '1');
-        }
-      }}>
-        <AlertDialogContent className="max-w-sm rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant">
-          <AlertDialogHeader>
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-stitch-primary-fixed">
-              <span className="material-symbols-outlined text-stitch-primary" style={{ fontSize: 24 }}>bakery_dining</span>
+      {/* Onboarding Paso 1: bienvenida (modal custom con backdrop difuminado) */}
+      {showWelcome && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="onboarding-welcome-title"
+        >
+          <div className="w-full max-w-md bg-white rounded-[24px] p-6 md:p-8 shadow-2xl text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#ffd9de]">
+              <span className="material-symbols-outlined text-[#b80049]" style={{ fontSize: 28 }}>bakery_dining</span>
             </div>
-            <AlertDialogTitle className="text-center text-base font-bold text-stitch-on-surface">
-              ¡Te damos la bienvenida!
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-center text-sm text-stitch-secondary leading-relaxed">
-              ¡Bienvenido a Costo Repostero! 🎂 Para comenzar a calcular costos, cargá al menos 2
-              ingredientes en tu inventario.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="mt-2">
-            <AlertDialogAction
-              onClick={() => {
-                setWelcomeDismissed(true);
-                if (typeof window !== 'undefined') localStorage.setItem(WELCOME_DISMISSED_KEY, '1');
-              }}
-              className="w-full rounded-full bg-[#b80049] text-white font-semibold text-sm py-3 hover:bg-[#bc004b] transition-colors"
+            <h2
+              id="onboarding-welcome-title"
+              className="text-xl font-bold text-[#151c27] mb-3"
+              style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
+            >
+              ¡Te damos la bienvenida! 🎂
+            </h2>
+            <p className="text-sm leading-[1.6] text-[#5f5e5e] mb-6">
+              Para comenzar a calcular costos de tus recetas, el primer paso es cargar al menos
+              2 ingredientes en tu inventario.
+            </p>
+            <button
+              type="button"
+              onClick={dismissWelcome}
+              className="w-full rounded-full bg-[#b80049] text-white font-semibold text-sm py-3.5 hover:bg-[#bc004b] transition-colors"
             >
               Entendido
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Onboarding Paso 2: hito alcanzado (modal custom con backdrop difuminado) */}
+      {milestoneOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="onboarding-milestone-title"
+        >
+          <div className="w-full max-w-md bg-white rounded-[24px] p-6 md:p-8 shadow-2xl text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#ffd9de]">
+              <span className="material-symbols-outlined text-[#b80049]" style={{ fontSize: 28 }}>celebration</span>
+            </div>
+            <h2
+              id="onboarding-milestone-title"
+              className="text-xl font-bold text-[#151c27] mb-3"
+              style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
+            >
+              ¡Excelente!
+            </h2>
+            <p className="text-sm leading-[1.6] text-[#5f5e5e] mb-6">
+              ¡Excelente! Ya tenés la base. Ya podés ir a crear tu primera receta o seguir
+              agregando más ingredientes.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={() => { setMilestoneOpen(false); router.push('/recetas/nueva'); }}
+                className="flex-1 rounded-full bg-[#b80049] text-white font-semibold text-sm py-3.5 hover:bg-[#bc004b] transition-colors"
+              >
+                Ir a Recetas
+              </button>
+              <button
+                type="button"
+                onClick={() => setMilestoneOpen(false)}
+                className="flex-1 rounded-full border-2 border-[#e4bdc2] text-[#151c27] font-semibold text-sm py-3.5 hover:bg-[#f0f3ff] transition-colors"
+              >
+                Seguir agregando
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent className="max-w-sm rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant">

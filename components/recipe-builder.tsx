@@ -13,7 +13,6 @@ import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
 import { UpgradeModal } from '@/components/upgrade-modal';
 import { useAppBoot } from '@/components/boot/app-boot-context';
 import { navigateWithTransition } from '@/lib/view-transition';
-import { createClient } from '@/utils/supabase/client';
 import {
   Accordion,
   AccordionContent,
@@ -106,7 +105,7 @@ const stitchShadow = { boxShadow: '0 10px 40px rgba(0,0,0,0.04)' } as const;
 export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion = 0, standalone = false, sandbox = false }: RecipeBuilderProps) {
   const router = useRouter();
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
-  const { ready, ingredients: bootIngredients, recipes: bootRecipes, applyLocal } = useAppBoot();
+  const { ready, ingredients: bootIngredients, recipes: bootRecipes, profile, applyLocal } = useAppBoot();
   const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
 
   const defaultDraft: RecipeDraft = {
@@ -134,7 +133,6 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const [manualName, setManualName] = useState('');
   const [manualPricePerUnit, setManualPricePerUnit] = useState('');
 
-  const [hourlyRate, setHourlyRate] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
   const didInitRef = useRef(false);
@@ -142,22 +140,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
   const searchParams = useSearchParams();
 
-  // Valor hora del perfil (para el cálculo de mano de obra)
-  useEffect(() => {
-    let cancelled = false;
-    const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('hourly_rate')
-        .eq('id', data.user.id)
-        .maybeSingle();
-      if (cancelled) return;
-      setHourlyRate(profile?.hourly_rate ?? 0);
-    });
-    return () => { cancelled = true; };
-  }, []);
+  // Valor hora del perfil: viene del contexto de boot (sin consultas propias).
+  const hourlyRate = profile?.hourlyRate ?? 0;
 
   useEffect(() => {
     let retries = 0;
