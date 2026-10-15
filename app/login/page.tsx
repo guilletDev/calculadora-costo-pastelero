@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Script from 'next/script';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 type AuthMode = 'login' | 'register';
+
+const GOOGLE_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,6 +20,11 @@ export default function LoginPage() {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [gisReady, setGisReady] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const googleWrapRef = useRef<HTMLDivElement>(null);
+  const googleOverlayRef = useRef<HTMLDivElement>(null);
 
   // Link de autenticación vencido/inválido: mensaje claro y limpieza de la URL
   useEffect(() => {
@@ -30,22 +38,80 @@ export default function LoginPage() {
     }
   }, []);
 
-  const handleLogin = async () => {
-    const supabase = createClient();
-    const origin = typeof window !== 'undefined' && window.location.origin
-      ? window.location.origin
-      : 'https://costorepostero.com';
+  // Google Identity Services: el ID token se valida directo contra Supabase
+  // (signInWithIdToken), sin redirect_uri a supabase.co. Así el consentimiento
+  // de Google muestra "ir a costorepostero.com".
+  const handleGoogleCredential = useCallback(async (response: GoogleCredentialResponse) => {
+    if (!response?.credential) {
+      toast.error('No pudimos obtener las credenciales de Google.');
+      return;
+    }
+    setGoogleLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: response.credential,
+      });
+      if (error) {
+        console.error('[login] signInWithIdToken falló:', error.message);
+        toast.error('No pudimos iniciar sesión con Google. Intentá de nuevo.');
+        setGoogleLoading(false);
+        return;
+      }
+      // Email de bienvenida (idempotente en el server): fire-and-forget.
+      void fetch('/api/auth/welcome', { method: 'POST' }).catch(() => {});
+      toast.success('¡Bienvenido!');
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('[login] Error inesperado con Google:', err);
+      toast.error('No pudimos iniciar sesión con Google. Intentá de nuevo.');
+      setGoogleLoading(false);
+    }
+  }, [router]);
 
-    const cleanOrigin = origin.replace(/\/+$/, '');
-    const redirectTo = `${cleanOrigin}/auth/callback`;
+  // Inicializa GIS cuando el script está listo.
+  useEffect(() => {
+    if (!gisReady) return;
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const gis = window.google?.accounts?.id;
+    if (!clientId || !gis) return;
 
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo,
-      },
+    gis.initialize({
+      client_id: clientId,
+      callback: handleGoogleCredential,
+      cancel_on_tap_outside: true,
     });
-  };
+  }, [gisReady, handleGoogleCredential]);
+
+  // Renderiza el botón oficial de Google (invisible) encima del botón custom:
+  // el click siempre abre el popup de Google y el look se mantiene.
+  useEffect(() => {
+    if (!gisReady) return;
+    const gis = window.google?.accounts?.id;
+    const container = googleOverlayRef.current;
+    const wrap = googleWrapRef.current;
+    if (!gis || !container || !wrap) return;
+
+    const render = () => {
+      const width = Math.max(200, Math.min(wrap.offsetWidth, 400));
+      container.innerHTML = '';
+      gis.renderButton(container, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        text: 'continue_with',
+        shape: 'pill',
+        logo_alignment: 'center',
+        width,
+      });
+    };
+
+    render();
+    const observer = new ResizeObserver(render);
+    observer.observe(wrap);
+    return () => observer.disconnect();
+  }, [gisReady]);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,6 +173,12 @@ export default function LoginPage() {
 
   return (
     <div className="bg-[#f9f9ff] text-[#151c27] min-h-screen md:h-screen flex flex-col md:flex-row overflow-x-hidden" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+      <Script
+        src={GOOGLE_SCRIPT_SRC}
+        strategy="afterInteractive"
+        onReady={() => setGisReady(true)}
+        onError={() => toast.error('No pudimos cargar Google. Revisá tu conexión e intentá de nuevo.')}
+      />
       {/* Left Panel (Brand/Marketing) */}
       <div className="hidden md:flex flex-col justify-between w-[45%] h-full bg-[#151c27] text-white py-10 px-8 md:px-12 relative overflow-hidden">
         {/* Subtle Radial Gradient */}
@@ -188,19 +260,28 @@ export default function LoginPage() {
 
           {/* Form */}
           <div className="flex flex-col gap-4">
-            {/* Google Sign In */}
-            <button
-              onClick={handleLogin}
-              className="w-full flex items-center justify-center gap-3 py-3 px-6 rounded-full border border-[#e4bdc2] bg-white text-[#151c27] text-[14px] font-[600] tracking-wide hover:bg-[#f0f3ff] transition-colors duration-200"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"></path>
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
-              </svg>
-              Continuar con Google
-            </button>
+            {/* Google Sign In: botón custom (visual) + botón oficial GIS invisible encima */}
+            <div ref={googleWrapRef} className="relative w-full">
+              <button
+                type="button"
+                disabled={googleLoading || !gisReady}
+                className="w-full flex items-center justify-center gap-3 py-3 px-6 rounded-full border border-[#e4bdc2] bg-white text-[#151c27] text-[14px] font-[600] tracking-wide hover:bg-[#f0f3ff] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"></path>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
+                </svg>
+                {googleLoading ? 'Conectando...' : 'Continuar con Google'}
+              </button>
+              <div
+                ref={googleOverlayRef}
+                className={`absolute inset-0 flex items-center justify-center overflow-hidden opacity-0 pointer-events-none [&_div]:pointer-events-auto ${
+                  gisReady && !googleLoading ? '' : 'invisible'
+                }`}
+              />
+            </div>
 
             {/* Separador */}
             <div className="flex items-center gap-3">
