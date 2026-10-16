@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppBoot } from '@/components/boot/app-boot-context';
-import { PRO_PLAN_NAME, PRO_PLAN_DESCRIPTION, formatProValidUntil } from '@/lib/pricing';
+import { PRO_PLAN_NAME, PRO_PLAN_DESCRIPTION, formatProValidUntil, formatProPrice } from '@/lib/pricing';
+import { FREE_TIER_INGREDIENTS_LIMIT, FREE_TIER_RECIPES_LIMIT } from '@/lib/limits';
 import { formatCurrency } from '@/lib/cost';
 import { UpgradeButton } from '@/components/upgrade-button';
 
@@ -18,10 +19,15 @@ interface PaymentRow {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const FREE_BENEFITS = [
-  { icon: 'calculate', text: 'Calculadora de costos completa para tus recetas' },
-  { icon: 'inventory_2', text: 'Inventario de ingredientes sin límites' },
-  { icon: 'menu_book', text: 'Recetas ilimitadas' },
-  { icon: 'storefront', text: 'Productos ilimitados con márgenes de ganancia' },
+  { icon: 'calculate', text: 'Calculadora de costos para tus recetas' },
+  { icon: 'inventory_2', text: `Hasta ${FREE_TIER_INGREDIENTS_LIMIT} ingredientes y ${FREE_TIER_RECIPES_LIMIT} recetas` },
+  { icon: 'storefront', text: 'Gestión de productos básica' },
+];
+
+const PRO_BENEFITS = [
+  { icon: 'all_inclusive', text: 'Recetas, productos e ingredientes ilimitados' },
+  { icon: 'calculate', text: 'Cálculo de costos reales y márgenes de ganancia' },
+  { icon: 'sell', text: 'Precios de venta sugeridos automáticos' },
 ];
 
 export default function PerfilPage() {
@@ -121,19 +127,32 @@ export default function PerfilPage() {
       {/* ── Tarjeta de Suscripción ───────────────────────────────────────── */}
       <section className="bg-white dark:bg-[#2a1a24] rounded-[24px] p-8 border border-[#e4bdc2]/30 shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
         {isPro ? (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-3">
                 <span className="material-symbols-outlined text-[#ee2b6c]" style={{ fontSize: 22 }}>
                   workspace_premium
                 </span>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                  Suscripción Activa
+                  Plan PRO
                 </h2>
+                <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 text-[11px] font-bold uppercase tracking-wide px-2.5 py-1">
+                  Activo
+                </span>
               </div>
+              <ul className="space-y-1.5 mb-4">
+                {PRO_BENEFITS.map(({ icon, text }) => (
+                  <li key={text} className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                    <span className="material-symbols-outlined text-[#ee2b6c]" style={{ fontSize: 16 }}>
+                      {icon}
+                    </span>
+                    {text}
+                  </li>
+                ))}
+              </ul>
               {validUntil && (
                 <>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
                     Tu plan {PRO_PLAN_NAME} vence el{' '}
                     <span className="font-semibold text-slate-700 dark:text-slate-200">
                       {formatProValidUntil(validUntil)}
@@ -170,7 +189,7 @@ export default function PerfilPage() {
               </ul>
             </div>
             <UpgradeButton
-              label="Volverse PRO"
+              label={`Mejorar a PRO · ${formatProPrice()}`}
               className="shrink-0 inline-flex items-center justify-center gap-2 rounded-full bg-[#ee2b6c] text-white text-sm font-semibold px-8 py-3 transition-all duration-300 hover:bg-[#d4235e]"
             />
           </div>
