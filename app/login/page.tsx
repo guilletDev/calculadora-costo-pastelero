@@ -11,6 +11,7 @@ import { createClient } from '@/utils/supabase/client';
 type AuthMode = 'login' | 'register';
 
 const GOOGLE_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
+const GOOGLE_TIMEOUT_MS = 3000;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -47,8 +48,26 @@ export default function LoginPage() {
       return;
     }
     setGoogleLoading(true);
+    const supabase = createClient();
+
+    // Resguardo anti-congelamiento: si la verificación tarda más de 3s,
+    // redirigimos si la sesión ya quedó activa o liberamos el botón para
+    // que el usuario pueda reintentar. La promesa original sigue corriendo
+    // y redirige igual si termina con éxito.
+    const guard = window.setTimeout(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          router.push('/dashboard');
+          return;
+        }
+      } catch {
+        // sin sesión: liberamos el botón abajo
+      }
+      setGoogleLoading(false);
+    }, GOOGLE_TIMEOUT_MS);
+
     try {
-      const supabase = createClient();
       const { error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
         token: response.credential,
@@ -56,16 +75,18 @@ export default function LoginPage() {
       if (error) {
         console.error('[login] signInWithIdToken falló:', error.message);
         toast.error('No pudimos iniciar sesión con Google. Intentá de nuevo.');
-        setGoogleLoading(false);
         return;
       }
-      // Email de bienvenida (idempotente en el server): fire-and-forget.
+      // Email de bienvenida (idempotente en el server): fire-and-forget,
+      // sin await para no demorar la redirección a /dashboard.
       void fetch('/api/auth/welcome', { method: 'POST' }).catch(() => {});
       toast.success('¡Bienvenido!');
       router.push('/dashboard');
     } catch (err) {
       console.error('[login] Error inesperado con Google:', err);
       toast.error('No pudimos iniciar sesión con Google. Intentá de nuevo.');
+    } finally {
+      window.clearTimeout(guard);
       setGoogleLoading(false);
     }
   }, [router]);

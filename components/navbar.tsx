@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { TransitionLink } from '@/components/transition-link';
 import { createClient } from '@/utils/supabase/client';
 import { useAppBoot } from '@/components/boot/app-boot-context';
@@ -26,6 +26,8 @@ import {
 import { formatProValidUntil } from '@/lib/pricing';
 import { UpgradeButton } from '@/components/upgrade-button';
 
+const SIGNOUT_TIMEOUT_MS = 1000;
+
 export function Navbar() {
   const [logoutOpen, setLogoutOpen]     = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -37,7 +39,6 @@ export function Navbar() {
   const { user, isPro, profile } = useAppBoot();
 
   const pathname = usePathname();
-  const router   = useRouter();
 
   // ── Datos del usuario ───────────────────────────────────────────────────────
   const meta      = user?.user_metadata ?? {};
@@ -46,15 +47,21 @@ export function Navbar() {
 
   // ── Logout ──────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
+    // Feedback instantáneo en el botón ("Cerrando sesión...").
     setIsLoggingOut(true);
     try {
       const supabase = createClient();
-      await supabase.auth.signOut();
-      router.push('/login');
-      router.refresh();
+      // signOut limpia las cookies de sesión: sin eso, el middleware
+      // devolvería /login → /dashboard. Tope de 1s para no demorar el cierre.
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise<void>((resolve) => setTimeout(resolve, SIGNOUT_TIMEOUT_MS)),
+      ]);
+    } catch (err) {
+      console.error('[navbar] Error al cerrar sesión:', err);
     } finally {
-      setIsLoggingOut(false);
-      setLogoutOpen(false);
+      // Hard-redirect: limpia todo el estado del cliente (boot/contexto/memoria).
+      window.location.href = '/login';
     }
   };
 
@@ -104,7 +111,7 @@ export function Navbar() {
               disabled={isLoggingOut}
               className="flex-1 rounded-full bg-[#b80049] hover:bg-[#bc004b] text-white font-medium text-sm py-2.5 focus:outline-none focus-visible:ring-0 shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isLoggingOut ? 'Cerrando...' : 'Cerrar sesión'}
+              {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

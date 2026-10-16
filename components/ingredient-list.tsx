@@ -750,7 +750,7 @@ export function IngredientList({
       {/* Onboarding Paso 1: bienvenida (modal custom con backdrop difuminado) */}
       {showWelcome && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+          className="fixed inset-0 w-screen h-screen z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
           role="dialog"
           aria-modal="true"
           aria-labelledby="onboarding-welcome-title"
@@ -784,7 +784,7 @@ export function IngredientList({
       {/* Onboarding Paso 2: hito alcanzado (modal custom con backdrop difuminado) */}
       {milestoneOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+          className="fixed inset-0 w-screen h-screen z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
           role="dialog"
           aria-modal="true"
           aria-labelledby="onboarding-milestone-title"
