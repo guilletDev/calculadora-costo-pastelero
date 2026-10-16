@@ -130,8 +130,6 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const [selectedValue, setSelectedValue] = useState('');
   const [newQuantity, setNewQuantity] = useState('');
   const [newUnit, setNewUnit] = useState<Unit>('g');
-  const [manualName, setManualName] = useState('');
-  const [manualPricePerUnit, setManualPricePerUnit] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
@@ -252,25 +250,10 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     const qty = parseFloat(newQuantity);
     if (!qty || qty <= 0) return;
 
-    const isManual = selectedValue === '__manual__';
-    const [type, id] = isManual ? [] : selectedValue.split(':');
+    const [type, id] = selectedValue.split(':');
 
     let row: RecipeIngredient | null = null;
-    if (isManual) {
-      const name = manualName.trim();
-      const pricePerUnit = parseFloat(manualPricePerUnit);
-      if (!name || !pricePerUnit || pricePerUnit <= 0) return;
-      const normalized = convertToBaseUnit(qty, newUnit);
-      row = {
-        id: crypto.randomUUID(),
-        baseIngredientId: null,
-        ingredientName: name,
-        quantityUsed: normalized.quantity,
-        unit: normalized.unit,
-        cost: pricePerUnit * normalized.quantity,
-        componentType: 'ingredient',
-      };
-    } else if (type === 'subproduct') {
+    if (type === 'subproduct') {
       const sub = yieldRecipes.find(s => s.id === id);
       if (!sub || sub.yieldGrams == null) return;
       const normalized = convertToBaseUnit(qty, newUnit);
@@ -307,8 +290,6 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     setSelectedValue('');
     setNewQuantity('');
     setNewUnit('g');
-    setManualName('');
-    setManualPricePerUnit('');
     setSelectKey(k => k + 1);
   };
 
@@ -420,11 +401,6 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const previewCost = (() => {
     if (!selectedValue || !newQuantity) return 0;
     const qty = parseFloat(newQuantity);
-    if (selectedValue === '__manual__') {
-      const pricePerUnit = parseFloat(manualPricePerUnit);
-      if (!pricePerUnit || pricePerUnit <= 0) return 0;
-      return pricePerUnit * toBaseQuantity(qty, newUnit);
-    }
     const [type, id] = selectedValue.split(':');
     if (type === 'subproduct') {
       const sub = yieldRecipes.find(s => s.id === id);
@@ -435,8 +411,6 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     if (!base) return 0;
     return calculateIngredientCost(base.pricePerUnit, qty, newUnit);
   })();
-
-  const isManual = selectedValue === '__manual__';
 
   const saveRecipe = async () => {
     if (savingRef.current || isSaving) return;
@@ -703,24 +677,11 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               className="bg-[#ffd9de]/10 p-4 rounded-xl border border-[#e4bdc2]/30 flex flex-col md:flex-row gap-4 items-center"
             >
               <div className="w-full md:w-1/2">
-                {isManual ? (
-                  <input
-                    className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
-                    placeholder="Nombre del ingrediente de prueba (ej: Harina test)"
-                    type="text"
-                    value={manualName}
-                    onChange={(e) => setManualName(e.target.value)}
-                  />
-                ) : (
-                  <Select
+                <Select
                     key={selectKey}
                     value={selectedValue || undefined}
                     onValueChange={(val) => {
                       setSelectedValue(val);
-                      if (val === '__manual__') {
-                        setNewUnit('g');
-                        return;
-                      }
                       const [type, id] = val.split(':');
                       if (type === 'subproduct') {
                         const sub = yieldRecipes.find(s => s.id === id);
@@ -734,7 +695,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                     <SelectTrigger className="interactive-input w-full truncate rounded-lg border border-gray-200 bg-white px-4 py-3 text-[16px] text-[#5f5e5e] justify-between gap-2">
                       <SelectValue placeholder="Seleccionar ingrediente o receta..." />
                     </SelectTrigger>
-                    <SelectContent position="popper" side="bottom" className="bg-white border border-gray-200 rounded-xl shadow-lg max-w-[min(24rem,calc(100vw-2rem))]">
+                    <SelectContent position="popper" side="bottom" align="start" avoidCollisions={false} className="bg-white border border-gray-200 rounded-xl shadow-lg max-w-[min(24rem,calc(100vw-2rem))]">
                       {sortedBaseIngredients.length > 0 && (
                         <SelectGroup>
                           <SelectLabel className="text-[#b80049] font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Ingredientes</SelectLabel>
@@ -763,18 +724,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                           ))}
                         </SelectGroup>
                       )}
-                      <SelectGroup>
-                        <SelectLabel className="text-[#b80049] font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Prueba manual</SelectLabel>
-                        <SelectItem
-                          value="__manual__"
-                          className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
-                        >
-                          ➕ Ingrediente de prueba (manual)
-                        </SelectItem>
-                      </SelectGroup>
                     </SelectContent>
                   </Select>
-                )}
               </div>
               <div className="w-full md:w-1/4 grid grid-cols-2 gap-2">
                 <input
@@ -798,19 +749,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                   </div>
                 </div>
               </div>
-              <div className={`w-full ${isManual ? 'md:w-1/3' : 'md:w-1/4'} flex items-center justify-end gap-2`}>
-                {isManual && (
-                  <div className="relative shrink-0">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#c5c7c8] pointer-events-none">$</span>
-                    <input
-                      className="interactive-input w-24 pl-7 pr-2 py-3 rounded-lg border border-gray-200 bg-white text-[#151c27] placeholder:text-[#c5c7c8] text-right"
-                      placeholder="precio/un"
-                      type="number" min="0" step="any"
-                      value={manualPricePerUnit}
-                      onChange={(e) => setManualPricePerUnit(e.target.value)}
-                    />
-                  </div>
-                )}
+              <div className="w-full md:w-1/4 flex items-center justify-end gap-2">
                 <span className="md:hidden text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Costo:</span>
                 <span className="text-[18px] leading-[1.2] text-[#151c27] font-semibold whitespace-nowrap">
                   {selectedValue && newQuantity ? formatCurrency(previewCost) : '$0,00'}
