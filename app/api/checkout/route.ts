@@ -4,7 +4,7 @@ import { getPreferenceClient, buildAppUrl, isSandboxToken } from '@/lib/mercadop
 import {
   PRO_PLAN_ID,
   PRO_PLAN_TITLE,
-  PRO_PLAN_DESCRIPTION,
+  PRO_PLAN_ITEM_TITLE,
   PRO_PLAN_PRICE,
   PRO_PLAN_CURRENCY,
   PRO_PLAN_DAYS,
@@ -35,7 +35,7 @@ export async function POST() {
         items: [
           {
             id: PRO_PLAN_ID,
-            title: PRO_PLAN_DESCRIPTION,
+            title: PRO_PLAN_ITEM_TITLE,
             description: `${PRO_PLAN_TITLE} por ${PRO_PLAN_DAYS} días`,
             quantity: 1,
             unit_price: PRO_PLAN_PRICE,

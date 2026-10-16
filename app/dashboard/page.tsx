@@ -9,7 +9,14 @@ import { UpgradeButton } from '@/components/upgrade-button';
 import { useAppBoot } from '@/components/boot/app-boot-context';
 import { createClient } from '@/utils/supabase/client';
 import { isProUser } from '@/lib/limits';
-import { PRO_PLAN_NAME, PRO_PLAN_LABEL } from '@/lib/pricing';
+import {
+  PRO_PLAN_NAME,
+  PRO_PLAN_DAYS,
+  PRO_PLAN_OFFER_BADGE,
+  PRO_PLAN_OFFER_DISCOUNT,
+  formatProPrice,
+  formatProOriginalPrice,
+} from '@/lib/pricing';
 
 const PAYMENT_POLL_ATTEMPTS = 12;
 const PAYMENT_POLL_INTERVAL_MS = 2000;
@@ -170,9 +177,18 @@ function DashboardContent() {
               </ul>
             </div>
             <div className="flex flex-col items-start lg:items-end gap-4 shrink-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="line-through text-gray-400 text-sm">{formatProOriginalPrice()}</span>
+                <span className="rounded-full bg-[#b80049]/25 text-[#ffb2be] text-xs font-bold px-2.5 py-1">
+                  {PRO_PLAN_OFFER_BADGE}
+                </span>
+                <span className="rounded-full bg-white/10 text-[#ebf1ff]/80 text-xs font-semibold px-2 py-1">
+                  {PRO_PLAN_OFFER_DISCOUNT}
+                </span>
+              </div>
               <div className="text-[36px] font-extrabold tracking-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
-                {PRO_PLAN_LABEL.split(' / ')[0]}
-                <span className="text-base font-normal opacity-80"> / {PRO_PLAN_LABEL.split(' / ')[1]}</span>
+                {formatProPrice()}
+                <span className="text-base font-normal opacity-80"> / {PRO_PLAN_DAYS} días</span>
               </div>
               <UpgradeButton
                 label="Pasar a Pro"

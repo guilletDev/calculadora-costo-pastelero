@@ -3,7 +3,14 @@ import { TransitionLink } from '@/components/transition-link';
 import { UpgradeButton } from '@/components/upgrade-button';
 import { Reveal, Stagger } from '@/components/landing-scroll-reveal';
 import { FREE_TIER_RECIPES_LIMIT, FREE_TIER_INGREDIENTS_LIMIT, FREE_TIER_PRODUCTS_LIMIT } from '@/lib/limits';
-import { PRO_PLAN_NAME, PRO_PLAN_LABEL } from '@/lib/pricing';
+import {
+  PRO_PLAN_NAME,
+  PRO_PLAN_LABEL,
+  PRO_PLAN_OFFER_BADGE,
+  PRO_PLAN_OFFER_DISCOUNT,
+  formatProPrice,
+  formatProOriginalPrice,
+} from '@/lib/pricing';
 
 export default function LandingPage() {
   return (
@@ -284,8 +291,21 @@ export default function LandingPage() {
                   Pago único · 30 días de acceso
                 </p>
               </div>
-              <div className="text-5xl text-[#ebf1ff] mb-10 tracking-tight font-[800]" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
-                {PRO_PLAN_LABEL.split(' / ')[0]} <span className="text-base opacity-80 font-normal" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>/ 30 días</span>
+              <div className="mb-10 flex flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="line-through text-gray-400 text-sm" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>
+                    {formatProOriginalPrice()}
+                  </span>
+                  <span className="rounded-full bg-[#b80049]/25 text-[#ffb2be] text-xs font-bold px-2.5 py-1">
+                    {PRO_PLAN_OFFER_BADGE}
+                  </span>
+                  <span className="rounded-full bg-white/10 text-[#ebf1ff]/80 text-xs font-semibold px-2 py-1">
+                    {PRO_PLAN_OFFER_DISCOUNT}
+                  </span>
+                </div>
+                <div className="text-5xl text-[#ebf1ff] tracking-tight font-[800]" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+                  {formatProPrice()} <span className="text-base opacity-80 font-normal" style={{ fontFamily: 'var(--font-inter), sans-serif' }}>/ 30 días</span>
+                </div>
               </div>
               <ul className="space-y-5 mb-12 flex-1">
                 <li className="flex items-start gap-3">

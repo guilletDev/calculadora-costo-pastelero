@@ -11,7 +11,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { UpgradeButton } from '@/components/upgrade-button';
 import { UpgradeResourceType, FREE_TIER_LIMITS } from '@/lib/limits';
-import { PRO_PLAN_LABEL } from '@/lib/pricing';
+import {
+  PRO_PLAN_LABEL,
+  PRO_PLAN_OFFER_BADGE,
+  PRO_PLAN_OFFER_DISCOUNT,
+  formatProPrice,
+  formatProOriginalPrice,
+} from '@/lib/pricing';
 
 interface UpgradeModalProps {
   open: boolean;
@@ -51,6 +57,29 @@ export function UpgradeModal({ open, onOpenChange, resourceType }: UpgradeModalP
             {content.description}
           </AlertDialogDescription>
         </AlertDialogHeader>
+
+        {/* Oferta de Lanzamiento */}
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <span className="line-through text-gray-400 text-sm">
+              {formatProOriginalPrice()}
+            </span>
+            <span className="rounded-full bg-[#ffd9de]/70 text-[#b80049] text-xs font-bold px-2.5 py-1">
+              {PRO_PLAN_OFFER_BADGE}
+            </span>
+            <span className="rounded-full bg-slate-100 text-slate-500 text-xs font-semibold px-2 py-1">
+              {PRO_PLAN_OFFER_DISCOUNT}
+            </span>
+          </div>
+          <div
+            className="text-3xl font-extrabold tracking-tight text-stitch-on-surface"
+            style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
+          >
+            {formatProPrice()}{' '}
+            <span className="text-sm font-normal text-stitch-secondary">/ 30 días</span>
+          </div>
+        </div>
+
         <AlertDialogFooter className="flex flex-col sm:flex-row gap-3 mt-6 items-center justify-end">
           <AlertDialogCancel
             className="w-full sm:w-auto text-sm py-2.5 px-4 h-auto rounded-md border border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface font-semibold hover:bg-stitch-surface-container-low transition-colors"
