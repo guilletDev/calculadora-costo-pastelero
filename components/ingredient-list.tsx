@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { BaseIngredient, Unit } from '@/lib/types';
@@ -155,11 +155,22 @@ export function IngredientList({
       !milestoneShownRef.current
     ) {
       milestoneShownRef.current = true;
-      // Pre-cargar el builder de recetas mientras el usuario decide en el modal.
-      router.prefetch('/recetas/nueva');
       setMilestoneOpen(true);
     }
-  }, [ingredients.length, isLoading, bootRecipes.length, router]);
+  }, [ingredients.length, isLoading, bootRecipes.length]);
+
+  // Pre-carga del builder durante el onboarding: cuando el usuario cruce los
+  // 2 ingredientes, el clic en "Ir a Recetas" entra con la vista caliente.
+  useEffect(() => {
+    if (!isLoading && ingredients.length < 2 && bootRecipes.length < 1) {
+      router.prefetch('/recetas/nueva');
+    }
+  }, [isLoading, ingredients.length, bootRecipes.length, router]);
+
+  // Pre-carga del builder apenas el modal de hito se vuelve visible.
+  useEffect(() => {
+    if (milestoneOpen) router.prefetch('/recetas/nueva');
+  }, [milestoneOpen, router]);
 
   // Auto-desbloquear si no hay ingredientes (ej: al migrar a DB vacía con localStorage bloqueado)
   useEffect(() => {
@@ -812,7 +823,12 @@ export function IngredientList({
             <div className="flex flex-col sm:flex-row gap-2">
               <button
                 type="button"
-                onClick={() => { setMilestoneOpen(false); router.push('/recetas/nueva'); }}
+                onClick={() => {
+                  setMilestoneOpen(false);
+                  startTransition(() => {
+                    router.push('/recetas/nueva');
+                  });
+                }}
                 className="flex-1 rounded-full bg-[#b80049] text-white font-semibold text-sm py-3.5 hover:bg-[#bc004b] transition-colors"
               >
                 Ir a Recetas
