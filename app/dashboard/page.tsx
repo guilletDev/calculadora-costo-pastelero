@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check, X } from 'lucide-react';
 import { TransitionLink } from '@/components/transition-link';
 import { UpgradeButton } from '@/components/upgrade-button';
 import { useAppBoot } from '@/components/boot/app-boot-context';
@@ -29,6 +29,9 @@ function DashboardContent() {
   // sin esperar a que el contexto vuelva a consultar.
   const [paymentVerified, setPaymentVerified] = useState(false);
   const isPro = paymentVerified || bootIsPro;
+
+  // Cierre temporal del banner (sin persistencia: reaparece en cada recarga).
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
   const searchParams = useSearchParams();
   const paymentSuccess = searchParams.get('payment') === 'success';
@@ -156,8 +159,16 @@ function DashboardContent() {
       </section>
 
       {/* ── Banner Mercado Pago (solo Free) ── */}
-      {!isPro && (
+      {!isPro && !isBannerDismissed && (
         <section className="bg-[#1e2330] text-white rounded-[24px] p-8 md:p-10 border border-[#b80049]/40 shadow-floating relative overflow-hidden animate-fade-up">
+          <button
+            type="button"
+            aria-label="Cerrar aviso"
+            onClick={() => setIsBannerDismissed(true)}
+            className="absolute top-4 right-4 z-10 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
             <div className="max-w-xl">
               <h2 className="text-[24px] md:text-[28px] font-bold tracking-tight mb-4" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
@@ -165,9 +176,9 @@ function DashboardContent() {
               </h2>
               <ul className="space-y-2.5">
                 {[
-                  'Recetas e ingredientes ilimitados',
-                  'Cálculo de márgenes y sugerencia de precios',
-                  'Exportación a PDF/Excel',
+                  'Recetas, productos e ingredientes ilimitados',
+                  'Cálculo de costos reales y márgenes de ganancia',
+                  'Precios de venta sugeridos automáticos',
                 ].map((benefit) => (
                   <li key={benefit} className="flex items-center gap-2.5 text-[14px] text-slate-200">
                     <Check className="w-4 h-4 text-[#ffb2be] shrink-0" />
