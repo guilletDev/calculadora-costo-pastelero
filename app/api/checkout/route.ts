@@ -45,7 +45,7 @@ export async function POST() {
         back_urls: {
           success: buildAppUrl('/api/checkout/success'),
           pending: buildAppUrl('/pro/estado?result=pending'),
-          failure: buildAppUrl('/pro/estado?result=failure'),
+          failure: buildAppUrl('/dashboard?payment=failed'),
         },
         auto_return: 'approved',
         external_reference: externalReference,

@@ -35,6 +35,17 @@ function DashboardContent() {
 
   const searchParams = useSearchParams();
   const paymentSuccess = searchParams.get('payment') === 'success';
+  const paymentFailed = searchParams.get('payment') === 'failed';
+
+  // Pago cancelado o rechazado (volvió desde Mercado Pago): aviso inmediato,
+  // sincrónico y sin consultas a la API.
+  useEffect(() => {
+    if (!paymentFailed) return;
+    toast.error('El pago no se pudo completar. Podés intentarlo de nuevo cuando quieras.');
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', '/dashboard');
+    }
+  }, [paymentFailed]);
 
   const meta = user?.user_metadata ?? {};
   const userName = (meta.full_name || meta.name || user?.email?.split('@')[0] || '') as string;
@@ -85,10 +96,10 @@ function DashboardContent() {
   // Onboarding: si el usuario aún no cargó al menos 2 ingredientes, lo llevamos
   // al inventario para completar la carga inicial (excepto al volver de un pago).
   useEffect(() => {
-    if (ready && !paymentSuccess && ingredients.length < 2) {
+    if (ready && !paymentSuccess && !paymentFailed && ingredients.length < 2) {
       router.replace('/inventario');
     }
-  }, [ready, ingredients.length, paymentSuccess, router]);
+  }, [ready, ingredients.length, paymentSuccess, paymentFailed, router]);
 
   const totalRecetas = recipes.length;
   const totalIngredientes = ingredients.length;
@@ -106,7 +117,7 @@ function DashboardContent() {
     { href: '/inventario', label: 'Inventario de Insumos', description: 'Actualizar precios de ingredientes y empaques', icon: 'inventory', cta: 'Ver' },
   ];
 
-  if (!ready || (ready && !paymentSuccess && ingredients.length < 2)) {
+  if (!ready || (ready && !paymentSuccess && !paymentFailed && ingredients.length < 2)) {
     return (
       <main className="flex-grow w-full max-w-[1200px] mx-auto px-6 md:px-[10%] py-12 flex flex-col items-center justify-center gap-2 text-[#5f5e5e]">
         <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>

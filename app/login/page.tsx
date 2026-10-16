@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { FullPageLoader } from '@/components/boot/full-page-loader';
 
 type AuthMode = 'login' | 'register';
 
@@ -13,6 +15,7 @@ const GOOGLE_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 const GOOGLE_TIMEOUT_MS = 3000;
 
 export default function LoginPage() {
+  const router = useRouter();
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,10 +24,31 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [gisReady, setGisReady] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [redirecting, setRedirecting] = useState(false);
+  const [entering, setEntering] = useState(false);
 
   const googleWrapRef = useRef<HTMLDivElement>(null);
   const googleOverlayRef = useRef<HTMLDivElement>(null);
+
+  // Pre-carga del dashboard solo si ya hay sesión: sin sesión, el middleware
+  // respondería con un redirect a /login y lo cachearía en el prefetch.
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!cancelled && session) router.prefetch('/dashboard');
+    });
+    return () => { cancelled = true; };
+  }, [router]);
+
+  // Transición única post-autenticación: overlay a pantalla completa (mismo
+  // visual que el splash del dashboard) y navegación SPA sin hard-reload.
+  // Con la sesión ya creada, el prefetch de /dashboard pasa el middleware sin
+  // redirect; la breve espera deja el prefetch listo antes del replace.
+  const goToDashboard = useCallback(() => {
+    setEntering(true);
+    router.prefetch('/dashboard');
+    window.setTimeout(() => router.replace('/dashboard'), 120);
+  }, [router]);
 
   // Link de autenticación vencido/inválido: mensaje claro y limpieza de la URL
   useEffect(() => {
@@ -57,8 +81,7 @@ export default function LoginPage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          setRedirecting(true);
-          window.location.href = '/dashboard';
+          goToDashboard();
           return;
         }
       } catch {
@@ -80,8 +103,7 @@ export default function LoginPage() {
       // Email de bienvenida (idempotente en el server): fire-and-forget,
       // sin await para no demorar la redirección a /dashboard.
       void fetch('/api/auth/welcome', { method: 'POST' }).catch(() => {});
-      setRedirecting(true);
-      window.location.href = '/dashboard';
+      goToDashboard();
     } catch (err) {
       console.error('[login] Error inesperado con Google:', err);
       toast.error('No pudimos iniciar sesión con Google. Intentá de nuevo.');
@@ -89,7 +111,7 @@ export default function LoginPage() {
       window.clearTimeout(guard);
       setGoogleLoading(false);
     }
-  }, []);
+  }, [goToDashboard]);
 
   // Inicializa GIS cuando el script está listo.
   useEffect(() => {
@@ -160,8 +182,7 @@ export default function LoginPage() {
           }
           return;
         }
-        setRedirecting(true);
-        window.location.href = '/dashboard';
+        goToDashboard();
       } else {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
@@ -178,8 +199,7 @@ export default function LoginPage() {
           return;
         }
         if (data.session) {
-          setRedirecting(true);
-          window.location.href = '/dashboard';
+          goToDashboard();
         } else {
           toast.success('Revisá tu correo para confirmar la cuenta.');
           setMode('login');
@@ -200,6 +220,7 @@ export default function LoginPage() {
         onReady={() => setGisReady(true)}
         onError={() => toast.error('No pudimos cargar Google. Revisá tu conexión e intentá de nuevo.')}
       />
+      {entering && <FullPageLoader label="Ingresando…" />}
       {/* Left Panel (Brand/Marketing) */}
       <div className="hidden md:flex flex-col justify-between w-[45%] h-full bg-[#151c27] text-white py-10 px-8 md:px-12 relative overflow-hidden">
         {/* Subtle Radial Gradient */}
@@ -285,13 +306,13 @@ export default function LoginPage() {
             <div ref={googleWrapRef} className="relative w-full">
               <button
                 type="button"
-                disabled={googleLoading || redirecting || !gisReady}
+                disabled={googleLoading || entering || !gisReady}
                 className="w-full flex items-center justify-center gap-3 py-3 px-6 rounded-full border border-[#e4bdc2] bg-white text-[#151c27] text-[14px] font-[600] tracking-wide hover:bg-[#f0f3ff] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {redirecting || googleLoading ? (
+                {googleLoading ? (
                   <>
                     <span className="material-symbols-outlined animate-spin" style={{ fontSize: 20 }}>progress_activity</span>
-                    {redirecting ? 'Ingresando...' : 'Conectando...'}
+                    Conectando...
                   </>
                 ) : (
                   <>
@@ -308,7 +329,7 @@ export default function LoginPage() {
               <div
                 ref={googleOverlayRef}
                 className={`absolute inset-0 flex items-center justify-center overflow-hidden opacity-0 pointer-events-none [&_div]:pointer-events-auto ${
-                  gisReady && !googleLoading && !redirecting ? '' : 'invisible'
+                  gisReady && !googleLoading && !entering ? '' : 'invisible'
                 }`}
               />
             </div>
@@ -409,17 +430,15 @@ export default function LoginPage() {
               </div>
               <button
                 type="submit"
-                disabled={loading || redirecting}
+                disabled={loading || entering}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full bg-[#b80049] text-white text-[14px] font-bold tracking-wide hover:bg-[#bc004b] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {(loading || redirecting) && (
+                {loading && (
                   <span className="material-symbols-outlined animate-spin" style={{ fontSize: 18 }}>progress_activity</span>
                 )}
-                {redirecting
-                  ? 'Ingresando...'
-                  : loading
-                    ? 'Procesando...'
-                    : mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
+                {loading
+                  ? 'Procesando...'
+                  : mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
               </button>
             </form>
           </div>

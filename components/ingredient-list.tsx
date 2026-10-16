@@ -39,7 +39,8 @@ interface IngredientListProps {
   title?: string;
 }
 
-const WELCOME_DISMISSED_KEY = 'cr-onboarding-welcome-dismissed';
+const WELCOME_DISMISSED_KEY_PREFIX = 'cr-onboarding-welcome-dismissed';
+const welcomeDismissedKey = (userId: string) => `${WELCOME_DISMISSED_KEY_PREFIX}:${userId}`;
 
 export function IngredientList({
   onLockChange,
@@ -60,7 +61,7 @@ export function IngredientList({
   const [deleteTarget, setDeleteTarget] = useState<BaseIngredient | null>(null);
   const [view, setView] = useState<'active' | 'trash'>('active');
   const [deletedIngredients, setDeletedIngredients] = useState<BaseIngredient[]>([]);
-  const { ready, ingredients: bootIngredients, recipes: bootRecipes, applyLocal } = useAppBoot();
+  const { ready, user, ingredients: bootIngredients, recipes: bootRecipes, applyLocal } = useAppBoot();
   const router = useRouter();
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const [milestoneOpen, setMilestoneOpen] = useState(false);
@@ -136,11 +137,13 @@ export function IngredientList({
     return () => { cancelled = true; };
   }, []);
 
-  // Onboarding: recordar si el usuario ya cerró el modal de bienvenida
+  // Onboarding: recordar si el usuario ya cerró el modal de bienvenida.
+  // La clave es por usuario: cada cuenta nueva ve el welcome una vez.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (localStorage.getItem(WELCOME_DISMISSED_KEY)) setWelcomeDismissed(true);
-  }, []);
+    if (!ready || !user) return;
+    setWelcomeDismissed(Boolean(localStorage.getItem(welcomeDismissedKey(user.id))));
+  }, [ready, user]);
 
   // Onboarding: al detectar el 2º ingrediente (y sin recetas), abrir el modal de hito
   useEffect(() => {
@@ -394,11 +397,13 @@ export function IngredientList({
     ing.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const showWelcome = !isLoading && view === 'active' && ingredients.length < 2 && bootRecipes.length < 1 && !welcomeDismissed;
+  const showWelcome = !isLoading && view === 'active' && ingredients.length < 2 && !welcomeDismissed;
 
   const dismissWelcome = () => {
     setWelcomeDismissed(true);
-    if (typeof window !== 'undefined') localStorage.setItem(WELCOME_DISMISSED_KEY, '1');
+    if (typeof window !== 'undefined' && user) {
+      localStorage.setItem(welcomeDismissedKey(user.id), '1');
+    }
   };
 
   return (

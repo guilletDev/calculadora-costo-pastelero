@@ -24,6 +24,12 @@ export async function GET(req: NextRequest) {
   const redirectTo = (result: string) =>
     NextResponse.redirect(buildAppUrl(`/pro/estado?result=${result}`), 303);
 
+  // Falla/cancelación: redirección inmediata sin consultar la API de Mercado
+  // Pago (evita el timeout de 8s y el aviso tardío al usuario).
+  if (mpStatus === 'failure' || mpStatus === 'rejected' || mpStatus === 'cancelled') {
+    return NextResponse.redirect(buildAppUrl('/dashboard?payment=failed'), 303);
+  }
+
   // Sin payment_id no hay nada que verificar: el webhook + el polling cubren
   // la activación asincrónica.
   if (!paymentId) {

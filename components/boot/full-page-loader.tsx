@@ -1,6 +1,12 @@
 'use client';
 
-export function FullPageLoader({ exiting }: { exiting?: boolean }) {
+export function FullPageLoader({
+  exiting,
+  label = 'Calculando tus costos…',
+}: {
+  exiting?: boolean;
+  label?: string;
+}) {
   return (
     <div
       role="status"
@@ -27,7 +33,7 @@ export function FullPageLoader({ exiting }: { exiting?: boolean }) {
           costo repostero
         </p>
         <p className="mt-2 text-sm text-[#5f5e5e] animate-[pulse_2s_ease-in-out_infinite] motion-reduce:animate-none">
-          Calculando tus costos…
+          {label}
         </p>
       </div>
     </div>
