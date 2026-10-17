@@ -272,7 +272,7 @@ export default function LandingPage() {
               </ul>
               <TransitionLink
                 href="/login"
-                className="w-full py-3.5 px-6 rounded-full border-2 border-slate-300 font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 transition-all text-center block"
+                className="w-full py-3.5 px-6 rounded-full border-2 border-slate-300 font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 btn-hover-effect transition-all duration-300 hover:scale-105 text-center block"
               >
                 Empezar gratis
               </TransitionLink>
