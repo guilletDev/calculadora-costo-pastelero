@@ -50,6 +50,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
+        <link rel="preload" as="image" href="/logo-120.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

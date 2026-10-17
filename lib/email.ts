@@ -116,3 +116,36 @@ export async function sendProConfirmationEmail({ to, name, validUntil }: ProConf
 
   if (error) throw new Error(`Error enviando email de confirmación Pro: ${error.message}`);
 }
+
+interface AccountDeletionEmailParams {
+  to: string;
+  name: string;
+}
+
+export async function sendAccountDeletionEmail({ to, name }: AccountDeletionEmailParams): Promise<void> {
+  const appUrl = getAppUrl();
+  const html = emailLayout(`
+    <h1 style="font-size:22px;margin:0 0 12px;">Tu cuenta fue eliminada</h1>
+    <p style="font-size:15px;line-height:1.6;color:#5f5e5e;margin:0 0 16px;">
+      Hola ${name}, te confirmamos que tu cuenta de Costo Repostero y todos tus datos
+      (recetas, ingredientes y productos) se eliminaron correctamente.
+    </p>
+    <p style="font-size:15px;line-height:1.6;color:#5f5e5e;margin:0 0 24px;">
+      Gracias por haber probado la app. Si querés volver, podés registrarte de nuevo
+      cuando quieras: te vamos a estar esperando.
+    </p>
+    <a href="${appUrl}/login"
+       style="display:inline-block;background-color:#b80049;color:#ffffff;text-decoration:none;font-weight:bold;font-size:14px;padding:14px 28px;border-radius:999px;">
+      Volver a registrarme
+    </a>
+  `);
+
+  const { error } = await getResend().emails.send({
+    from: getFromAddress(),
+    to,
+    subject: 'Confirmación de eliminación de cuenta - Costo Repostero',
+    html,
+  });
+
+  if (error) throw new Error(`Error enviando email de eliminación de cuenta: ${error.message}`);
+}

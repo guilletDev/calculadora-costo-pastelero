@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { PRO_PLAN_NAME, PRO_PLAN_DESCRIPTION, formatProValidUntil, formatProPrice } from '@/lib/pricing';
-import { FREE_TIER_INGREDIENTS_LIMIT, FREE_TIER_RECIPES_LIMIT } from '@/lib/limits';
+import { FREE_TIER_INGREDIENTS_LIMIT, FREE_TIER_RECIPES_LIMIT, FREE_TIER_PRODUCTS_LIMIT } from '@/lib/limits';
 import { formatCurrency } from '@/lib/cost';
 import { UpgradeButton } from '@/components/upgrade-button';
 
@@ -32,7 +32,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 const FREE_BENEFITS = [
   { icon: 'calculate', text: 'Calculadora de costos para tus recetas' },
-  { icon: 'inventory_2', text: `Hasta ${FREE_TIER_INGREDIENTS_LIMIT} ingredientes y ${FREE_TIER_RECIPES_LIMIT} recetas` },
+  { icon: 'inventory_2', text: `Hasta ${FREE_TIER_INGREDIENTS_LIMIT} ingredientes, ${FREE_TIER_RECIPES_LIMIT} recetas y ${FREE_TIER_PRODUCTS_LIMIT} producto${FREE_TIER_PRODUCTS_LIMIT === 1 ? '' : 's'}` },
   { icon: 'storefront', text: 'Gestión de productos básica' },
 ];
 

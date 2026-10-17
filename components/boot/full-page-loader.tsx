@@ -21,7 +21,7 @@ export function FullPageLoader({
         <div className="absolute inset-0 rounded-full border-2 border-dashed border-[#b80049]/30 animate-[spin_3s_linear_infinite] motion-reduce:animate-none" />
         <div className="absolute inset-0 rounded-full border border-[#ee2b6c]/40 animate-[ping_1.8s_cubic-bezier(0,0,0.2,1)_infinite] motion-reduce:animate-none" />
         <img
-          src="/icon.svg"
+          src="/logo-120.png"
           alt="Costo Repostero"
           width={80}
           height={80}
