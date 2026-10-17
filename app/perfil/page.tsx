@@ -2,7 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { useAppBoot } from '@/components/boot/app-boot-context';
+import { createClient } from '@/utils/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { PRO_PLAN_NAME, PRO_PLAN_DESCRIPTION, formatProValidUntil, formatProPrice } from '@/lib/pricing';
 import { FREE_TIER_INGREDIENTS_LIMIT, FREE_TIER_RECIPES_LIMIT } from '@/lib/limits';
 import { formatCurrency } from '@/lib/cost';
@@ -36,6 +48,8 @@ export default function PerfilPage() {
   // instante, sin consultas bloqueantes al entrar.
   const { ready, user, isPro, profile } = useAppBoot();
   const [payments, setPayments] = useState<PaymentRow[] | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Seguridad extra (el middleware ya protege la ruta): sin sesión → login.
   useEffect(() => {
@@ -57,6 +71,30 @@ export default function PerfilPage() {
       cancelled = true;
     };
   }, []);
+
+  // Baja definitiva de cuenta: elimina el usuario en el server (service_role)
+  // y limpia la sesión local antes de volver al login.
+  const handleDeleteAccount = async () => {
+    if (isDeletingAccount) return;
+    setIsDeletingAccount(true);
+    try {
+      const res = await fetch('/api/user/delete', { method: 'POST' });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error ?? 'No se pudo eliminar la cuenta');
+      }
+      try {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+      } catch {
+        // Aunque falle el signOut, el usuario ya no existe en el server.
+      }
+      window.location.href = '/login?deleted=true';
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo eliminar la cuenta');
+      setIsDeletingAccount(false);
+    }
+  };
 
   if (!ready) {
     return (
@@ -257,6 +295,68 @@ export default function PerfilPage() {
           </div>
         )}
       </section>
+
+      {/* ── Zona de Peligro ──────────────────────────────────────────────── */}
+      <section className="bg-white dark:bg-[#2a1a24] rounded-[24px] p-8 border border-red-200/60 dark:border-red-900/40 shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+          Zona de Peligro
+        </h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+          Eliminar tu cuenta es permanente: se borran tus recetas, productos,
+          ingredientes e historial de pagos. Esta acción no se puede deshacer.
+        </p>
+        <button
+          type="button"
+          onClick={() => setDeleteOpen(true)}
+          className="inline-flex items-center gap-2 rounded-full border border-[#ba1a1a] text-[#ba1a1a] font-semibold text-sm px-6 py-2.5 hover:bg-[#ffdad6]/40 transition-colors"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete_forever</span>
+          Eliminar mi cuenta
+        </button>
+      </section>
+
+      {/* ── Confirmación de baja definitiva ──────────────────────────────── */}
+      <AlertDialog open={deleteOpen} onOpenChange={(open) => { if (!isDeletingAccount) setDeleteOpen(open); }}>
+        <AlertDialogContent
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="max-w-sm rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant"
+        >
+          <AlertDialogHeader>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#ffdad6]">
+              <span className="material-symbols-outlined text-[#ba1a1a]" style={{ fontSize: 24 }}>delete_forever</span>
+            </div>
+            <AlertDialogTitle className="text-center text-base font-bold text-stitch-on-surface">
+              ¿Eliminar mi cuenta?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-sm text-stitch-secondary leading-relaxed">
+              ¿Estás seguro? Esta acción es irreversible y eliminará permanentemente
+              todas tus recetas, productos, ingredientes e historial.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-2 sm:flex-row gap-2">
+            <AlertDialogCancel
+              disabled={isDeletingAccount}
+              className="flex-1 rounded-full border border-gray-300 bg-white text-gray-700 font-medium text-sm py-2.5 hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus-visible:ring-0 shadow-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleDeleteAccount(); }}
+              disabled={isDeletingAccount}
+              className="flex-1 rounded-full bg-[#ba1a1a] text-white font-medium text-sm py-2.5 hover:bg-[#a31313] focus:outline-none focus-visible:ring-0 shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isDeletingAccount ? (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <span className="material-symbols-outlined animate-spin" style={{ fontSize: 16 }}>progress_activity</span>
+                  Eliminando cuenta...
+                </span>
+              ) : (
+                'Eliminar mi cuenta'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
