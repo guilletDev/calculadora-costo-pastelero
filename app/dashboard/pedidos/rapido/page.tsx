@@ -1,14 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { toPng } from 'html-to-image';
 import { formatCurrency } from '@/lib/cost';
+import { PresupuestoTicket } from '@/components/presupuesto-ticket';
 
 interface BudgetLine {
   id: string;
   concepto: string;
   precio: string;
+}
+
+const DRAFT_KEY = 'costo_repostero_presupuesto_rapido_draft';
+
+interface BudgetDraft {
+  title: string;
+  clientName: string;
+  deposit: string;
+  lines: BudgetLine[];
 }
 
 const inputClass =
@@ -18,12 +29,6 @@ const cardClass =
   'bg-white rounded-[24px] border border-[#e4bdc2]/30 p-6';
 
 const cardShadow = { boxShadow: '0 10px 40px rgba(0,0,0,0.04)' } as const;
-
-function comingSoon() {
-  toast('Próximamente', {
-    description: 'Esta función va a estar disponible en la próxima versión.',
-  });
-}
 
 function isLineComplete(line: BudgetLine): boolean {
   return line.concepto.trim().length > 0 && (parseFloat(line.precio) || 0) > 0;
@@ -36,6 +41,10 @@ export default function PresupuestoRapidoPage() {
   const [lines, setLines] = useState<BudgetLine[]>([
     { id: 'line-1', concepto: '', precio: '' },
   ]);
+  const [isSharing, setIsSharing] = useState(false);
+  const ticketRef = useRef<HTMLDivElement>(null);
+  const conceptInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const shouldFocusLastLineRef = useRef(false);
 
   const total = lines.reduce((acc, line) => acc + (parseFloat(line.precio) || 0), 0);
 
@@ -43,12 +52,109 @@ export default function PresupuestoRapidoPage() {
   const canAddLine = !lastLine || isLineComplete(lastLine);
   const hasCompleteLine = lines.some(isLineComplete);
 
-  const handleAction = () => {
+  // Recuperar borrador guardado en este dispositivo (una sola vez al montar).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as Partial<BudgetDraft> | null;
+      if (!draft || typeof draft !== 'object') return;
+
+      if (typeof draft.title === 'string') setTitle(draft.title);
+      if (typeof draft.clientName === 'string') setClientName(draft.clientName);
+      if (typeof draft.deposit === 'string') setDeposit(draft.deposit);
+      if (Array.isArray(draft.lines)) {
+        const validLines = draft.lines.filter(
+          (line): line is BudgetLine =>
+            !!line &&
+            typeof line.concepto === 'string' &&
+            typeof line.precio === 'string'
+        );
+        if (validLines.length > 0) {
+          setLines(
+            validLines.map((line) => ({
+              id: typeof line.id === 'string' && line.id ? line.id : crypto.randomUUID(),
+              concepto: line.concepto,
+              precio: line.precio,
+            }))
+          );
+        }
+      }
+    } catch (error) {
+      console.error('[presupuesto-rapido] No se pudo leer el borrador:', error);
+    }
+  }, []);
+
+  const handleSaveDraft = () => {
+    try {
+      const draft: BudgetDraft = { title, clientName, deposit, lines };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      toast.success('Borrador guardado en este dispositivo');
+    } catch (error) {
+      console.error('[presupuesto-rapido] No se pudo guardar el borrador:', error);
+      toast.error('No pudimos guardar el borrador. Intentá de nuevo.');
+    }
+  };
+
+  const handleClearDraft = () => {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch (error) {
+      console.error('[presupuesto-rapido] No se pudo limpiar el borrador:', error);
+    }
+    setTitle('');
+    setClientName('');
+    setDeposit('');
+    setLines([{ id: 'line-1', concepto: '', precio: '' }]);
+    toast('Borrador eliminado');
+  };
+
+  const handleShare = async () => {
     if (!hasCompleteLine) {
       toast.error('Completá el concepto y precio de las líneas');
       return;
     }
-    comingSoon();
+    const node = ticketRef.current;
+    if (!node || isSharing) return;
+
+    setIsSharing(true);
+    try {
+      const dataUrl = await toPng(node, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+        width: 480,
+        height: Math.ceil(node.offsetHeight),
+        skipFonts: true,
+      });
+
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], 'presupuesto.png', { type: 'image/png' });
+
+      const canShareFiles =
+        typeof navigator !== 'undefined' &&
+        typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [file] });
+
+      if (canShareFiles && typeof navigator.share === 'function') {
+        try {
+          await navigator.share({ files: [file], title: 'Presupuesto - Costo Repostero' });
+        } catch (shareError) {
+          // El usuario puede cancelar el share nativo: no es un error real.
+          if (!(shareError instanceof Error) || shareError.name !== 'AbortError') throw shareError;
+        }
+      } else {
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = 'presupuesto.png';
+        link.click();
+      }
+    } catch (error) {
+      console.error('[presupuesto-rapido] Error generando la imagen:', error);
+      toast.error('No pudimos generar la imagen. Intentá de nuevo.');
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   const addLine = () => {
@@ -56,6 +162,27 @@ export default function PresupuestoRapidoPage() {
       ...prev,
       { id: crypto.randomUUID(), concepto: '', precio: '' },
     ]);
+  };
+
+  const handleAddLine = () => {
+    if (!canAddLine) return;
+    shouldFocusLastLineRef.current = true;
+    addLine();
+  };
+
+  // Al agregar una línea (Enter o botón), enfocar el "Concepto" de la nueva fila
+  // una vez que React la montó. El flag evita robar foco al cargar un borrador.
+  useEffect(() => {
+    if (!shouldFocusLastLineRef.current) return;
+    shouldFocusLastLineRef.current = false;
+    conceptInputRefs.current[lines.length - 1]?.focus();
+  }, [lines.length]);
+
+  const handleLineKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddLine();
+    }
   };
 
   const updateLine = (id: string, patch: Partial<BudgetLine>) => {
@@ -109,14 +236,16 @@ export default function PresupuestoRapidoPage() {
           QUÉ INCLUYE
         </h2>
         <div className="space-y-3">
-          {lines.map((line) => (
+          {lines.map((line, index) => (
             <div key={line.id} className="flex gap-3">
               <input
+                ref={(el) => { conceptInputRefs.current[index] = el; }}
                 className={`${inputClass} flex-1`}
                 type="text"
                 placeholder="Concepto (ej: Decoración)"
                 value={line.concepto}
                 onChange={(e) => updateLine(line.id, { concepto: e.target.value })}
+                onKeyDown={handleLineKeyDown}
               />
               <div className="relative w-32 shrink-0">
                 <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#c5c7c8] pointer-events-none">
@@ -130,6 +259,7 @@ export default function PresupuestoRapidoPage() {
                   placeholder="0"
                   value={line.precio}
                   onChange={(e) => updateLine(line.id, { precio: e.target.value })}
+                  onKeyDown={handleLineKeyDown}
                 />
               </div>
             </div>
@@ -137,7 +267,7 @@ export default function PresupuestoRapidoPage() {
         </div>
         <button
           type="button"
-          onClick={addLine}
+          onClick={handleAddLine}
           disabled={!canAddLine}
           className="w-full py-3 rounded-full border border-[#b80049] text-[#b80049] text-sm font-semibold hover:bg-[#b80049]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
@@ -183,18 +313,43 @@ export default function PresupuestoRapidoPage() {
       <div className="flex flex-col gap-3">
         <button
           type="button"
-          onClick={handleAction}
+          onClick={handleSaveDraft}
           className="w-full py-3.5 rounded-full border border-[#b80049] text-[#b80049] font-semibold text-sm hover:bg-[#b80049]/10 transition-colors"
         >
           Guardar en borrador
         </button>
         <button
           type="button"
-          onClick={handleAction}
-          className="w-full py-3.5 rounded-full bg-[#b80049] text-white font-semibold text-sm hover:bg-[#bc004b] transition-colors"
+          onClick={handleShare}
+          disabled={isSharing}
+          className="w-full py-3.5 rounded-full bg-[#b80049] text-white font-semibold text-sm hover:bg-[#bc004b] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Compartir presupuesto
+          {isSharing ? 'Generando imagen...' : 'Compartir presupuesto'}
         </button>
+        <button
+          type="button"
+          onClick={handleClearDraft}
+          className="mx-auto text-xs font-semibold text-[#5f5e5e] underline underline-offset-2 hover:text-[#b80049] transition-colors"
+        >
+          Limpiar borrador
+        </button>
+      </div>
+
+      {/* Ticket oculto para exportar como imagen. El wrapper 1px queda invisible y
+          el clon se hace del nodo interno, que no tiene offsets de posicionamiento. */}
+      <div
+        aria-hidden="true"
+        className="fixed top-0 left-0 -z-50 h-px w-px overflow-hidden opacity-0 pointer-events-none"
+      >
+        <div ref={ticketRef} className="w-[480px] bg-white">
+          <PresupuestoTicket
+            title={title}
+            clientName={clientName}
+            lines={lines}
+            total={total}
+            deposit={parseFloat(deposit) || 0}
+          />
+        </div>
       </div>
     </main>
   );
