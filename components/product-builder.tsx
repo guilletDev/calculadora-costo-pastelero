@@ -432,7 +432,14 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
         : [saved, ...bootProducts];
       applyLocal({ products: nextProducts });
       toast.success(productId ? 'Producto actualizado exitosamente' : 'Producto guardado exitosamente');
-      navigateWithTransition(router, `/productos/${saved.id}`);
+      if (productId) {
+        // Edición → detalle
+        router.push(`/productos/${saved.id}`);
+      } else {
+        // Creación → lista
+        router.push('/productos');
+      }
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al guardar producto');
     } finally {
@@ -613,14 +620,14 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
             {/* Rows */}
             {draft.components.length === 0 ? (
               <div className="bg-stitch-surface-container-low rounded-xl p-6 border border-stitch-outline-variant/50 text-center font-stitch-body-md text-stitch-secondary">
-                Agregá al menos un ítem para armar el producto.
+                Agregá al menos un ingrediente para armar el producto.
               </div>
             ) : (
               <div className="space-y-4">
                 {draft.components.map((component, index) => {
                   const baseCost = getBaseCostPerUnit(component);
                   const readOnly = isReadOnlyRow(component);
-                  const displayName = component.recipeName ?? component.ingredientName ?? 'Ítem';
+                  const displayName = component.recipeName ?? component.ingredientName ?? 'Ingrediente';
                   const recipe = component.componentType === 'recipe'
                     ? eligibleRecipes.find(r => r.id === component.recipeId)
                     : null;
@@ -819,7 +826,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
           </h3>
           <div className="space-y-4 font-stitch-body-md text-body-md" style={{ color: '#ffb2be' }}>
             <div className="flex justify-between items-center border-b border-white/20 pb-4">
-              <span>Subtotal Ítems:</span>
+              <span>Subtotal Ingredientes:</span>
               <span className="text-on-primary font-medium text-[20px]">{formatCurrency(componentsCost)}</span>
             </div>
             <div className="flex justify-between items-center border-b border-white/20 pb-4">

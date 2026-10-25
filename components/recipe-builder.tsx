@@ -551,7 +551,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                 placeholder="Ej: 45 (minutos)"
                 type="number"
                 min="0"
-                step="any"
+                step="1"
                 value={currentRecipe.laborMinutes ?? ''}
                 onChange={(e) => setCurrentRecipe({ ...currentRecipe, laborMinutes: e.target.value })}
               />
@@ -847,7 +847,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
         </article>
 
         {/* ── Costos Adicionales + Precio de Venta (acordeón opcional) ── */}
-        <Accordion type="single" collapsible className="bg-white rounded-[24px] border border-gray-100 overflow-hidden card-animate delay-400" style={stitchShadow}>
+        <Accordion type="single" collapsible className="bg-white rounded-[24px] border border-gray-100 card-animate delay-400" style={stitchShadow}>
           <AccordionItem value="costos" className="border-b-0">
             <AccordionTrigger className="px-8 py-6 text-left text-[18px] font-semibold text-[#151c27] hover:no-underline hover:text-[#b80049] transition-colors" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
               <span className="flex items-center gap-3">
@@ -856,9 +856,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               </span>
             </AccordionTrigger>
             <AccordionContent className="px-8 pb-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 {/* Costos Adicionales */}
-                <div>
+                <div className="lg:col-span-7 space-y-4">
                   <form
                     noValidate
                     onSubmit={(e) => { e.preventDefault(); addCostRow(); }}
@@ -871,9 +871,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                         .map(r => r.key);
                       return (
                         <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3">
-                          <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3">
+                          <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-3">
                             <select
-                              className="interactive-input w-full sm:w-56 px-3 py-2.5 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] text-sm"
+                              className="interactive-input w-full sm:flex-1 sm:min-w-0 px-3 py-2.5 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] text-sm"
                               value={row.isCustom ? CUSTOM_EXTRA_COST_OPTION : row.key}
                               onChange={(e) => updateCostRowPreset(index, e.target.value)}
                             >
@@ -886,7 +886,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                             </select>
                             {row.isCustom && (
                               <input
-                                className="interactive-input w-full sm:w-56 px-3 py-2.5 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] text-sm"
+                                className="interactive-input w-full sm:flex-1 sm:min-w-0 px-3 py-2.5 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] text-sm"
                                 placeholder="Ej: Moldes descartables"
                                 type="text"
                                 value={row.label}
@@ -925,7 +925,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                 </div>
 
                 {/* Margen + Precio de Venta */}
-                <div className="space-y-6">
+                <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <h3 className="text-[14px] leading-[1.4] tracking-[0.05em] font-bold text-[#b80049]">Margen de Ganancia (%)</h3>

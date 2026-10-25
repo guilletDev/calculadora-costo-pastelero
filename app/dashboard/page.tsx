@@ -111,6 +111,12 @@ function DashboardContent() {
     { label: 'Ingredientes', value: String(totalIngredientes), icon: 'inventory_2', iconBg: 'bg-[#ffd9de]/50 text-[#b80049]', href: '/inventario' },
   ];
 
+  // Pedidos: datos estáticos por ahora (aún no existe el flujo de ventas).
+  const orderMetrics = [
+    { label: 'Pendientes', value: '0', icon: 'pending_actions' },
+    { label: 'Entregados', value: '0', icon: 'task_alt' },
+  ];
+
   const quickActions = [
     { href: '/recetas/nueva', label: 'Nueva Receta', description: 'Calcular costos y márgenes de una receta completa', icon: 'cake', cta: '+ Crear' },
     { href: '/productos/nuevo', label: 'Nuevo Producto', description: 'Configurar producto final para la venta', icon: 'storefront', cta: '+ Crear' },
@@ -128,8 +134,8 @@ function DashboardContent() {
 
   return (
     <main className="flex-grow w-full max-w-[1200px] mx-auto px-6 md:px-[10%] py-12 flex flex-col gap-12">
-      {/* ── Header ── */}
-      <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-up">
+      {/* ── Pedidos: ventas y presupuestos ── */}
+      <section className="space-y-6 animate-fade-up">
         <div>
           <h1
             className="text-[28px] md:text-[32px] leading-[1.2] md:tracking-[-0.01em] font-bold text-[#151c27] mb-2"
@@ -138,35 +144,98 @@ function DashboardContent() {
             Hola, {userName || 'pastelero'}
           </h1>
           <p className="text-[#5f5e5e] text-[18px] leading-[1.6]">
-            Este es el resumen de tu negocio.
+            ¿Qué vamos a crear hoy?
           </p>
+        </div>
+
+        {/* Métricas de pedidos */}
+        <div className="grid grid-cols-2 gap-6">
+          {orderMetrics.map((metric) => (
+            <div
+              key={metric.label}
+              className="bg-stitch-surface-container-lowest rounded-[24px] p-4 sm:p-6 overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant flex flex-col justify-between"
+            >
+              <div className="flex items-start justify-between min-w-0 mb-2">
+                <span className="text-[10px] sm:text-xs tracking-normal font-bold text-stitch-secondary flex-1 break-words pr-1 leading-tight">
+                  {metric.label}
+                </span>
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#ffd9de]/50 flex items-center justify-center shrink-0 ml-auto">
+                  <span className="material-symbols-outlined text-[18px]">{metric.icon}</span>
+                </div>
+              </div>
+              <div className="font-stitch-numeric-data text-3xl leading-tight text-stitch-on-surface">
+                {metric.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* CTAs de pedidos */}
+        <div className="flex flex-col gap-3">
+          <TransitionLink
+            href="/dashboard/pedidos/nuevo"
+            className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-[#b80049] text-white rounded-full text-[14px] leading-[1.4] tracking-[0.02em] font-semibold uppercase hover:bg-[#bc004b] transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            Nuevo pedido
+          </TransitionLink>
+          <TransitionLink
+            href="/dashboard/pedidos/rapido"
+            className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 border border-[#b80049] text-[#b80049] rounded-full text-[14px] leading-[1.4] tracking-[0.02em] font-semibold uppercase hover:bg-[#b80049]/10 transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">request_quote</span>
+            Presupuesto rápido
+          </TransitionLink>
+        </div>
+
+        {/* Bandeja */}
+        <div className="space-y-3">
+          <h2
+            className="text-xl font-semibold text-[#151c27]"
+            style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
+          >
+            Pedidos a confirmar
+          </h2>
+          <div className="bg-white rounded-[24px] border border-stitch-outline-variant p-6 text-center">
+            <p className="text-[16px] leading-[1.6] text-[#5f5e5e]">
+              Todavía no hay pedidos. Creá tu primer presupuesto para empezar a organizarte.
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* ── KPIs ── */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        {kpis.map((kpi) => (
-          <TransitionLink
-            key={kpi.label}
-            href={kpi.href}
-            className="bg-stitch-surface-container-lowest rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant flex flex-col justify-between hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary uppercase tracking-widest">
-                {kpi.label}
-              </span>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${kpi.iconBg}`}>
-                <span className="material-symbols-outlined text-[18px]">{kpi.icon}</span>
+      {/* ── Resumen de tu negocio ── */}
+      <section className="space-y-6">
+        <h2
+          className="text-xl font-semibold text-[#151c27]"
+          style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
+        >
+          Resumen de tu negocio
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {kpis.map((kpi) => (
+            <TransitionLink
+              key={kpi.label}
+              href={kpi.href}
+              className="bg-stitch-surface-container-lowest rounded-[24px] p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-stitch-outline-variant flex flex-col justify-between hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <span className="font-stitch-label-sm text-stitch-label-sm text-stitch-secondary uppercase tracking-widest">
+                  {kpi.label}
+                </span>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${kpi.iconBg}`}>
+                  <span className="material-symbols-outlined text-[18px]">{kpi.icon}</span>
+                </div>
               </div>
-            </div>
-            <div className="font-stitch-numeric-data text-[32px] leading-tight text-stitch-on-surface">
-              {kpi.value}
-            </div>
-            <div className="mt-3 flex justify-end">
-              <ArrowRight className="w-4 h-4 text-muted-foreground" />
-            </div>
-          </TransitionLink>
-        ))}
+              <div className="font-stitch-numeric-data text-[32px] leading-tight text-stitch-on-surface">
+                {kpi.value}
+              </div>
+              <div className="mt-3 flex justify-end">
+                <ArrowRight className="w-4 h-4 text-muted-foreground" />
+              </div>
+            </TransitionLink>
+          ))}
+        </div>
       </section>
 
       {/* ── Banner Mercado Pago (solo Free) ── */}

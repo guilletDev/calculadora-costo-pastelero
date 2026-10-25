@@ -131,8 +131,8 @@ export default function ProductosPage() {
                 {/* Metrics */}
                 <div className="grid grid-cols-2 gap-4 mb-8">
                   <div className="bg-[#f0f3ff] rounded-xl p-4 flex items-center justify-between gap-2">
-                    <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase shrink-0 whitespace-nowrap">
-                      Ítems
+                    <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase shrink-0">
+                      Ingredientes
                     </span>
                     <span className="text-[20px] leading-[1.2] text-[#151c27] font-semibold">
                       {product.components.length}
