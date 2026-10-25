@@ -129,20 +129,20 @@ export default function ProductosPage() {
                 </header>
 
                 {/* Metrics */}
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                  <div className="bg-[#f0f3ff] rounded-xl p-4 flex items-center justify-between gap-2">
-                    <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase shrink-0">
+                <div className="grid grid-cols-2 gap-2 w-full my-4">
+                  <div className="flex flex-col items-center justify-center p-2 sm:p-2.5 rounded-xl bg-[#eff3ff] min-w-0 w-full text-center">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-[#5c6068] tracking-wider uppercase leading-tight w-full truncate">
                       Ingredientes
                     </span>
-                    <span className="text-[20px] leading-[1.2] text-[#151c27] font-semibold">
+                    <span className="text-base sm:text-lg md:text-xl font-bold text-[#151c27] leading-tight mt-0.5">
                       {product.components.length}
                     </span>
                   </div>
-                  <div className="bg-[#f0f3ff] rounded-xl p-4 flex flex-col justify-center">
-                    <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase mb-1">
+                  <div className="flex flex-col items-center justify-center p-2 sm:p-2.5 rounded-xl bg-[#eff3ff] min-w-0 w-full text-center">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-[#5c6068] tracking-wider uppercase leading-tight w-full truncate">
                       Margen
                     </span>
-                    <span className="text-[20px] leading-[1.2] text-[#151c27] font-semibold">
+                    <span className="text-base sm:text-lg md:text-xl font-bold text-[#151c27] leading-tight mt-0.5">
                       {product.profitMargin}%
                     </span>
                   </div>
