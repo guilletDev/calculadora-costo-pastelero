@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { toPng } from 'html-to-image';
 import { useAppBoot } from '@/components/boot/app-boot-context';
+import { PresupuestoTicket } from '@/components/presupuesto-ticket';
 import { EXTRA_COST_LABELS, Recipe } from '@/lib/types';
 import { formatCurrency, proportionalCost } from '@/lib/cost';
 import {
@@ -64,6 +66,15 @@ function quantityPlaceholder(recipe: Recipe | undefined): string {
   return 'Ej: 1';
 }
 
+function isRecipeLineComplete(line: RecipeLine): boolean {
+  return !!line.recipeId && (parseFloat(line.quantity) || 0) > 0;
+}
+
+function isExtraLineComplete(line: ExtraLine): boolean {
+  const hasLabel = line.label.trim().length > 0 || line.key !== '';
+  return hasLabel && (parseFloat(line.amount) || 0) > 0;
+}
+
 export default function CotizarPedidoPage() {
   const { recipes } = useAppBoot();
   const [title, setTitle] = useState('');
@@ -76,6 +87,12 @@ export default function CotizarPedidoPage() {
   ]);
   const [salePrice, setSalePrice] = useState('');
   const [deposit, setDeposit] = useState('');
+  const [isSharing, setIsSharing] = useState(false);
+  const ticketRef = useRef<HTMLDivElement>(null);
+  const recipeSelectRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const shouldFocusRecipeRef = useRef(false);
+  const extraSelectRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const shouldFocusExtraRef = useRef(false);
 
   const findRecipe = (recipeId: string | undefined) =>
     recipes.find((recipe) => recipe.id === recipeId);
@@ -137,6 +154,44 @@ export default function CotizarPedidoPage() {
     });
   };
 
+  const lastRecipeLine = recipeLines[recipeLines.length - 1];
+  const canAddRecipe = !lastRecipeLine || isRecipeLineComplete(lastRecipeLine);
+  const lastExtraLine = extraLines[extraLines.length - 1];
+  const canAddExtra = !lastExtraLine || isExtraLineComplete(lastExtraLine);
+
+  const handleAddRecipe = () => {
+    if (!canAddRecipe) return;
+    shouldFocusRecipeRef.current = true;
+    addRecipeLine();
+  };
+
+  const handleAddExtra = () => {
+    if (!canAddExtra) return;
+    shouldFocusExtraRef.current = true;
+    addExtraLine();
+  };
+
+  // Al agregar una fila (Enter o botón), enfocar el Select de la nueva fila
+  // una vez que React la montó. Los flags evitan robar foco en el primer render.
+  useEffect(() => {
+    if (!shouldFocusRecipeRef.current) return;
+    shouldFocusRecipeRef.current = false;
+    recipeSelectRefs.current[recipeLines.length - 1]?.focus();
+  }, [recipeLines.length]);
+
+  useEffect(() => {
+    if (!shouldFocusExtraRef.current) return;
+    shouldFocusExtraRef.current = false;
+    extraSelectRefs.current[extraLines.length - 1]?.focus();
+  }, [extraLines.length]);
+
+  const handleRowKeyDown = (e: React.KeyboardEvent<HTMLElement>, add: () => void) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      add();
+    }
+  };
+
   const recipesTotal = recipeLines.reduce(
     (sum, line) => sum + recipeLineCost(line),
     0
@@ -146,6 +201,83 @@ export default function CotizarPedidoPage() {
     0
   );
   const totalCost = recipesTotal + extrasTotal;
+
+  // Datos para el ticket exportable: recetas y gastos con sus subtotales.
+  const ticketLines = [
+    ...recipeLines
+      .filter((line) => line.recipeId)
+      .map((line) => {
+        const recipe = findRecipe(line.recipeId);
+        const quantity = line.quantity ? ` · ${line.quantity}` : '';
+        return {
+          id: line.id,
+          concepto: `${recipe?.name ?? 'Receta'}${quantity}`,
+          precio: String(recipeLineCost(line)),
+        };
+      }),
+    ...extraLines
+      .filter((line) => line.label.trim() || line.amount)
+      .map((line) => ({
+        id: line.id,
+        concepto: line.label.trim() || 'Gasto extra',
+        precio: line.amount,
+      })),
+  ];
+
+  const parsedSalePrice = parseFloat(salePrice) || 0;
+  const ticketTotal = parsedSalePrice > 0 ? parsedSalePrice : totalCost;
+
+  const hasSomethingToShare =
+    recipeLines.some((line) => line.recipeId) ||
+    extraLines.some((line) => line.label.trim() || line.amount);
+
+  const handleShare = async () => {
+    if (!hasSomethingToShare) {
+      toast.error('Agregá al menos una receta o un gasto extra para compartir');
+      return;
+    }
+    const node = ticketRef.current;
+    if (!node || isSharing) return;
+
+    setIsSharing(true);
+    try {
+      const dataUrl = await toPng(node, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+        width: 480,
+        height: Math.ceil(node.offsetHeight),
+        skipFonts: true,
+      });
+
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], 'presupuesto.png', { type: 'image/png' });
+
+      const canShareFiles =
+        typeof navigator !== 'undefined' &&
+        typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [file] });
+
+      if (canShareFiles && typeof navigator.share === 'function') {
+        try {
+          await navigator.share({ files: [file], title: 'Presupuesto - Costo Repostero' });
+        } catch (shareError) {
+          // El usuario puede cancelar el share nativo: no es un error real.
+          if (!(shareError instanceof Error) || shareError.name !== 'AbortError') throw shareError;
+        }
+      } else {
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = 'presupuesto.png';
+        link.click();
+      }
+    } catch (error) {
+      console.error('[cotizar-pedido] Error generando la imagen:', error);
+      toast.error('No pudimos generar la imagen. Intentá de nuevo.');
+    } finally {
+      setIsSharing(false);
+    }
+  };
 
   return (
     <main className="mx-auto w-full max-w-[900px] flex-1 px-5 py-8 space-y-8">
@@ -200,7 +332,7 @@ export default function CotizarPedidoPage() {
         </div>
 
         <div className="space-y-4">
-          {recipeLines.map((line) => {
+          {recipeLines.map((line, index) => {
             const recipe = findRecipe(line.recipeId);
             return (
               <div
@@ -217,7 +349,11 @@ export default function CotizarPedidoPage() {
                       updateRecipeLine(line.id, { recipeId: value })
                     }
                   >
-                    <SelectTrigger className={triggerClass}>
+                    <SelectTrigger
+                      ref={(el) => { recipeSelectRefs.current[index] = el; }}
+                      className={triggerClass}
+                      onKeyDown={(e) => handleRowKeyDown(e, handleAddRecipe)}
+                    >
                       <SelectValue placeholder="Seleccionar receta" />
                     </SelectTrigger>
                     <SelectContent
@@ -260,6 +396,7 @@ export default function CotizarPedidoPage() {
                     onChange={(e) =>
                       updateRecipeLine(line.id, { quantity: e.target.value })
                     }
+                    onKeyDown={(e) => handleRowKeyDown(e, handleAddRecipe)}
                   />
                 </div>
 
@@ -284,8 +421,9 @@ export default function CotizarPedidoPage() {
 
         <button
           type="button"
-          onClick={addRecipeLine}
-          className="w-full py-3 rounded-full border border-[#b80049] text-[#b80049] text-sm font-semibold hover:bg-[#b80049]/10 transition-colors"
+          onClick={handleAddRecipe}
+          disabled={!canAddRecipe}
+          className="w-full py-3 rounded-full border border-[#b80049] text-[#b80049] text-sm font-semibold hover:bg-[#b80049]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
           + Agregar otra receta
         </button>
@@ -306,7 +444,7 @@ export default function CotizarPedidoPage() {
         </div>
 
         <div className="space-y-4">
-          {extraLines.map((line) => (
+          {extraLines.map((line, index) => (
             <div
               key={line.id}
               className="flex flex-col gap-3 sm:flex-row sm:items-end"
@@ -322,7 +460,11 @@ export default function CotizarPedidoPage() {
                     }
                     onValueChange={(value) => setExtraPreset(line.id, value)}
                   >
-                    <SelectTrigger className={triggerClass}>
+                    <SelectTrigger
+                      ref={(el) => { extraSelectRefs.current[index] = el; }}
+                      className={triggerClass}
+                      onKeyDown={(e) => handleRowKeyDown(e, handleAddExtra)}
+                    >
                       <SelectValue placeholder="Seleccionar gasto" />
                     </SelectTrigger>
                     <SelectContent
@@ -387,6 +529,7 @@ export default function CotizarPedidoPage() {
                     onChange={(e) =>
                       updateExtraLine(line.id, { amount: e.target.value })
                     }
+                    onKeyDown={(e) => handleRowKeyDown(e, handleAddExtra)}
                   />
                 </div>
               </div>
@@ -408,8 +551,9 @@ export default function CotizarPedidoPage() {
 
         <button
           type="button"
-          onClick={addExtraLine}
-          className="w-full py-3 rounded-full border border-[#b80049] text-[#b80049] text-sm font-semibold hover:bg-[#b80049]/10 transition-colors"
+          onClick={handleAddExtra}
+          disabled={!canAddExtra}
+          className="w-full py-3 rounded-full border border-[#b80049] text-[#b80049] text-sm font-semibold hover:bg-[#b80049]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
           + Agregar gasto extra
         </button>
@@ -503,11 +647,28 @@ export default function CotizarPedidoPage() {
         </button>
         <button
           type="button"
-          onClick={comingSoon}
-          className="w-full py-3.5 rounded-full bg-[#b80049] text-white font-semibold text-sm hover:bg-[#bc004b] transition-colors"
+          onClick={handleShare}
+          disabled={isSharing}
+          className="w-full py-3.5 rounded-full bg-[#b80049] text-white font-semibold text-sm hover:bg-[#bc004b] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Compartir presupuesto
+          {isSharing ? 'Generando imagen...' : 'Compartir presupuesto'}
         </button>
+      </div>
+
+      {/* Ticket oculto para exportar como imagen */}
+      <div
+        aria-hidden="true"
+        className="fixed top-0 left-0 -z-50 h-px w-px overflow-hidden opacity-0 pointer-events-none"
+      >
+        <div ref={ticketRef} className="w-[480px] bg-white">
+          <PresupuestoTicket
+            title={title}
+            clientName={clientName}
+            lines={ticketLines}
+            total={ticketTotal}
+            deposit={parseFloat(deposit) || 0}
+          />
+        </div>
       </div>
     </main>
   );

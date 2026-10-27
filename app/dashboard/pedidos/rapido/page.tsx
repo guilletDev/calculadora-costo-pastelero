@@ -45,6 +45,7 @@ export default function PresupuestoRapidoPage() {
   const ticketRef = useRef<HTMLDivElement>(null);
   const conceptInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const shouldFocusLastLineRef = useRef(false);
+  const [hydrated, setHydrated] = useState(false);
 
   const total = lines.reduce((acc, line) => acc + (parseFloat(line.precio) || 0), 0);
 
@@ -82,32 +83,24 @@ export default function PresupuestoRapidoPage() {
       }
     } catch (error) {
       console.error('[presupuesto-rapido] No se pudo leer el borrador:', error);
+    } finally {
+      setHydrated(true);
     }
   }, []);
 
-  const handleSaveDraft = () => {
-    try {
-      const draft: BudgetDraft = { title, clientName, deposit, lines };
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-      toast.success('Borrador guardado en este dispositivo');
-    } catch (error) {
-      console.error('[presupuesto-rapido] No se pudo guardar el borrador:', error);
-      toast.error('No pudimos guardar el borrador. Intentá de nuevo.');
-    }
-  };
-
-  const handleClearDraft = () => {
-    try {
-      localStorage.removeItem(DRAFT_KEY);
-    } catch (error) {
-      console.error('[presupuesto-rapido] No se pudo limpiar el borrador:', error);
-    }
-    setTitle('');
-    setClientName('');
-    setDeposit('');
-    setLines([{ id: 'line-1', concepto: '', precio: '' }]);
-    toast('Borrador eliminado');
-  };
+  // Auto-guardado en background: el formulario no pierde datos ante un refresh.
+  // El flag `hydrated` evita pisar el borrador guardado con el estado inicial vacío.
+  useEffect(() => {
+    if (!hydrated) return;
+    const timer = window.setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, clientName, deposit, lines }));
+      } catch (error) {
+        console.error('[presupuesto-rapido] No se pudo autoguardar el borrador:', error);
+      }
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [hydrated, title, clientName, deposit, lines]);
 
   const handleShare = async () => {
     if (!hasCompleteLine) {
@@ -313,25 +306,11 @@ export default function PresupuestoRapidoPage() {
       <div className="flex flex-col gap-3">
         <button
           type="button"
-          onClick={handleSaveDraft}
-          className="w-full py-3.5 rounded-full border border-[#b80049] text-[#b80049] font-semibold text-sm hover:bg-[#b80049]/10 transition-colors"
-        >
-          Guardar en borrador
-        </button>
-        <button
-          type="button"
           onClick={handleShare}
           disabled={isSharing}
           className="w-full py-3.5 rounded-full bg-[#b80049] text-white font-semibold text-sm hover:bg-[#bc004b] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isSharing ? 'Generando imagen...' : 'Compartir presupuesto'}
-        </button>
-        <button
-          type="button"
-          onClick={handleClearDraft}
-          className="mx-auto text-xs font-semibold text-[#5f5e5e] underline underline-offset-2 hover:text-[#b80049] transition-colors"
-        >
-          Limpiar borrador
         </button>
       </div>
 
