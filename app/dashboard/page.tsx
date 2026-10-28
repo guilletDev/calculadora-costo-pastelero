@@ -17,9 +17,20 @@ import {
   formatProPrice,
   formatProOriginalPrice,
 } from '@/lib/pricing';
+import { formatCurrency } from '@/lib/cost';
 
 const PAYMENT_POLL_ATTEMPTS = 12;
 const PAYMENT_POLL_INTERVAL_MS = 2000;
+
+interface OrderSummaryRow {
+  id: string;
+  client_name: string;
+  title: string | null;
+  sale_price: number;
+  created_at: string;
+  delivery_date: string | null;
+  status: string;
+}
 
 function DashboardContent() {
   const router = useRouter();
@@ -32,6 +43,11 @@ function DashboardContent() {
 
   // Cierre temporal del banner (sin persistencia: reaparece en cada recarga).
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
+
+  // Pedidos: conteos reales y bandeja de pendientes.
+  const [pendingOrders, setPendingOrders] = useState<OrderSummaryRow[]>([]);
+  const [deliveredCount, setDeliveredCount] = useState(0);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
   const searchParams = useSearchParams();
   const paymentSuccess = searchParams.get('payment') === 'success';
@@ -101,6 +117,48 @@ function DashboardContent() {
     }
   }, [ready, ingredients.length, paymentSuccess, paymentFailed, router]);
 
+  // Cargar pedidos (pendientes + conteo de entregados) desde Supabase.
+  useEffect(() => {
+    if (!ready || !user) return;
+    let cancelled = false;
+    setOrdersLoading(true);
+
+    (async () => {
+      try {
+        const supabase = createClient();
+        const [pendingRes, deliveredRes] = await Promise.all([
+          supabase
+            .from('orders')
+            .select('id, client_name, title, sale_price, created_at, delivery_date, status')
+            .eq('user_id', user.id)
+            .eq('status', 'pendiente')
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('orders')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('status', 'entregado'),
+        ]);
+
+        if (pendingRes.error) throw new Error(pendingRes.error.message);
+        if (deliveredRes.error) throw new Error(deliveredRes.error.message);
+        if (cancelled) return;
+
+        setPendingOrders((pendingRes.data ?? []) as OrderSummaryRow[]);
+        setDeliveredCount(deliveredRes.count ?? 0);
+      } catch (error) {
+        console.error('[dashboard] Error cargando pedidos:', error);
+        if (!cancelled) toast.error('No pudimos cargar los pedidos. Intentá de nuevo.');
+      } finally {
+        if (!cancelled) setOrdersLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, user]);
+
   const totalRecetas = recipes.length;
   const totalIngredientes = ingredients.length;
   const totalProductos = products.length;
@@ -111,10 +169,9 @@ function DashboardContent() {
     { label: 'Ingredientes', value: String(totalIngredientes), icon: 'inventory_2', iconBg: 'bg-[#ffd9de]/50 text-[#b80049]', href: '/inventario' },
   ];
 
-  // Pedidos: datos estáticos por ahora (aún no existe el flujo de ventas).
   const orderMetrics = [
-    { label: 'Pendientes', value: '0', icon: 'pending_actions' },
-    { label: 'Entregados', value: '0', icon: 'task_alt' },
+    { label: 'Pendientes', value: ordersLoading ? '—' : String(pendingOrders.length), icon: 'pending_actions' },
+    { label: 'Entregados', value: ordersLoading ? '—' : String(deliveredCount), icon: 'task_alt' },
   ];
 
   const quickActions = [
@@ -190,16 +247,70 @@ function DashboardContent() {
 
         {/* Bandeja */}
         <div className="space-y-3">
-          <h2
-            className="text-xl font-semibold text-[#151c27]"
-            style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
-          >
-            Pedidos a confirmar
-          </h2>
-          <div className="bg-white rounded-[24px] border border-stitch-outline-variant p-6 text-center">
-            <p className="text-[16px] leading-[1.6] text-[#5f5e5e]">
-              Todavía no hay pedidos. Creá tu primer presupuesto para empezar a organizarte.
-            </p>
+          <div className="flex items-center justify-between gap-3">
+            <h2
+              className="text-xl font-semibold text-[#151c27]"
+              style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
+            >
+              Pedidos a confirmar
+            </h2>
+            {!ordersLoading && pendingOrders.length > 0 && (
+              <TransitionLink
+                href="/dashboard/pedidos"
+                className="text-sm font-semibold text-[#b80049] hover:underline whitespace-nowrap"
+              >
+                Ver todos
+              </TransitionLink>
+            )}
+          </div>
+          <div className="bg-white rounded-[24px] border border-stitch-outline-variant p-6">
+            {ordersLoading ? (
+              <div className="space-y-3">
+                {[0, 1].map((index) => (
+                  <div
+                    key={index}
+                    className="h-14 animate-pulse rounded-xl bg-[#f0f3ff]"
+                  />
+                ))}
+              </div>
+            ) : pendingOrders.length === 0 ? (
+              <p className="text-center text-[16px] leading-[1.6] text-[#5f5e5e]">
+                Todavía no hay pedidos. Creá tu primer presupuesto para empezar a organizarte.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {pendingOrders.map((order) => (
+                  <TransitionLink
+                    key={order.id}
+                    href="/dashboard/pedidos"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-[#e4bdc2]/30 p-4 transition-colors hover:border-[#b80049]/40 hover:bg-[#fdf3f6]"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-[#151c27]">
+                        {order.title?.trim() || 'Pedido'}
+                      </p>
+                      <p className="truncate text-xs text-[#8a8a8a]">
+                        {order.client_name}
+                        {' · '}
+                        {new Date(order.created_at).toLocaleDateString('es-AR', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="font-semibold text-[#b80049]">
+                        {formatCurrency(Number(order.sale_price) || 0)}
+                      </p>
+                      <p className="text-[11px] uppercase tracking-wide text-[#8a8a8a]">
+                        Pendiente
+                      </p>
+                    </div>
+                  </TransitionLink>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { toPng } from 'html-to-image';
 import { useAppBoot } from '@/components/boot/app-boot-context';
 import { PresupuestoTicket } from '@/components/presupuesto-ticket';
+import { createClient } from '@/utils/supabase/client';
 import { EXTRA_COST_LABELS, Recipe } from '@/lib/types';
 import { formatCurrency, proportionalCost } from '@/lib/cost';
 import {
@@ -32,6 +34,8 @@ interface ExtraLine {
 
 const CUSTOM_EXTRA_OPTION = '__custom__';
 
+const FREE_TIER_ORDERS_LIMIT = 5;
+
 const EXTRA_PRESETS = Object.entries(EXTRA_COST_LABELS).map(([key, label]) => ({
   key,
   label,
@@ -47,12 +51,6 @@ const cardClass = 'bg-white rounded-[24px] border border-[#e4bdc2]/30 p-6';
 const cardShadow = { boxShadow: '0 10px 40px rgba(0,0,0,0.04)' } as const;
 const selectContentClass =
   'bg-white border border-gray-200 rounded-xl shadow-lg max-w-[min(24rem,calc(100vw-2rem))]';
-
-function comingSoon() {
-  toast('Próximamente', {
-    description: 'Esta función va a estar disponible en la próxima versión.',
-  });
-}
 
 function quantityLabel(recipe: Recipe | undefined): string {
   if (recipe?.yieldPortions != null && recipe.yieldPortions > 0) return 'Porciones';
@@ -76,7 +74,8 @@ function isExtraLineComplete(line: ExtraLine): boolean {
 }
 
 export default function CotizarPedidoPage() {
-  const { recipes } = useAppBoot();
+  const router = useRouter();
+  const { recipes, user, isPro } = useAppBoot();
   const [title, setTitle] = useState('');
   const [clientName, setClientName] = useState('');
   const [recipeLines, setRecipeLines] = useState<RecipeLine[]>([
@@ -87,7 +86,12 @@ export default function CotizarPedidoPage() {
   ]);
   const [salePrice, setSalePrice] = useState('');
   const [deposit, setDeposit] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [notes, setNotes] = useState('');
   const [isSharing, setIsSharing] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const savingOrderRef = useRef(false);
   const ticketRef = useRef<HTMLDivElement>(null);
   const recipeSelectRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const shouldFocusRecipeRef = useRef(false);
@@ -279,6 +283,90 @@ export default function CotizarPedidoPage() {
     }
   };
 
+  const handleSaveOrder = async () => {
+    if (savingOrderRef.current || isSavingOrder) return;
+
+    if (!user) {
+      toast.error('Iniciá sesión para guardar el pedido');
+      return;
+    }
+    if (!clientName.trim()) {
+      toast.error('Ingresá el nombre del cliente');
+      return;
+    }
+    if (!hasSomethingToShare) {
+      toast.error('Agregá al menos una receta o un gasto extra');
+      return;
+    }
+
+    savingOrderRef.current = true;
+    setIsSavingOrder(true);
+    try {
+      const supabase = createClient();
+
+      const { count, error: countError } = await supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (countError) throw new Error(countError.message);
+
+      if (!isPro && (count ?? 0) >= FREE_TIER_ORDERS_LIMIT) {
+        toast.error(
+          `Alcanzaste el límite de ${FREE_TIER_ORDERS_LIMIT} pedidos del Plan Gratuito`,
+          {
+            description: 'Pasate a Pro para gestionar pedidos sin límites.',
+            action: { label: 'Ver Plan Pro', onClick: () => router.push('/perfil') },
+          }
+        );
+        return;
+      }
+
+      const { error: insertError } = await supabase.from('orders').insert({
+        user_id: user.id,
+        client_name: clientName.trim(),
+        client_phone: clientPhone.trim() || null,
+        title: title.trim() || null,
+        recipes: recipeLines
+          .filter((line) => line.recipeId)
+          .map((line) => ({
+            recipeId: line.recipeId,
+            name: findRecipe(line.recipeId)?.name ?? null,
+            quantity: parseFloat(line.quantity) || 0,
+            cost: recipeLineCost(line),
+          })),
+        expenses: extraLines
+          .filter((line) => line.label.trim() || line.amount)
+          .map((line) => ({
+            key: line.key || null,
+            label: line.label.trim() || 'Gasto extra',
+            amount: parseFloat(line.amount) || 0,
+          })),
+        sale_price: parseFloat(salePrice) || 0,
+        total_cost: totalCost,
+        deposit: parseFloat(deposit) || 0,
+        status: 'pendiente',
+        delivery_date: deliveryDate ? new Date(deliveryDate).toISOString() : null,
+        notes: notes.trim() || null,
+      });
+
+      if (insertError) throw new Error(insertError.message);
+
+      toast.success('Pedido guardado exitosamente');
+      router.push('/dashboard/pedidos');
+    } catch (error) {
+      console.error('[cotizar-pedido] Error guardando el pedido:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'No pudimos guardar el pedido. Intentá de nuevo.'
+      );
+    } finally {
+      savingOrderRef.current = false;
+      setIsSavingOrder(false);
+    }
+  };
+
   return (
     <main className="mx-auto w-full max-w-[900px] flex-1 px-5 py-8 space-y-8">
       {/* ── Header ── */}
@@ -306,13 +394,48 @@ export default function CotizarPedidoPage() {
         </div>
         <div>
           <label className="block text-sm font-semibold text-[#5f5e5e] mb-1.5">
-            Nombre del cliente (opcional)
+            Nombre del cliente
           </label>
           <input
             className={inputClass}
             type="text"
             value={clientName}
             onChange={(e) => setClientName(e.target.value)}
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-[#5f5e5e] mb-1.5">
+              Teléfono (opcional)
+            </label>
+            <input
+              className={inputClass}
+              type="tel"
+              value={clientPhone}
+              onChange={(e) => setClientPhone(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-[#5f5e5e] mb-1.5">
+              Fecha de entrega (opcional)
+            </label>
+            <input
+              className={inputClass}
+              type="date"
+              value={deliveryDate}
+              onChange={(e) => setDeliveryDate(e.target.value)}
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-[#5f5e5e] mb-1.5">
+            Notas (opcional)
+          </label>
+          <textarea
+            className={`${inputClass} resize-none`}
+            rows={2}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
           />
         </div>
       </section>
@@ -640,10 +763,11 @@ export default function CotizarPedidoPage() {
       <div className="flex flex-col gap-3">
         <button
           type="button"
-          onClick={comingSoon}
-          className="w-full py-3.5 rounded-full border border-[#b80049] text-[#b80049] font-semibold text-sm hover:bg-[#b80049]/10 transition-colors"
+          onClick={handleSaveOrder}
+          disabled={isSavingOrder}
+          className="w-full py-3.5 rounded-full border border-[#b80049] text-[#b80049] font-semibold text-sm hover:bg-[#b80049]/10 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Guardar en borrador
+          {isSavingOrder ? 'Guardando pedido...' : 'Guardar pedido'}
         </button>
         <button
           type="button"
