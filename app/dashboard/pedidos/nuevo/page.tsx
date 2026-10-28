@@ -42,15 +42,15 @@ const EXTRA_PRESETS = Object.entries(EXTRA_COST_LABELS).map(([key, label]) => ({
 }));
 
 const inputClass =
-  'w-full px-4 py-3 rounded-xl border border-[#e4bdc2] bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8] focus:ring-2 focus:ring-[#b80049]/20 focus:border-[#b80049] outline-none transition-all text-[15px]';
+  'w-full px-4 py-3 rounded-xl border border-stitch-outline-variant bg-stitch-surface focus:bg-stitch-surface-container-lowest text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim focus:ring-2 focus:ring-[#b80049]/20 focus:border-stitch-primary outline-none transition-all text-[15px]';
 
 const triggerClass =
-  'w-full !h-auto rounded-xl border border-[#e4bdc2] bg-[#f9f9ff] px-4 py-3 text-[15px] text-[#151c27] justify-between gap-2';
+  'w-full !h-auto rounded-xl border border-stitch-outline-variant bg-stitch-surface px-4 py-3 text-[15px] text-stitch-on-surface justify-between gap-2';
 
-const cardClass = 'bg-white rounded-[24px] border border-[#e4bdc2]/30 p-6';
+const cardClass = 'bg-stitch-surface-container-lowest rounded-[24px] border border-stitch-outline-variant/30 p-6';
 const cardShadow = { boxShadow: '0 10px 40px rgba(0,0,0,0.04)' } as const;
 const selectContentClass =
-  'bg-white border border-gray-200 rounded-xl shadow-lg max-w-[min(24rem,calc(100vw-2rem))]';
+  'bg-stitch-surface-container-lowest border border-gray-200 dark:border-stitch-outline-variant rounded-xl shadow-lg max-w-[min(24rem,calc(100vw-2rem))]';
 
 function quantityLabel(recipe: Recipe | undefined): string {
   if (recipe?.yieldPortions != null && recipe.yieldPortions > 0) return 'Porciones';
@@ -371,10 +371,10 @@ export default function CotizarPedidoPage() {
     <main className="mx-auto w-full max-w-[900px] flex-1 px-5 py-8 space-y-8">
       {/* ── Header ── */}
       <div className="relative w-full flex items-center justify-center min-h-[44px] mb-6">
-        <Link className="absolute left-0 top-1/2 -translate-y-1/2 text-sm font-semibold text-[#b80049] hover:underline flex items-center gap-1 z-10" href="/dashboard">
+        <Link className="absolute left-0 top-1/2 -translate-y-1/2 text-sm font-semibold text-stitch-primary hover:underline flex items-center gap-1 z-10" href="/dashboard">
           ← Volver
         </Link>
-        <h1 className="text-base sm:text-xl md:text-2xl font-bold text-[#151c27] text-center uppercase tracking-tight px-14 sm:px-16 w-full">
+        <h1 className="text-base sm:text-xl md:text-2xl font-bold text-stitch-on-surface text-center uppercase tracking-tight px-14 sm:px-16 w-full">
           COTIZAR PEDIDO
         </h1>
       </div>
@@ -382,7 +382,7 @@ export default function CotizarPedidoPage() {
       {/* ── Datos del pedido ── */}
       <section className={`${cardClass} space-y-4`} style={cardShadow}>
         <div>
-          <label className="block text-sm font-semibold text-[#5f5e5e] mb-1.5">
+          <label className="block text-sm font-semibold text-stitch-secondary mb-1.5">
             Título del pedido
           </label>
           <input
@@ -393,7 +393,7 @@ export default function CotizarPedidoPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-semibold text-[#5f5e5e] mb-1.5">
+          <label className="block text-sm font-semibold text-stitch-secondary mb-1.5">
             Nombre del cliente
           </label>
           <input
@@ -405,7 +405,7 @@ export default function CotizarPedidoPage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-semibold text-[#5f5e5e] mb-1.5">
+            <label className="block text-sm font-semibold text-stitch-secondary mb-1.5">
               Teléfono (opcional)
             </label>
             <input
@@ -416,7 +416,7 @@ export default function CotizarPedidoPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-[#5f5e5e] mb-1.5">
+            <label className="block text-sm font-semibold text-stitch-secondary mb-1.5">
               Fecha de entrega (opcional)
             </label>
             <input
@@ -428,7 +428,7 @@ export default function CotizarPedidoPage() {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-semibold text-[#5f5e5e] mb-1.5">
+          <label className="block text-sm font-semibold text-stitch-secondary mb-1.5">
             Notas (opcional)
           </label>
           <textarea
@@ -444,12 +444,12 @@ export default function CotizarPedidoPage() {
       <section className={`${cardClass} space-y-4`} style={cardShadow}>
         <div>
           <h2
-            className="text-sm font-bold uppercase tracking-widest text-[#5f5e5e]"
+            className="text-sm font-bold uppercase tracking-widest text-stitch-secondary"
             style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
           >
             Mis recetas
           </h2>
-          <p className="mt-1 text-[13px] text-[#5f5e5e]">
+          <p className="mt-1 text-[13px] text-stitch-secondary">
             Agregá las recetas que forman parte del pedido.
           </p>
         </div>
@@ -463,7 +463,7 @@ export default function CotizarPedidoPage() {
                 className="flex flex-col gap-3 sm:flex-row sm:items-end"
               >
                 <div className="min-w-0 flex-1">
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-[#5f5e5e] mb-1.5">
+                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-stitch-secondary mb-1.5">
                     Receta
                   </label>
                   <Select
@@ -487,7 +487,7 @@ export default function CotizarPedidoPage() {
                       className={selectContentClass}
                     >
                       {recipes.length === 0 ? (
-                        <div className="px-3 py-2 text-sm text-[#5f5e5e]">
+                        <div className="px-3 py-2 text-sm text-stitch-secondary">
                           Todavía no tenés recetas guardadas.
                         </div>
                       ) : (
@@ -495,7 +495,7 @@ export default function CotizarPedidoPage() {
                           <SelectItem
                             key={item.id}
                             value={item.id}
-                            className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
+                            className="text-stitch-on-surface truncate focus:bg-stitch-primary-fixed focus:text-stitch-on-primary-fixed"
                           >
                             {item.name}
                           </SelectItem>
@@ -506,7 +506,7 @@ export default function CotizarPedidoPage() {
                 </div>
 
                 <div className="w-full sm:w-32">
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-[#5f5e5e] mb-1.5">
+                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-stitch-secondary mb-1.5">
                     {quantityLabel(recipe)}
                   </label>
                   <input
@@ -524,7 +524,7 @@ export default function CotizarPedidoPage() {
                 </div>
 
                 <div className="flex items-center justify-between gap-3 sm:justify-end sm:pb-1">
-                  <span className="whitespace-nowrap text-sm font-semibold text-[#b80049]">
+                  <span className="whitespace-nowrap text-sm font-semibold text-stitch-primary">
                     {formatCurrency(recipeLineCost(line))}
                   </span>
                   <button
@@ -532,7 +532,7 @@ export default function CotizarPedidoPage() {
                     onClick={() => removeRecipeLine(line.id)}
                     aria-label="Eliminar receta"
                     title="Eliminar receta"
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#ba1a1a] transition-colors hover:bg-[#ffdad6]"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-stitch-error transition-colors hover:bg-stitch-error-container"
                   >
                     <span className="material-symbols-outlined text-[20px]">delete</span>
                   </button>
@@ -546,7 +546,7 @@ export default function CotizarPedidoPage() {
           type="button"
           onClick={handleAddRecipe}
           disabled={!canAddRecipe}
-          className="w-full py-3 rounded-full border border-[#b80049] text-[#b80049] text-sm font-semibold hover:bg-[#b80049]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          className="w-full py-3 rounded-full border border-stitch-primary text-stitch-primary text-sm font-semibold hover:bg-[#b80049]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
           + Agregar otra receta
         </button>
@@ -556,12 +556,12 @@ export default function CotizarPedidoPage() {
       <section className={`${cardClass} space-y-4`} style={cardShadow}>
         <div>
           <h2
-            className="text-sm font-bold uppercase tracking-widest text-[#5f5e5e]"
+            className="text-sm font-bold uppercase tracking-widest text-stitch-secondary"
             style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
           >
             Gastos extra
           </h2>
-          <p className="mt-1 text-[13px] text-[#5f5e5e]">
+          <p className="mt-1 text-[13px] text-stitch-secondary">
             Sumá packaging, envíos u otros costos del pedido.
           </p>
         </div>
@@ -574,7 +574,7 @@ export default function CotizarPedidoPage() {
             >
               <div className="flex-1 min-w-0 space-y-3">
                 <div>
-                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-[#5f5e5e] mb-1.5">
+                  <label className="block text-[11px] uppercase tracking-widest font-semibold text-stitch-secondary mb-1.5">
                     Gasto
                   </label>
                   <Select
@@ -601,14 +601,14 @@ export default function CotizarPedidoPage() {
                         <SelectItem
                           key={preset.key}
                           value={preset.key}
-                          className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
+                          className="text-stitch-on-surface truncate focus:bg-stitch-primary-fixed focus:text-stitch-on-primary-fixed"
                         >
                           {preset.label}
                         </SelectItem>
                       ))}
                       <SelectItem
                         value={CUSTOM_EXTRA_OPTION}
-                        className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
+                        className="text-stitch-on-surface truncate focus:bg-stitch-primary-fixed focus:text-stitch-on-primary-fixed"
                       >
                         Otro...
                       </SelectItem>
@@ -618,7 +618,7 @@ export default function CotizarPedidoPage() {
 
                 {line.isCustom && (
                   <div>
-                    <label className="block text-[11px] uppercase tracking-widest font-semibold text-[#5f5e5e] mb-1.5">
+                    <label className="block text-[11px] uppercase tracking-widest font-semibold text-stitch-secondary mb-1.5">
                       Descripción
                     </label>
                     <input
@@ -635,11 +635,11 @@ export default function CotizarPedidoPage() {
               </div>
 
               <div className="w-full sm:w-36">
-                <label className="block text-[11px] uppercase tracking-widest font-semibold text-[#5f5e5e] mb-1.5">
+                <label className="block text-[11px] uppercase tracking-widest font-semibold text-stitch-secondary mb-1.5">
                   Monto
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[#c5c7c8] pointer-events-none">
+                  <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-stitch-tertiary-fixed-dim pointer-events-none">
                     $
                   </span>
                   <input
@@ -663,7 +663,7 @@ export default function CotizarPedidoPage() {
                   onClick={() => removeExtraLine(line.id)}
                   aria-label="Eliminar gasto extra"
                   title="Eliminar gasto extra"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#ba1a1a] transition-colors hover:bg-[#ffdad6]"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-stitch-error transition-colors hover:bg-stitch-error-container"
                 >
                   <span className="material-symbols-outlined text-[20px]">delete</span>
                 </button>
@@ -676,7 +676,7 @@ export default function CotizarPedidoPage() {
           type="button"
           onClick={handleAddExtra}
           disabled={!canAddExtra}
-          className="w-full py-3 rounded-full border border-[#b80049] text-[#b80049] text-sm font-semibold hover:bg-[#b80049]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          className="w-full py-3 rounded-full border border-stitch-primary text-stitch-primary text-sm font-semibold hover:bg-[#b80049]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
           + Agregar gasto extra
         </button>
@@ -685,23 +685,23 @@ export default function CotizarPedidoPage() {
       {/* ── Desglose ── */}
       <section className={cardClass} style={cardShadow}>
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-sm text-[#5f5e5e]">
+          <div className="flex items-center justify-between text-sm text-stitch-secondary">
             <span>Mis recetas</span>
-            <span className="font-semibold text-[#151c27]">
+            <span className="font-semibold text-stitch-on-surface">
               {formatCurrency(recipesTotal)}
             </span>
           </div>
-          <div className="flex items-center justify-between text-sm text-[#5f5e5e]">
+          <div className="flex items-center justify-between text-sm text-stitch-secondary">
             <span>Gastos extra</span>
-            <span className="font-semibold text-[#151c27]">
+            <span className="font-semibold text-stitch-on-surface">
               {formatCurrency(extrasTotal)}
             </span>
           </div>
-          <div className="border-t border-[#e4bdc2]/40 pt-3 flex items-center justify-between">
-            <span className="text-sm font-bold uppercase tracking-widest text-[#5f5e5e]">
+          <div className="border-t border-stitch-outline-variant/40 pt-3 flex items-center justify-between">
+            <span className="text-sm font-bold uppercase tracking-widest text-stitch-secondary">
               COSTO TOTAL
             </span>
-            <span className="font-bold text-2xl text-[#b80049]">
+            <span className="font-bold text-2xl text-stitch-primary">
               {formatCurrency(totalCost)}
             </span>
           </div>
@@ -711,17 +711,17 @@ export default function CotizarPedidoPage() {
       {/* ── Precio de venta ── */}
       <section className={`${cardClass} space-y-4`} style={cardShadow}>
         <h2
-          className="text-xl font-semibold text-[#151c27]"
+          className="text-xl font-semibold text-stitch-on-surface"
           style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
         >
           PRECIO DE VENTA
         </h2>
         <div>
-          <label className="block text-sm font-semibold text-[#5f5e5e] mb-1.5">
+          <label className="block text-sm font-semibold text-stitch-secondary mb-1.5">
             ¿Cuánto le cobrás?
           </label>
           <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[#c5c7c8] text-lg pointer-events-none">
+            <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-stitch-tertiary-fixed-dim text-lg pointer-events-none">
               $
             </span>
             <input
@@ -734,16 +734,16 @@ export default function CotizarPedidoPage() {
               onChange={(e) => setSalePrice(e.target.value)}
             />
           </div>
-          <p className="mt-2 text-[13px] text-[#5f5e5e]">
+          <p className="mt-2 text-[13px] text-stitch-secondary">
             Poné el precio de venta y te calculamos el markup.
           </p>
         </div>
         <div>
-          <label className="block text-sm font-semibold text-[#5f5e5e] mb-1.5">
+          <label className="block text-sm font-semibold text-stitch-secondary mb-1.5">
             Seña (opcional)
           </label>
           <div className="relative w-full sm:w-48">
-            <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[#c5c7c8] pointer-events-none">
+            <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-stitch-tertiary-fixed-dim pointer-events-none">
               $
             </span>
             <input
@@ -765,7 +765,7 @@ export default function CotizarPedidoPage() {
           type="button"
           onClick={handleSaveOrder}
           disabled={isSavingOrder}
-          className="w-full py-3.5 rounded-full border border-[#b80049] text-[#b80049] font-semibold text-sm hover:bg-[#b80049]/10 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full py-3.5 rounded-full border border-stitch-primary text-stitch-primary font-semibold text-sm hover:bg-[#b80049]/10 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isSavingOrder ? 'Guardando pedido...' : 'Guardar pedido'}
         </button>
@@ -784,7 +784,7 @@ export default function CotizarPedidoPage() {
         aria-hidden="true"
         className="fixed top-0 left-0 -z-50 h-px w-px overflow-hidden opacity-0 pointer-events-none"
       >
-        <div ref={ticketRef} className="w-[480px] bg-white">
+        <div ref={ticketRef} className="w-[480px] bg-stitch-surface-container-lowest">
           <PresupuestoTicket
             title={title}
             clientName={clientName}

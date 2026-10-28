@@ -15,7 +15,10 @@ export function FullPageLoader({
       className={`fixed inset-0 z-[100] flex flex-col items-center justify-center gap-8 bg-[#f9f9ff] transition-opacity duration-500 ${
         exiting ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
-      style={{ background: 'radial-gradient(circle at 50% 0%, rgba(233,30,99,0.08), transparent 70%), #f9f9ff' }}
+      style={{
+        background:
+          'radial-gradient(circle at 50% 0%, rgba(233,30,99,0.08), transparent 70%), #f9f9ff',
+      }}
     >
       <div className="relative flex h-28 w-28 items-center justify-center">
         <div className="absolute inset-0 rounded-full border-2 border-dashed border-[#b80049]/30 animate-[spin_3s_linear_infinite] motion-reduce:animate-none" />

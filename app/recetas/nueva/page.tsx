@@ -20,7 +20,7 @@ export default function NuevaRecetaPage() {
       </section>
 
       <Suspense fallback={
-        <div className="py-20 text-center text-[#5f5e5e] flex flex-col items-center gap-2">
+        <div className="py-20 text-center text-stitch-secondary flex flex-col items-center gap-2">
           <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
           <p className="text-[16px]">Cargando creador de recetas...</p>
         </div>

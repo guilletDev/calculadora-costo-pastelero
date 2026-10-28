@@ -51,13 +51,13 @@ export function HourlyRateCard() {
 
   return (
     <article
-      className="bg-white rounded-[24px] border border-gray-100 overflow-hidden card-animate"
+      className="bg-stitch-surface-container-lowest rounded-[24px] border border-gray-100 dark:border-stitch-outline-variant/60 overflow-hidden card-animate"
       style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.04)' }}
     >
-      <div className="p-8 border-b border-gray-100 flex items-center gap-3">
-        <span className="material-symbols-outlined text-[#b80049] text-[28px]">schedule</span>
+      <div className="p-8 border-b border-gray-100 dark:border-stitch-outline-variant/60 flex items-center gap-3">
+        <span className="material-symbols-outlined text-stitch-primary text-[28px]">schedule</span>
         <h2
-          className="font-semibold text-[24px] leading-[1.3] text-[#151c27]"
+          className="font-semibold text-[24px] leading-[1.3] text-stitch-on-surface"
           style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
         >
           Configuración de Mano de Obra
@@ -65,26 +65,26 @@ export function HourlyRateCard() {
       </div>
 
       <div className="p-8 space-y-6">
-        <p className="text-[#5f5e5e] text-[16px] leading-[1.6]">
+        <p className="text-stitch-secondary text-[16px] leading-[1.6]">
           Definí tu valor hora global. En tus recetas podrás ingresar los minutos
           trabajados para sumar la mano de obra automáticamente.
         </p>
 
         {isLoading ? (
-          <div className="inline-flex items-center gap-2 text-[#5f5e5e]">
+          <div className="inline-flex items-center gap-2 text-stitch-secondary">
             <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
             <span className="text-sm font-medium">Cargando valor hora...</span>
           </div>
         ) : (
           <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
             <div className="space-y-1.5">
-              <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">
+              <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary">
                 Tarifa por hora (ARS)
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[#c5c7c8] pointer-events-none">$</span>
+                <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-stitch-tertiary-fixed-dim pointer-events-none">$</span>
                 <input
-                  className="interactive-input w-full sm:w-64 pl-8 pr-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
+                  className="interactive-input w-full sm:w-64 pl-8 pr-4 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface focus:bg-stitch-surface-container-lowest text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim"
                   type="number"
                   min="0"
                   step="any"

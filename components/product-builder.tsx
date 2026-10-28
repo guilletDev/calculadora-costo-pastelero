@@ -535,22 +535,22 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
                     }
                   }}
                 >
-                  <SelectTrigger className="interactive-input h-10 data-[size=default]:h-10 w-full truncate rounded-lg border border-gray-200 bg-white px-4 text-[16px] text-[#5f5e5e] justify-between gap-2">
+                  <SelectTrigger className="interactive-input h-10 data-[size=default]:h-10 w-full truncate rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest px-4 text-[16px] text-stitch-secondary justify-between gap-2">
                     <SelectValue placeholder="Seleccionar ingrediente o receta..." />
                   </SelectTrigger>
-                  <SelectContent position="popper" side="bottom" sideOffset={4} className="bg-white border border-gray-200 rounded-xl shadow-lg max-h-[300px] z-50 max-w-[min(26rem,calc(100vw-2rem))]">
+                  <SelectContent position="popper" side="bottom" sideOffset={4} className="bg-stitch-surface-container-lowest border border-gray-200 dark:border-stitch-outline-variant rounded-xl shadow-lg max-h-[300px] z-50 max-w-[min(26rem,calc(100vw-2rem))]">
                     {(() => {
                       const availableIngredients = baseIngredients.filter(ing =>
                         !draft.components.some(c => c.componentType === 'ingredient' && c.ingredientId === ing.id)
                       );
                       return availableIngredients.length > 0 && (
                         <SelectGroup>
-                          <SelectLabel className="text-[#b80049] font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Ingredientes</SelectLabel>
+                          <SelectLabel className="text-stitch-primary font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Ingredientes</SelectLabel>
                           {availableIngredients.map(ingredient => (
                             <SelectItem
                               key={`ingredient:${ingredient.id}`}
                               value={`ingredient:${ingredient.id}`}
-                              className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
+                              className="text-stitch-on-surface truncate focus:bg-stitch-primary-fixed focus:text-stitch-on-primary-fixed"
                             >
                               {ingredient.name} — {formatCurrency(ingredient.pricePerUnit)} / {ingredient.unit}
                             </SelectItem>
@@ -564,12 +564,12 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
                       );
                       return availableRecipes.length > 0 && (
                         <SelectGroup>
-                          <SelectLabel className="text-[#b80049] font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Recetas</SelectLabel>
+                          <SelectLabel className="text-stitch-primary font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Recetas</SelectLabel>
                           {availableRecipes.map(recipe => (
                             <SelectItem
                               key={`recipe:${recipe.id}`}
                               value={`recipe:${recipe.id}`}
-                              className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
+                              className="text-stitch-on-surface truncate focus:bg-stitch-primary-fixed focus:text-stitch-on-primary-fixed"
                             >
                               {recipe.name} — {yieldLabel(recipe)}
                             </SelectItem>
@@ -609,7 +609,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
                 <button
                   type="submit"
                   disabled={!selectedValue || !newQuantity}
-                  className="interactive-btn text-[#b80049] hover:text-[#900038] h-10 w-10 shrink-0 flex items-center justify-center rounded-full hover:bg-[#ffd9de] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="interactive-btn text-stitch-primary hover:text-stitch-on-primary-fixed-variant h-10 w-10 shrink-0 flex items-center justify-center rounded-full hover:bg-stitch-primary-fixed disabled:opacity-40 disabled:cursor-not-allowed"
                   title="Agregar"
                 >
                   <span className="material-symbols-outlined text-[24px]">add_circle</span>
@@ -846,7 +846,7 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
             <button
               onClick={saveProduct}
               disabled={!canSave || isSaving}
-              className="w-full py-4 bg-white text-stitch-primary rounded-full font-bold tracking-wider hover:bg-stitch-primary-fixed transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed font-stitch-label-sm text-stitch-label-sm"
+              className="w-full py-4 bg-stitch-surface-container-lowest text-stitch-primary rounded-full font-bold tracking-wider hover:bg-stitch-primary-fixed transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed font-stitch-label-sm text-stitch-label-sm"
             >
               {isSaving ? 'GUARDANDO...' : (productId ? 'ACTUALIZAR PRODUCTO' : 'GUARDAR PRODUCTO')}
             </button>

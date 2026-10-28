@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import { Manrope, Inter } from 'next/font/google'
 import './globals.css'
 import { LayoutShell } from '@/components/layout-shell'
-import { Toaster } from 'sonner'
+import { ThemeProvider } from '@/components/theme-provider'
+import { Toaster } from '@/components/ui/sonner'
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -48,7 +49,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <head>
         <link rel="preload" as="image" href="/logo-120.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -62,16 +63,23 @@ export default function RootLayout({
         className={`${manrope.variable} ${inter.variable} antialiased min-h-screen flex flex-col bg-[#f8f6f6] dark:bg-[#221016] text-slate-900 dark:text-slate-100`}
         style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
       >
-        <LayoutShell>
-          {children}
-        </LayoutShell>
-        <Toaster
-          position="top-center"
-          richColors
-          toastOptions={{
-            style: { fontFamily: 'var(--font-manrope), sans-serif' },
-          }}
-        />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <LayoutShell>
+            {children}
+          </LayoutShell>
+          <Toaster
+            position="top-center"
+            richColors
+            toastOptions={{
+              style: { fontFamily: 'var(--font-manrope), sans-serif' },
+            }}
+          />
+        </ThemeProvider>
       </body>
     </html>
   )

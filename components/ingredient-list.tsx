@@ -419,10 +419,10 @@ export function IngredientList({
 
   return (
     <>
-      <article className="bg-white rounded-[24px] border border-gray-100 overflow-hidden card-animate delay-100" style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.04)' }}>
-      <div className="p-8 border-b border-gray-100 flex items-center gap-3">
-        <span className="material-symbols-outlined text-[#b80049] text-[28px]">inventory_2</span>
-        <h2 className="font-semibold text-[24px] leading-[1.3] text-[#151c27]" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>{title}</h2>
+      <article className="bg-stitch-surface-container-lowest rounded-[24px] border border-gray-100 dark:border-stitch-outline-variant/60 overflow-hidden card-animate delay-100" style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.04)' }}>
+      <div className="p-8 border-b border-gray-100 dark:border-stitch-outline-variant/60 flex items-center gap-3">
+        <span className="material-symbols-outlined text-stitch-primary text-[28px]">inventory_2</span>
+        <h2 className="font-semibold text-[24px] leading-[1.3] text-stitch-on-surface" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>{title}</h2>
       </div>
 
       {/* Tabs: Activos / Papelera */}
@@ -433,7 +433,7 @@ export function IngredientList({
           className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
             view === 'active'
               ? 'bg-[#b80049] text-white shadow-sm'
-              : 'bg-[#f0f3ff] text-[#5b3f43] hover:text-[#151c27]'
+              : 'bg-stitch-surface-container-low text-stitch-on-surface-variant hover:text-stitch-on-surface'
           }`}
         >
           Activos ({ingredients.length})
@@ -444,7 +444,7 @@ export function IngredientList({
           className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
             view === 'trash'
               ? 'bg-[#b80049] text-white shadow-sm'
-              : 'bg-[#f0f3ff] text-[#5b3f43] hover:text-[#151c27]'
+              : 'bg-stitch-surface-container-low text-stitch-on-surface-variant hover:text-stitch-on-surface'
           }`}
         >
           Papelera ({deletedIngredients.length})
@@ -454,7 +454,7 @@ export function IngredientList({
       {(view === 'active' ? ingredients.length > 0 : deletedIngredients.length > 0) && (
         <div className="px-8 pt-4">
           <input
-            className="interactive-input w-full sm:w-80 px-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
+            className="interactive-input w-full sm:w-80 px-4 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface focus:bg-stitch-surface-container-lowest text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim"
             placeholder={view === 'trash' ? 'Buscar en papelera...' : 'Buscar ingrediente...'}
             type="text"
             value={search}
@@ -466,7 +466,7 @@ export function IngredientList({
       <div className="overflow-x-auto custom-scrollbar">
         {isLoading ? (
           <div className="p-8 text-center">
-            <div className="inline-flex items-center gap-2 text-[#5f5e5e]">
+            <div className="inline-flex items-center gap-2 text-stitch-secondary">
               <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
               <span className="text-sm font-medium">Cargando ingredientes...</span>
             </div>
@@ -474,23 +474,23 @@ export function IngredientList({
         ) : view === 'trash' ? (
           <table className="w-full min-w-[600px] text-left border-collapse">
             <thead>
-              <tr className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase border-b-2 border-[#e2e8f8]">
+              <tr className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary uppercase border-b-2 border-stitch-surface-container-high">
                 <th className="pb-4 pt-8 pl-8 font-semibold">INGREDIENTE</th>
                 <th className="pb-4 pt-8 font-semibold">UNIDAD</th>
                 <th className="pb-4 pt-8 font-semibold">ELIMINADO</th>
                 <th className="pb-4 pt-8 w-32"></th>
               </tr>
             </thead>
-            <tbody className="text-[16px] leading-[1.5] text-[#151c27] divide-y divide-gray-50">
+            <tbody className="text-[16px] leading-[1.5] text-stitch-on-surface divide-y divide-gray-50 dark:divide-stitch-outline-variant/40">
               {deletedIngredients.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="p-8 text-center text-[#5f5e5e] text-[16px]">
+                  <td colSpan={4} className="p-8 text-center text-stitch-secondary text-[16px]">
                     La papelera está vacía. Los insumos que elimines aparecerán acá y podrás restaurarlos.
                   </td>
                 </tr>
               ) : filteredDeleted.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="p-8 text-center text-[#5f5e5e] text-[16px]">
+                  <td colSpan={4} className="p-8 text-center text-stitch-secondary text-[16px]">
                     Sin resultados para &quot;{search}&quot;.
                   </td>
                 </tr>
@@ -499,11 +499,11 @@ export function IngredientList({
                   <tr key={ing.id} className="interactive-row">
                     <td className="pl-8 py-4 font-medium">{ing.name}</td>
                     <td className="py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#dce2f3] text-[#5b3f43]">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stitch-surface-container-highest text-stitch-on-surface-variant">
                         {ing.unit}
                       </span>
                     </td>
-                    <td className="py-4 text-[#5f5e5e] text-sm">
+                    <td className="py-4 text-stitch-secondary text-sm">
                       {ing.deletedAt ? new Date(ing.deletedAt).toLocaleDateString('es-AR') : '—'}
                     </td>
                     <td className="py-4 pr-8">
@@ -511,7 +511,7 @@ export function IngredientList({
                         <button
                           onClick={() => handleRestore(ing.id)}
                           disabled={isSaving}
-                          className="interactive-btn flex items-center gap-1.5 px-3 py-2 text-[#b80049] hover:text-[#900038] rounded-lg hover:bg-[#ffd9de] text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="interactive-btn flex items-center gap-1.5 px-3 py-2 text-stitch-primary hover:text-stitch-on-primary-fixed-variant rounded-lg hover:bg-stitch-primary-fixed text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Restaurar"
                         >
                           <span className="material-symbols-outlined text-[18px]">undo</span>
@@ -527,7 +527,7 @@ export function IngredientList({
         ) : (
           <table className="w-full min-w-[600px] text-left border-collapse">
             <thead>
-              <tr className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase border-b-2 border-[#e2e8f8]">
+              <tr className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary uppercase border-b-2 border-stitch-surface-container-high">
                 <th className="pb-4 pt-8 pl-8 font-semibold">INGREDIENTE</th>
                 <th className="pb-4 pt-8 font-semibold">CANTIDAD</th>
                 <th className="pb-4 pt-8 font-semibold">UNIDAD</th>
@@ -535,26 +535,26 @@ export function IngredientList({
                 {!locked && <th className="pb-4 pt-8 w-24"></th>}
               </tr>
             </thead>
-            <tbody className="text-[16px] leading-[1.5] text-[#151c27] divide-y divide-gray-50">
+            <tbody className="text-[16px] leading-[1.5] text-stitch-on-surface divide-y divide-gray-50 dark:divide-stitch-outline-variant/40">
               {ingredients.length === 0 ? (
                 <tr>
-                  <td colSpan={!locked ? 5 : 4} className="p-8 text-center text-[#5f5e5e] text-[16px]">
+                  <td colSpan={!locked ? 5 : 4} className="p-8 text-center text-stitch-secondary text-[16px]">
                     Agrega ingredientes para registrar en el inventario.
                   </td>
                 </tr>
               ) : filteredIngredients.length === 0 ? (
                 <tr>
-                  <td colSpan={!locked ? 5 : 4} className="p-8 text-center text-[#5f5e5e] text-[16px]">
+                  <td colSpan={!locked ? 5 : 4} className="p-8 text-center text-stitch-secondary text-[16px]">
                     Sin resultados para &quot;{search}&quot;.
                   </td>
                 </tr>
               ) : (
                 filteredIngredients.map((ingredient) => (
                   editingId === ingredient.id ? (
-                    <tr key={ingredient.id} className="interactive-row bg-[#ffd9de]/10">
+                    <tr key={ingredient.id} className="interactive-row bg-stitch-primary-fixed/10">
                       <td className="pl-8 py-3">
                         <input
-                          className="interactive-input w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-[#151c27] text-sm"
+                          className="interactive-input w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface text-sm"
                           type="text"
                           autoFocus
                           value={editInlineData.name}
@@ -564,7 +564,7 @@ export function IngredientList({
                       </td>
                       <td className="py-3">
                         <input
-                          className="interactive-input w-24 px-3 py-2 rounded-lg border border-gray-200 bg-white text-[#151c27] text-sm"
+                          className="interactive-input w-24 px-3 py-2 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface text-sm"
                           type="number" min="0" step="0.01"
                           value={editInlineData.purchasedQuantity}
                           onChange={(e) => setEditInlineData({ ...editInlineData, purchasedQuantity: e.target.value })}
@@ -572,7 +572,7 @@ export function IngredientList({
                       </td>
                       <td className="py-3">
                         <select
-                          className="interactive-input rounded-lg border border-gray-200 bg-white text-[#151c27] text-sm px-2 py-2"
+                          className="interactive-input rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface text-sm px-2 py-2"
                           value={editInlineData.unit}
                           onChange={(e) => setEditInlineData({ ...editInlineData, unit: e.target.value as Unit })}
                         >
@@ -585,9 +585,9 @@ export function IngredientList({
                       </td>
                       <td className="py-3 pr-8">
                         <div className="flex items-center gap-1 justify-end">
-                          <span className="text-[#5f5e5e] text-sm">$</span>
+                          <span className="text-stitch-secondary text-sm">$</span>
                           <input
-                            className="interactive-input w-28 px-3 py-2 rounded-lg border border-gray-200 bg-white text-[#151c27] text-sm text-right"
+                            className="interactive-input w-28 px-3 py-2 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface text-sm text-right"
                             type="number" min="0" step="0.01"
                             value={editInlineData.totalPrice}
                             onChange={(e) => setEditInlineData({ ...editInlineData, totalPrice: e.target.value })}
@@ -606,7 +606,7 @@ export function IngredientList({
                           </button>
                           <button
                             onClick={cancelInlineEdit}
-                            className="interactive-btn p-1.5 text-[#5f5e5e] hover:text-[#151c27] rounded-lg hover:bg-[#f0f3ff]"
+                            className="interactive-btn p-1.5 text-stitch-secondary hover:text-stitch-on-surface rounded-lg hover:bg-stitch-surface-container-low"
                           >
                             <span className="material-symbols-outlined text-[18px]">close</span>
                           </button>
@@ -618,17 +618,17 @@ export function IngredientList({
                       <td className="pl-8 py-4 font-medium">{ingredient.name}</td>
                       <td className="py-4">{ingredient.purchasedQuantity}</td>
                       <td className="py-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#dce2f3] text-[#5b3f43]">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stitch-surface-container-highest text-stitch-on-surface-variant">
                           {ingredient.unit}
                         </span>
                       </td>
-                      <td className="py-4 text-right text-[#b80049] text-[20px] leading-[1.2] font-medium pr-8">{formatCurrency(ingredient.totalPrice)}</td>
+                      <td className="py-4 text-right text-stitch-primary text-[20px] leading-[1.2] font-medium pr-8">{formatCurrency(ingredient.totalPrice)}</td>
                       {!locked && (
                         <td className="py-4 pr-8">
                           <div className="flex gap-1.5 justify-end">
                             <button
                               onClick={() => startInlineEdit(ingredient)}
-                              className="interactive-btn p-1.5 text-[#5f5e5e] hover:text-[#b80049] rounded-lg hover:bg-[#f0f3ff]"
+                              className="interactive-btn p-1.5 text-stitch-secondary hover:text-stitch-primary rounded-lg hover:bg-stitch-surface-container-low"
                               title="Editar"
                             >
                               <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -636,7 +636,7 @@ export function IngredientList({
                             <button
                               onClick={() => setDeleteTarget(ingredient)}
                               disabled={isSaving}
-                              className="interactive-btn p-1.5 text-[#5f5e5e] hover:text-[#ba1a1a] rounded-lg hover:bg-[#ffdad6]/30 disabled:opacity-50"
+                              className="interactive-btn p-1.5 text-stitch-secondary hover:text-stitch-error rounded-lg hover:bg-stitch-error-container/30 disabled:opacity-50"
                               title="Eliminar"
                             >
                               <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -657,22 +657,22 @@ export function IngredientList({
       {view === 'active' && !locked && !isLoading && (isAdding ? (
         <form
           onSubmit={(e) => { e.preventDefault(); handleSave(); }}
-          className="p-8 border-t border-gray-100 bg-[#f0f3ff]"
+          className="p-8 border-t border-gray-100 dark:border-stitch-outline-variant/60 bg-stitch-surface-container-low"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-1.5">
-              <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Nombre</label>
+              <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary">Nombre</label>
               <input
-                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
+                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim"
                 placeholder="Ej: Harina"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Cantidad</label>
+              <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary">Cantidad</label>
               <input
-                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
+                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim"
                 type="number" step="0.01" min="0"
                 placeholder="10"
                 value={formData.purchasedQuantity}
@@ -680,9 +680,9 @@ export function IngredientList({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Unidad</label>
+              <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary">Unidad</label>
               <select
-                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-[#151c27]"
+                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface"
                 value={formData.unit}
                 onChange={(e) => setFormData({ ...formData, unit: e.target.value as Unit })}
               >
@@ -694,9 +694,9 @@ export function IngredientList({
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Total ($)</label>
+              <label className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary">Total ($)</label>
               <input
-                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
+                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim"
                 type="number" step="0.01" min="0"
                 placeholder="8500"
                 value={formData.totalPrice}
@@ -705,7 +705,7 @@ export function IngredientList({
             </div>
           </div>
           <div className="flex gap-2 justify-end mt-4">
-            <button type="button" onClick={handleCancel} className="interactive-btn px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200">
+            <button type="button" onClick={handleCancel} className="interactive-btn px-6 py-3 bg-stitch-surface-container-high hover:bg-stitch-surface-container-highest text-stitch-on-surface rounded-full text-[16px] font-medium border border-gray-200 dark:border-stitch-outline-variant">
               Cancelar
             </button>
             <button
@@ -718,8 +718,8 @@ export function IngredientList({
           </div>
         </form>
       ) : (
-        <div className="p-8 border-t border-gray-100">
-          <button onClick={() => { if (guardLoading) return; if (guardUpgrade('ingredients', ingredients.length)) setIsAdding(true); }} className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200">
+        <div className="p-8 border-t border-gray-100 dark:border-stitch-outline-variant/60">
+          <button onClick={() => { if (guardLoading) return; if (guardUpgrade('ingredients', ingredients.length)) setIsAdding(true); }} className="interactive-btn flex items-center gap-2 px-6 py-3 bg-stitch-surface-container-high hover:bg-stitch-surface-container-highest text-stitch-on-surface rounded-full text-[16px] font-medium border border-gray-200 dark:border-stitch-outline-variant">
             <span className="material-symbols-outlined text-[20px]">add</span> Añadir Ingrediente
           </button>
         </div>
@@ -727,17 +727,17 @@ export function IngredientList({
 
       {/* Tarjeta de Resumen y Guardado */}
       {view === 'active' && ingredients.length > 0 && !isLoading && (
-        <div className="bg-[#ffd9de]/20 p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 rounded-b-[24px]">
+        <div className="bg-stitch-primary-fixed/20 p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 rounded-b-[24px]">
           <div>
-            <p className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase mb-1">Inversión total en ingredientes</p>
-            <p className="font-bold text-[28px] md:text-[32px] leading-[1.2] tracking-[-0.01em] text-[#b80049]" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>{formatCurrency(totalInvestment)}</p>
+            <p className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary uppercase mb-1">Inversión total en ingredientes</p>
+            <p className="font-bold text-[28px] md:text-[32px] leading-[1.2] tracking-[-0.01em] text-stitch-primary" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>{formatCurrency(totalInvestment)}</p>
           </div>
           {lockEnabled && (
             <div className="flex gap-2">
               {isLocked ? (
                 <button
                   onClick={() => handleLockToggle(false)}
-                  className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200"
+                  className="interactive-btn flex items-center gap-2 px-6 py-3 bg-stitch-surface-container-high hover:bg-stitch-surface-container-highest text-stitch-on-surface rounded-full text-[16px] font-medium border border-gray-200 dark:border-stitch-outline-variant"
                 >
                   <span className="material-symbols-outlined text-[20px]">edit</span>
                   Editar Inventario
@@ -771,18 +771,18 @@ export function IngredientList({
           aria-modal="true"
           aria-labelledby="onboarding-welcome-title"
         >
-          <div className="w-full max-w-md bg-white rounded-[24px] p-6 md:p-8 shadow-2xl text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#ffd9de]">
-              <span className="material-symbols-outlined text-[#b80049]" style={{ fontSize: 28 }}>bakery_dining</span>
+          <div className="w-full max-w-md bg-stitch-surface-container-lowest rounded-[24px] p-6 md:p-8 shadow-2xl text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-stitch-primary-fixed">
+              <span className="material-symbols-outlined text-stitch-primary" style={{ fontSize: 28 }}>bakery_dining</span>
             </div>
             <h2
               id="onboarding-welcome-title"
-              className="text-xl font-bold text-[#151c27] mb-3"
+              className="text-xl font-bold text-stitch-on-surface mb-3"
               style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
             >
               ¡Te damos la bienvenida! 🎂
             </h2>
-            <p className="text-sm leading-[1.6] text-[#5f5e5e] mb-6">
+            <p className="text-sm leading-[1.6] text-stitch-secondary mb-6">
               Para comenzar a calcular costos de tus recetas, el primer paso es cargar al menos
               2 ingredientes en tu inventario.
             </p>
@@ -805,18 +805,18 @@ export function IngredientList({
           aria-modal="true"
           aria-labelledby="onboarding-milestone-title"
         >
-          <div className="w-full max-w-md bg-white rounded-[24px] p-6 md:p-8 shadow-2xl text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#ffd9de]">
-              <span className="material-symbols-outlined text-[#b80049]" style={{ fontSize: 28 }}>celebration</span>
+          <div className="w-full max-w-md bg-stitch-surface-container-lowest rounded-[24px] p-6 md:p-8 shadow-2xl text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-stitch-primary-fixed">
+              <span className="material-symbols-outlined text-stitch-primary" style={{ fontSize: 28 }}>celebration</span>
             </div>
             <h2
               id="onboarding-milestone-title"
-              className="text-xl font-bold text-[#151c27] mb-3"
+              className="text-xl font-bold text-stitch-on-surface mb-3"
               style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
             >
               ¡Excelente!
             </h2>
-            <p className="text-sm leading-[1.6] text-[#5f5e5e] mb-6">
+            <p className="text-sm leading-[1.6] text-stitch-secondary mb-6">
               ¡Excelente! Ya tenés la base. Ya podés ir a crear tu primera receta o seguir
               agregando más ingredientes.
             </p>
@@ -836,7 +836,7 @@ export function IngredientList({
               <button
                 type="button"
                 onClick={() => setMilestoneOpen(false)}
-                className="flex-1 rounded-full border-2 border-[#e4bdc2] text-[#151c27] font-semibold text-sm py-3.5 hover:bg-[#f0f3ff] transition-colors"
+                className="flex-1 rounded-full border-2 border-stitch-outline-variant text-stitch-on-surface font-semibold text-sm py-3.5 hover:bg-stitch-surface-container-low transition-colors"
               >
                 Seguir agregando
               </button>
@@ -848,8 +848,8 @@ export function IngredientList({
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent className="max-w-sm rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant">
           <AlertDialogHeader>
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#ffdad6]">
-              <span className="material-symbols-outlined text-[#ba1a1a]" style={{ fontSize: 24 }}>delete</span>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-stitch-error-container">
+              <span className="material-symbols-outlined text-stitch-error" style={{ fontSize: 24 }}>delete</span>
             </div>
             <AlertDialogTitle className="text-center text-base font-bold text-stitch-on-surface">
               ¿Eliminar ingrediente?
@@ -861,7 +861,7 @@ export function IngredientList({
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-2 sm:flex-row gap-2">
             <AlertDialogCancel
-              className="flex-1 rounded-md border border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface font-semibold text-sm py-2.5 hover:bg-stitch-surface-container-low transition-colors"
+              className="flex-1 rounded-md border border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface font-semibold text-sm py-2.5 hover:bg-stitch-surface-container-low dark:bg-white/10 dark:hover:bg-white/15 transition-colors"
             >
               Cancelar
             </AlertDialogCancel>

@@ -459,8 +459,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
   if (!sandbox && baseIngredients.length === 0 && yieldRecipes.length === 0) {
     return (
-      <section className="bg-white rounded-[24px] border border-gray-100 p-8 text-center card-animate delay-200" style={stitchShadow}>
-        <p className="text-[#5f5e5e] text-[16px] leading-[1.5] mb-4">
+      <section className="bg-stitch-surface-container-lowest rounded-[24px] border border-gray-100 dark:border-stitch-outline-variant/60 p-8 text-center card-animate delay-200" style={stitchShadow}>
+        <p className="text-stitch-secondary text-[16px] leading-[1.5] mb-4">
           Primero debes agregar ingredientes al inventario o crear recetas base con gramos para poder armar una receta.
         </p>
         <a
@@ -479,23 +479,23 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
       <div id="recipe-builder" className="space-y-8 scroll-mt-20">
 
         {/* ── Armador de Receta ── */}
-        <article className="bg-white rounded-[24px] border border-gray-100 p-8 space-y-6 card-animate delay-200" style={stitchShadow}>
+        <article className="bg-stitch-surface-container-lowest rounded-[24px] border border-gray-100 dark:border-stitch-outline-variant/60 p-8 space-y-6 card-animate delay-200" style={stitchShadow}>
           <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-[#b80049] text-[28px]">receipt_long</span>
-            <h2 className="font-semibold text-[24px] leading-[1.3] text-[#151c27]" style={stitchFontManrope}>
+            <span className="material-symbols-outlined text-stitch-primary text-[28px]">receipt_long</span>
+            <h2 className="font-semibold text-[24px] leading-[1.3] text-stitch-on-surface" style={stitchFontManrope}>
               {standalone ? 'Armador de Receta' : '2. Armador de Receta'}
             </h2>
           </div>
 
           {sandbox && (
-            <div className="px-4 py-3 rounded-lg bg-[#ffd9de]/20 border border-[#e4bdc2]/30 text-[#5f5e5e] text-sm font-medium flex items-center gap-2">
+            <div className="px-4 py-3 rounded-lg bg-stitch-primary-fixed/20 border border-stitch-outline-variant/30 text-stitch-secondary text-sm font-medium flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px]">science</span>
               Borrador temporal de simulación: nada se guarda hasta presionar &quot;Guardar como Receta Oficial&quot;.
             </div>
           )}
 
           {!standalone && !isIngredientsLocked && (
-            <div className="px-4 py-3 rounded-lg bg-[#ffd9de]/20 border border-[#e4bdc2]/30 text-[#5f5e5e] text-sm font-medium flex items-center gap-2">
+            <div className="px-4 py-3 rounded-lg bg-stitch-primary-fixed/20 border border-stitch-outline-variant/30 text-stitch-secondary text-sm font-medium flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px]">lock</span>
               Bloqueá el inventario para poder guardar recetas.
             </div>
@@ -503,9 +503,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Nombre de la Receta</label>
+              <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary">Nombre de la Receta</label>
               <input
-                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
+                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface focus:bg-stitch-surface-container-lowest text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim"
                 placeholder="Ej: Pastel de Chocolate Especial"
                 type="text"
                 value={currentRecipe.name}
@@ -513,9 +513,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Descripción (opcional)</label>
+              <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary">Descripción (opcional)</label>
               <textarea
-                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8] resize-none"
+                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface focus:bg-stitch-surface-container-lowest text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim resize-none"
                 placeholder="Ej: Bizcochuelo de vainilla con relleno de crema y frutillas."
                 rows={2}
                 value={currentRecipe.description}
@@ -523,9 +523,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Porciones (opcional)</label>
+              <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary">Porciones (opcional)</label>
               <input
-                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
+                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface focus:bg-stitch-surface-container-lowest text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim"
                 placeholder="Ej: 12"
                 type="number"
                 min="0"
@@ -534,9 +534,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Rendimiento en gramos (opcional)</label>
+              <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary">Rendimiento en gramos (opcional)</label>
               <input
-                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
+                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface focus:bg-stitch-surface-container-lowest text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim"
                 placeholder="Ej: 500"
                 type="number"
                 min="0"
@@ -545,9 +545,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Minutos de trabajo activo (opcional)</label>
+              <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary">Minutos de trabajo activo (opcional)</label>
               <input
-                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
+                className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface focus:bg-stitch-surface-container-lowest text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim"
                 placeholder="Ej: 45 (minutos)"
                 type="number"
                 min="0"
@@ -563,8 +563,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                     onClick={() => setCurrentRecipe({ ...currentRecipe, laborMinutes: String(preset.minutes) })}
                     className={`interactive-btn px-3.5 py-1.5 rounded-full transition-colors text-[13px] leading-[1.4] font-semibold ${
                       String(currentRecipe.laborMinutes) === String(preset.minutes)
-                        ? 'bg-[#ffd9de] text-[#400014]'
-                        : 'bg-[#ffd9de]/30 text-[#b80049] hover:bg-[#ffd9de]'
+                        ? 'bg-stitch-primary-fixed text-stitch-on-primary-fixed'
+                        : 'bg-stitch-primary-fixed/30 text-stitch-primary hover:bg-stitch-primary-fixed'
                     }`}
                   >
                     {preset.label}
@@ -573,42 +573,42 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               </div>
             </div>
           </div>
-          <p className="text-xs text-[#5a5c5d] -mt-2">
+          <p className="text-xs text-stitch-tertiary -mt-2">
             Completá al menos uno de los dos rendimientos (porciones y/o gramos). El costo por unidad se calcula automáticamente.
           </p>
 
-          <div className="pt-6 border-t border-gray-100">
+          <div className="pt-6 border-t border-gray-100 dark:border-stitch-outline-variant/60">
             {/* Header de la grilla */}
             <div className="hidden md:grid grid-cols-12 gap-4 items-end mb-2">
               <div className="col-span-6">
-                <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] mb-2 uppercase text-[10px]">INGREDIENTE / RECETA</label>
+                <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary mb-2 uppercase text-[10px]">INGREDIENTE / RECETA</label>
               </div>
               <div className="col-span-3">
-                <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] mb-2 uppercase text-[10px]">CANT. USADA</label>
+                <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary mb-2 uppercase text-[10px]">CANT. USADA</label>
               </div>
               <div className="col-span-3 text-right">
-                <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] mb-2 uppercase text-[10px]">COSTO CALC.</label>
+                <label className="block text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary mb-2 uppercase text-[10px]">COSTO CALC.</label>
               </div>
             </div>
 
             {/* Componentes agregados */}
             {currentRecipe.ingredients?.map((ing: RecipeIngredient) => (
               editingComponentId === ing.id ? (
-                <div key={ing.id} className="bg-[#ffd9de]/10 p-4 rounded-xl border border-[#e4bdc2]/30 flex flex-col md:flex-row gap-4 items-center mb-2">
+                <div key={ing.id} className="bg-stitch-primary-fixed/10 p-4 rounded-xl border border-stitch-outline-variant/30 flex flex-col md:flex-row gap-4 items-center mb-2">
                   <div className="w-full md:w-1/2">
-                    <span className="text-[16px] leading-[1.5] font-medium text-[#151c27]">{getComponentName(ing)}</span>
-                    <span className="block text-xs text-[#5f5e5e] font-normal">editando cantidad...</span>
+                    <span className="text-[16px] leading-[1.5] font-medium text-stitch-on-surface">{getComponentName(ing)}</span>
+                    <span className="block text-xs text-stitch-secondary font-normal">editando cantidad...</span>
                   </div>
                   <div className="w-full md:w-1/4 flex gap-2">
                     <input
-                      className="interactive-input flex-1 min-w-0 px-4 py-3 rounded-lg border border-gray-200 bg-white text-[#151c27]"
+                      className="interactive-input flex-1 min-w-0 px-4 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface"
                       type="number" min="0" placeholder="250"
                       value={editingQuantity}
                       onChange={(e) => setEditingQuantity(e.target.value)}
                       autoFocus
                     />
                     <select
-                      className="interactive-input w-24 shrink-0 px-2 py-3 rounded-lg border border-gray-200 bg-white text-[#5f5e5e]"
+                      className="interactive-input w-24 shrink-0 px-2 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-secondary"
                       value={editingUnit}
                       onChange={(e) => setEditingUnit(e.target.value as Unit)}
                     >
@@ -618,50 +618,50 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                     </select>
                   </div>
                   <div className="w-full md:w-1/4 flex justify-between md:justify-end items-center gap-4">
-                    <span className="md:hidden text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Costo:</span>
-                    <span className="text-[18px] leading-[1.2] text-[#151c27] font-semibold">
+                    <span className="md:hidden text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary">Costo:</span>
+                    <span className="text-[18px] leading-[1.2] text-stitch-on-surface font-semibold">
                       {editingQuantity
                         ? formatCurrency(resolveComponentCost(ing, parseFloat(editingQuantity) || 0, editingUnit, ing.cost))
                         : '$0,00'}
                     </span>
                     <button onClick={() => saveEditComponent(ing.id)}
-                      className="interactive-btn text-[#b80049] hover:text-[#900038] w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#ffd9de]">
+                      className="interactive-btn text-stitch-primary hover:text-stitch-on-primary-fixed-variant w-8 h-8 flex items-center justify-center rounded-full hover:bg-stitch-primary-fixed">
                       <span className="material-symbols-outlined text-[20px]">check_circle</span>
                     </button>
                     <button onClick={() => setEditingComponentId(null)}
-                      className="interactive-btn text-[#5f5e5e] hover:text-[#151c27] w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f0f3ff]">
+                      className="interactive-btn text-stitch-secondary hover:text-stitch-on-surface w-8 h-8 flex items-center justify-center rounded-full hover:bg-stitch-surface-container-low">
                       <span className="material-symbols-outlined text-[18px]">close</span>
                     </button>
                   </div>
                 </div>
               ) : (
-                <div key={ing.id} className="bg-[#ffd9de]/10 p-4 rounded-xl border border-[#e4bdc2]/30 flex flex-col md:flex-row gap-4 items-center mb-2 interactive-row">
+                <div key={ing.id} className="bg-stitch-primary-fixed/10 p-4 rounded-xl border border-stitch-outline-variant/30 flex flex-col md:flex-row gap-4 items-center mb-2 interactive-row">
                   <div className="w-full md:w-1/2">
-                    <span className="md:hidden text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] mr-1">Ítem:</span>
-                    <span className="text-[16px] leading-[1.5] font-medium text-[#151c27]">{getComponentName(ing)}</span>
+                    <span className="md:hidden text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary mr-1">Ítem:</span>
+                    <span className="text-[16px] leading-[1.5] font-medium text-stitch-on-surface">{getComponentName(ing)}</span>
                     {ing.componentType === 'subproduct' && (
-                      <span className="inline-flex items-center ml-2 px-2 py-0.5 rounded-full bg-[#ffd9de] text-[#b80049] text-[10px] leading-[1.4] tracking-[0.05em] font-semibold whitespace-nowrap align-middle">
+                      <span className="inline-flex items-center ml-2 px-2 py-0.5 rounded-full bg-stitch-primary-fixed text-stitch-primary text-[10px] leading-[1.4] tracking-[0.05em] font-semibold whitespace-nowrap align-middle">
                         Receta
                       </span>
                     )}
                   </div>
                   <div className="w-full md:w-1/4 flex items-center gap-2 md:justify-center">
-                    <span className="md:hidden text-xs text-[#5f5e5e]">Cantidad:</span>
-                    <span className="text-sm text-[#151c27]">{ing.quantityUsed} {ing.unit}</span>
+                    <span className="md:hidden text-xs text-stitch-secondary">Cantidad:</span>
+                    <span className="text-sm text-stitch-on-surface">{ing.quantityUsed} {ing.unit}</span>
                     <button
                       onClick={() => startEditComponent(ing)}
-                      className="interactive-btn text-[#5f5e5e] hover:text-[#b80049] transition-colors"
+                      className="interactive-btn text-stitch-secondary hover:text-stitch-primary transition-colors"
                       title="Editar cantidad"
                     >
                       <span className="material-symbols-outlined text-[15px]">edit</span>
                     </button>
                   </div>
                   <div className="w-full md:w-1/4 flex justify-between md:justify-end items-center gap-2">
-                    <span className="md:hidden text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Costo:</span>
-                    <span className="text-[20px] leading-[1.2] text-[#151c27] font-semibold">{formatCurrency(ing.cost)}</span>
+                    <span className="md:hidden text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary">Costo:</span>
+                    <span className="text-[20px] leading-[1.2] text-stitch-on-surface font-semibold">{formatCurrency(ing.cost)}</span>
                     <button
                       onClick={() => removeComponentFromRecipe(ing.id)}
-                      className="interactive-btn text-[#ba1a1a] hover:text-[#ffffff] w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#ffdad6]"
+                      className="interactive-btn text-stitch-error hover:text-[#ffffff] w-8 h-8 flex items-center justify-center rounded-full hover:bg-stitch-error-container"
                     >
                       <span className="material-symbols-outlined text-[20px]">delete</span>
                     </button>
@@ -674,7 +674,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
             <form
               noValidate
               onSubmit={(e) => { e.preventDefault(); addComponentToRecipe(); }}
-              className="bg-[#ffd9de]/10 p-4 rounded-xl border border-[#e4bdc2]/30 flex flex-col md:flex-row gap-4 items-center"
+              className="bg-stitch-primary-fixed/10 p-4 rounded-xl border border-stitch-outline-variant/30 flex flex-col md:flex-row gap-4 items-center"
             >
               <div className="w-full md:w-1/2">
                 <Select
@@ -692,18 +692,18 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                       }
                     }}
                   >
-                    <SelectTrigger className="interactive-input w-full truncate rounded-lg border border-gray-200 bg-white px-4 py-3 text-[16px] text-[#5f5e5e] justify-between gap-2">
+                    <SelectTrigger className="interactive-input w-full truncate rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest px-4 py-3 text-[16px] text-stitch-secondary justify-between gap-2">
                       <SelectValue placeholder="Seleccionar ingrediente o receta..." />
                     </SelectTrigger>
-                    <SelectContent position="popper" side="bottom" align="start" avoidCollisions={false} className="bg-white border border-gray-200 rounded-xl shadow-lg max-w-[min(24rem,calc(100vw-2rem))]">
+                    <SelectContent position="popper" side="bottom" align="start" avoidCollisions={false} className="bg-stitch-surface-container-lowest border border-gray-200 dark:border-stitch-outline-variant rounded-xl shadow-lg max-w-[min(24rem,calc(100vw-2rem))]">
                       {sortedBaseIngredients.length > 0 && (
                         <SelectGroup>
-                          <SelectLabel className="text-[#b80049] font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Ingredientes</SelectLabel>
+                          <SelectLabel className="text-stitch-primary font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Ingredientes</SelectLabel>
                           {sortedBaseIngredients.map(ing => (
                             <SelectItem
                               key={`ingredient:${ing.id}`}
                               value={`ingredient:${ing.id}`}
-                              className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
+                              className="text-stitch-on-surface truncate focus:bg-stitch-primary-fixed focus:text-stitch-on-primary-fixed"
                             >
                               {ing.name}
                             </SelectItem>
@@ -712,12 +712,12 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                       )}
                       {yieldRecipes.length > 0 && (
                         <SelectGroup>
-                          <SelectLabel className="text-[#b80049] font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Recetas</SelectLabel>
+                          <SelectLabel className="text-stitch-primary font-bold uppercase tracking-wide text-[10px] px-2 py-1.5">Recetas</SelectLabel>
                           {yieldRecipes.map(sub => (
                             <SelectItem
                               key={`subproduct:${sub.id}`}
                               value={`subproduct:${sub.id}`}
-                              className="text-[#151c27] truncate focus:bg-[#ffd9de] focus:text-[#400014]"
+                              className="text-stitch-on-surface truncate focus:bg-stitch-primary-fixed focus:text-stitch-on-primary-fixed"
                             >
                               {sub.name} — rinde {sub.yieldGrams} g
                             </SelectItem>
@@ -729,14 +729,14 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
               </div>
               <div className="w-full md:w-1/4 grid grid-cols-2 gap-2">
                 <input
-                  className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-[#151c27] placeholder:text-[#c5c7c8]"
+                  className="interactive-input w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim"
                   type="number" min="0" placeholder="250"
                   value={newQuantity}
                   onChange={(e) => setNewQuantity(e.target.value)}
                 />
                 <div className="relative">
                   <select
-                    className="interactive-input w-full appearance-none px-2 py-3 rounded-lg border border-gray-200 bg-white text-[#5f5e5e] text-[16px] text-center"
+                    className="interactive-input w-full appearance-none px-2 py-3 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-secondary text-[16px] text-center"
                     value={newUnit}
                     onChange={(e) => setNewUnit(e.target.value as Unit)}
                   >
@@ -744,19 +744,19 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                       <option key={u} value={u}>{u === 'unidad' ? 'unidad' : u}</option>
                     ))}
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[#5f5e5e]">
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-stitch-secondary">
                     <span className="material-symbols-outlined text-[16px]">expand_more</span>
                   </div>
                 </div>
               </div>
               <div className="w-full md:w-1/4 flex items-center justify-end gap-2">
-                <span className="md:hidden text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e]">Costo:</span>
-                <span className="text-[18px] leading-[1.2] text-[#151c27] font-semibold whitespace-nowrap">
+                <span className="md:hidden text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary">Costo:</span>
+                <span className="text-[18px] leading-[1.2] text-stitch-on-surface font-semibold whitespace-nowrap">
                   {selectedValue && newQuantity ? formatCurrency(previewCost) : '$0,00'}
                 </span>
                 <button
                   type="submit"
-                  className="interactive-btn text-[#b80049] hover:text-[#900038] w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#ffd9de]"
+                  className="interactive-btn text-stitch-primary hover:text-stitch-on-primary-fixed-variant w-8 h-8 flex items-center justify-center rounded-full hover:bg-stitch-primary-fixed"
                   title="Agregar"
                 >
                   <span className="material-symbols-outlined text-[24px]">add_circle</span>
@@ -824,7 +824,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
             <button
               onClick={saveRecipe}
               disabled={!canSave || isSaving}
-              className="interactive-btn w-full py-4 bg-white text-[#b80049] rounded-full font-bold tracking-wider hover:bg-[#ffd9de] hover:text-[#400014] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="interactive-btn w-full py-4 bg-stitch-surface-container-lowest text-stitch-primary rounded-full font-bold tracking-wider hover:bg-stitch-primary-fixed hover:text-stitch-on-primary-fixed shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: 'var(--font-inter), sans-serif' }}
             >
               {isSaving ? 'GUARDANDO...' : (editingRecipeId ? 'ACTUALIZAR RECETA' : sandbox ? 'GUARDAR COMO RECETA OFICIAL' : 'GUARDAR RECETA')}
@@ -847,11 +847,11 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
         </article>
 
         {/* ── Costos Adicionales + Precio de Venta (acordeón opcional) ── */}
-        <Accordion type="single" collapsible className="bg-white rounded-[24px] border border-gray-100 card-animate delay-400" style={stitchShadow}>
+        <Accordion type="single" collapsible className="bg-stitch-surface-container-lowest rounded-[24px] border border-gray-100 dark:border-stitch-outline-variant/60 card-animate delay-400" style={stitchShadow}>
           <AccordionItem value="costos" className="border-b-0">
-            <AccordionTrigger className="px-8 py-6 text-left text-[18px] font-semibold text-[#151c27] hover:no-underline hover:text-[#b80049] transition-colors" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+            <AccordionTrigger className="px-8 py-6 text-left text-[18px] font-semibold text-stitch-on-surface hover:no-underline hover:text-stitch-primary transition-colors" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
               <span className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[#b80049] text-[24px]">local_shipping</span>
+                <span className="material-symbols-outlined text-stitch-primary text-[24px]">local_shipping</span>
                 ¿Querés calcular costos adicionales y precio de venta?
               </span>
             </AccordionTrigger>
@@ -864,7 +864,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                     onSubmit={(e) => { e.preventDefault(); addCostRow(); }}
                     className="space-y-6"
                   >
-                    <h3 className="text-[16px] leading-[1.4] tracking-[0.05em] font-bold text-[#b80049]">Costos Adicionales</h3>
+                    <h3 className="text-[16px] leading-[1.4] tracking-[0.05em] font-bold text-stitch-primary">Costos Adicionales</h3>
                     {currentRecipe.additionalCosts.map((row, index) => {
                       const usedKeys = currentRecipe.additionalCosts
                         .filter((r, i) => i !== index && !r.isCustom)
@@ -873,7 +873,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                         <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3">
                           <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-3">
                             <select
-                              className="interactive-input w-full sm:flex-1 sm:min-w-0 px-3 py-2.5 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] text-sm"
+                              className="interactive-input w-full sm:flex-1 sm:min-w-0 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface focus:bg-stitch-surface-container-lowest text-stitch-on-surface text-sm"
                               value={row.isCustom ? CUSTOM_EXTRA_COST_OPTION : row.key}
                               onChange={(e) => updateCostRowPreset(index, e.target.value)}
                             >
@@ -886,7 +886,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                             </select>
                             {row.isCustom && (
                               <input
-                                className="interactive-input w-full sm:flex-1 sm:min-w-0 px-3 py-2.5 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-[#151c27] text-sm"
+                                className="interactive-input w-full sm:flex-1 sm:min-w-0 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface focus:bg-stitch-surface-container-lowest text-stitch-on-surface text-sm"
                                 placeholder="Ej: Moldes descartables"
                                 type="text"
                                 value={row.label}
@@ -895,9 +895,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                             )}
                           </div>
                           <div className="relative w-full sm:w-32">
-                            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#c5c7c8] pointer-events-none">$</span>
+                            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-stitch-tertiary-fixed-dim pointer-events-none">$</span>
                             <input
-                              className="interactive-input w-full pl-8 pr-4 py-2.5 rounded-lg border border-gray-200 bg-[#f9f9ff] focus:bg-white text-right text-[#151c27] placeholder:text-[#c5c7c8]"
+                              className="interactive-input w-full pl-8 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface focus:bg-stitch-surface-container-lowest text-right text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim"
                               placeholder="0" type="number" min="0"
                               value={row.value}
                               onChange={(e) => updateCostRowValue(index, e.target.value)}
@@ -906,7 +906,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                           <button
                             type="button"
                             onClick={() => removeCostRow(index)}
-                            className="interactive-btn text-[#ba1a1a] hover:text-[#ffffff] w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#ffdad6] shrink-0"
+                            className="interactive-btn text-stitch-error hover:text-[#ffffff] w-8 h-8 flex items-center justify-center rounded-full hover:bg-stitch-error-container shrink-0"
                             title="Quitar costo"
                           >
                             <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -916,7 +916,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                     })}
                     <button
                       type="submit"
-                      className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#e2e8f8] hover:bg-[#dce2f3] text-[#151c27] rounded-full text-[16px] font-medium border border-gray-200"
+                      className="interactive-btn flex items-center gap-2 px-6 py-3 bg-stitch-surface-container-high hover:bg-stitch-surface-container-highest text-stitch-on-surface rounded-full text-[16px] font-medium border border-gray-200 dark:border-stitch-outline-variant"
                     >
                       <span className="material-symbols-outlined text-[20px]">add</span>
                       Agregar costo adicional
@@ -928,19 +928,19 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                 <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h3 className="text-[14px] leading-[1.4] tracking-[0.05em] font-bold text-[#b80049]">Margen de Ganancia (%)</h3>
-                      <p className="text-[12px] text-[#5a5c5d]">Porcentaje extra sobre el costo total</p>
+                      <h3 className="text-[14px] leading-[1.4] tracking-[0.05em] font-bold text-stitch-primary">Margen de Ganancia (%)</h3>
+                      <p className="text-[12px] text-stitch-tertiary">Porcentaje extra sobre el costo total</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="relative w-20">
                         <input
-                          className="interactive-input w-full px-4 py-2 rounded-lg border-2 border-[#ffd9de] bg-white text-center text-[#b80049] font-semibold placeholder:text-[#c5c7c8]"
+                          className="interactive-input w-full px-4 py-2 rounded-lg border-2 border-stitch-primary-fixed bg-stitch-surface-container-lowest text-center text-stitch-primary font-semibold placeholder:text-stitch-tertiary-fixed-dim"
                           placeholder="Ej: 40" type="number" min="0" max="500"
                           value={currentRecipe.profitMargin ?? ''}
                           onChange={(e) => setCurrentRecipe({ ...currentRecipe, profitMargin: e.target.value })}
                         />
                       </div>
-                      <span className="text-[#b80049] font-bold">%</span>
+                      <span className="text-stitch-primary font-bold">%</span>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -951,8 +951,8 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                         onClick={() => setCurrentRecipe({ ...currentRecipe, profitMargin: String(pct) })}
                         className={`interactive-btn px-4 py-1.5 rounded-full transition-colors text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-xs ${
                           String(currentRecipe.profitMargin) === String(pct)
-                            ? 'bg-[#ffd9de] text-[#400014]'
-                            : 'bg-[#ffd9de]/30 text-[#b80049] hover:bg-[#ffd9de]'
+                            ? 'bg-stitch-primary-fixed text-stitch-on-primary-fixed'
+                            : 'bg-stitch-primary-fixed/30 text-stitch-primary hover:bg-stitch-primary-fixed'
                         }`}
                       >
                         {pct}%
@@ -960,23 +960,23 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                     ))}
                   </div>
 
-                  <div className="bg-[#f0f3ff] rounded-[24px] p-6 space-y-3">
+                  <div className="bg-stitch-surface-container-low rounded-[24px] p-6 space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase">Costos Extras / Packaging</span>
-                      <span className="text-[18px] font-semibold text-[#151c27]">{formatCurrency(extraCostsTotal)}</span>
+                      <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary uppercase">Costos Extras / Packaging</span>
+                      <span className="text-[18px] font-semibold text-stitch-on-surface">{formatCurrency(extraCostsTotal)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-[#5f5e5e] uppercase">Costo Total Neto</span>
-                      <span className="text-[18px] font-semibold text-[#151c27]">{formatCurrency(totalCost)}</span>
+                      <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-semibold text-stitch-secondary uppercase">Costo Total Neto</span>
+                      <span className="text-[18px] font-semibold text-stitch-on-surface">{formatCurrency(totalCost)}</span>
                     </div>
-                    <div className="flex justify-between items-center border-t border-[#e4bdc2] pt-3">
-                      <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-bold text-[#b80049]">Precio de Venta Sugerido ({margin}%)</span>
-                      <span className="text-[22px] font-bold text-[#b80049]">{formatCurrency(salePriceTotal)}</span>
+                    <div className="flex justify-between items-center border-t border-stitch-outline-variant pt-3">
+                      <span className="text-[14px] leading-[1.4] tracking-[0.05em] font-bold text-stitch-primary">Precio de Venta Sugerido ({margin}%)</span>
+                      <span className="text-[22px] font-bold text-stitch-primary">{formatCurrency(salePriceTotal)}</span>
                     </div>
                     {portions > 0 && (
                       <div className="flex justify-between items-center">
-                        <span className="text-[13px] text-[#5f5e5e]">Precio sugerido por porción</span>
-                        <span className="text-[15px] font-semibold text-[#151c27]">{formatCurrency(salePerUnit)}</span>
+                        <span className="text-[13px] text-stitch-secondary">Precio sugerido por porción</span>
+                        <span className="text-[15px] font-semibold text-stitch-on-surface">{formatCurrency(salePerUnit)}</span>
                       </div>
                     )}
                   </div>

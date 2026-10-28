@@ -6,6 +6,7 @@ import { TransitionLink } from '@/components/transition-link';
 import { createClient } from '@/utils/supabase/client';
 import { useAppBoot } from '@/components/boot/app-boot-context';
 import { UserProfile } from '@/components/user-profile';
+import { ThemeToggle } from '@/components/theme-toggle';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -105,7 +106,7 @@ export function Navbar() {
           <AlertDialogFooter className="mt-2 sm:flex-row gap-2">
             <AlertDialogCancel
               disabled={isLoggingOut}
-              className="flex-1 rounded-full border border-gray-300 bg-white text-gray-700 font-medium text-sm py-2.5 hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus-visible:ring-0 shadow-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 rounded-full border border-gray-300 bg-stitch-surface-container-lowest text-gray-700 dark:border-stitch-outline-variant dark:bg-white/10 dark:text-stitch-on-surface font-medium text-sm py-2.5 hover:bg-gray-50 hover:border-gray-400 dark:hover:bg-white/15 dark:hover:border-stitch-outline-variant focus:outline-none focus-visible:ring-0 shadow-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Cancelar
             </AlertDialogCancel>
@@ -153,8 +154,10 @@ export function Navbar() {
             ))}
           </nav>
 
-          {/* ── Dropdown unificado de usuario (mobile + desktop) ───────────── */}
-          <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+          {/* ── Toggle de tema (desktop) + Dropdown de usuario ─────────────── */}
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
             <DropdownMenuTrigger asChild>
               <button
                 className="group flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-offset-0 select-none"
@@ -255,7 +258,8 @@ export function Navbar() {
                 Cerrar sesión
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
     </>

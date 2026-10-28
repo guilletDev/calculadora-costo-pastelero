@@ -64,7 +64,7 @@ function EstadoContent() {
   }, [result]);
 
   const card =
-    'w-full max-w-md rounded-[24px] bg-white dark:bg-[#2a1a24] border border-[#e4bdc2]/30 p-8 md:p-10 text-center shadow-floating';
+    'w-full max-w-md rounded-[24px] bg-stitch-surface-container-lowest dark:bg-[#2a1a24] border border-stitch-outline-variant/30 p-8 md:p-10 text-center shadow-floating';
 
   if (result === 'success') {
     return (
@@ -124,7 +124,7 @@ function EstadoContent() {
           />
           <TransitionLink
             href="/dashboard"
-            className="inline-block w-full rounded-full border border-[#e4bdc2] text-slate-700 dark:text-slate-300 text-sm font-semibold py-3.5 transition-all duration-300 hover:bg-[#f0f3ff] dark:hover:bg-slate-800"
+            className="inline-block w-full rounded-full border border-stitch-outline-variant text-slate-700 dark:text-slate-300 text-sm font-semibold py-3.5 transition-all duration-300 hover:bg-stitch-surface-container-low dark:hover:bg-slate-800"
           >
             Volver al inicio
           </TransitionLink>
@@ -151,7 +151,7 @@ function EstadoContent() {
         </TransitionLink>
         <UpgradeButton
           label="Pagar de nuevo"
-          className="w-full rounded-full border border-[#e4bdc2] text-slate-700 dark:text-slate-300 text-sm font-semibold py-3.5 transition-all duration-300 hover:bg-[#f0f3ff] dark:hover:bg-slate-800"
+          className="w-full rounded-full border border-stitch-outline-variant text-slate-700 dark:text-slate-300 text-sm font-semibold py-3.5 transition-all duration-300 hover:bg-stitch-surface-container-low dark:hover:bg-slate-800"
         />
       </div>
     </div>

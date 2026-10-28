@@ -106,25 +106,25 @@ function OrderCard({ pedido, isUpdating, onUpdateStatus, onDelete }: OrderCardPr
   const balance = Math.max(salePrice - deposit, 0);
 
   return (
-    <article className="bg-white rounded-[24px] border border-[#e4bdc2]/40 p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] space-y-4">
+    <article className="bg-stitch-surface-container-lowest rounded-[24px] border border-stitch-outline-variant/40 p-6 shadow-[0_10px_40px_rgba(0,0,0,0.04)] space-y-4">
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-semibold text-[20px] leading-[1.3] text-[#151c27] truncate">
+          <h2 className="font-semibold text-[20px] leading-[1.3] text-stitch-on-surface truncate">
             {pedido.title?.trim() || 'Pedido'}
           </h2>
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[#5f5e5e]">
-            <span className="font-medium text-[#151c27]">{pedido.client_name}</span>
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-stitch-secondary">
+            <span className="font-medium text-stitch-on-surface">{pedido.client_name}</span>
             {pedido.client_phone && (
               <>
-                <span className="text-[#c5c7c8]">·</span>
+                <span className="text-stitch-tertiary-fixed-dim">·</span>
                 <span>{pedido.client_phone}</span>
                 {phoneDigits.length >= 8 && (
                   <a
                     href={`https://wa.me/${phoneDigits}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 font-semibold text-[#b80049] hover:underline"
+                    className="inline-flex items-center gap-1 font-semibold text-stitch-primary hover:underline"
                   >
                     <span className="material-symbols-outlined text-[16px]">chat</span>
                     WhatsApp
@@ -133,7 +133,7 @@ function OrderCard({ pedido, isUpdating, onUpdateStatus, onDelete }: OrderCardPr
               </>
             )}
           </p>
-          <p className="mt-1 text-xs text-[#8a8a8a]">
+          <p className="mt-1 text-xs text-stitch-muted">
             Creado el {createdAt}
             {deliveryDate && ` · Entrega: ${deliveryDate}`}
           </p>
@@ -147,9 +147,9 @@ function OrderCard({ pedido, isUpdating, onUpdateStatus, onDelete }: OrderCardPr
       </header>
 
       {/* Resumen */}
-      <div className="space-y-2 rounded-2xl bg-[#f9f9ff] p-4">
+      <div className="space-y-2 rounded-2xl bg-stitch-surface p-4">
         {recipes.length === 0 && expenses.length === 0 ? (
-          <p className="text-sm text-[#8a8a8a]">Sin ítems cargados.</p>
+          <p className="text-sm text-stitch-muted">Sin ítems cargados.</p>
         ) : (
           <>
             {recipes.map((item, index) => (
@@ -157,13 +157,13 @@ function OrderCard({ pedido, isUpdating, onUpdateStatus, onDelete }: OrderCardPr
                 key={`recipe-${index}`}
                 className="flex items-start justify-between gap-3 text-sm"
               >
-                <span className="text-[#151c27]">
+                <span className="text-stitch-on-surface">
                   {item.name ?? 'Receta'}
                   {item.quantity ? (
-                    <span className="text-[#8a8a8a]"> · {item.quantity}</span>
+                    <span className="text-stitch-muted"> · {item.quantity}</span>
                   ) : null}
                 </span>
-                <span className="whitespace-nowrap font-medium text-[#5f5e5e]">
+                <span className="whitespace-nowrap font-medium text-stitch-secondary">
                   {formatCurrency(Number(item.cost) || 0)}
                 </span>
               </div>
@@ -173,8 +173,8 @@ function OrderCard({ pedido, isUpdating, onUpdateStatus, onDelete }: OrderCardPr
                 key={`expense-${index}`}
                 className="flex items-start justify-between gap-3 text-sm"
               >
-                <span className="text-[#151c27]">{item.label ?? 'Gasto extra'}</span>
-                <span className="whitespace-nowrap font-medium text-[#5f5e5e]">
+                <span className="text-stitch-on-surface">{item.label ?? 'Gasto extra'}</span>
+                <span className="whitespace-nowrap font-medium text-stitch-secondary">
                   {formatCurrency(Number(item.amount) || 0)}
                 </span>
               </div>
@@ -185,38 +185,38 @@ function OrderCard({ pedido, isUpdating, onUpdateStatus, onDelete }: OrderCardPr
 
       {/* Montos */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-[#e4bdc2]/30 p-3">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#8a8a8a]">
+        <div className="rounded-xl border border-stitch-outline-variant/30 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-stitch-muted">
             Precio de venta
           </p>
-          <p className="mt-1 text-lg font-bold text-[#151c27]">{formatCurrency(salePrice)}</p>
+          <p className="mt-1 text-lg font-bold text-stitch-on-surface">{formatCurrency(salePrice)}</p>
         </div>
-        <div className="rounded-xl border border-[#e4bdc2]/30 p-3">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#8a8a8a]">
+        <div className="rounded-xl border border-stitch-outline-variant/30 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-stitch-muted">
             Seña
           </p>
-          <p className="mt-1 text-lg font-bold text-[#151c27]">{formatCurrency(deposit)}</p>
+          <p className="mt-1 text-lg font-bold text-stitch-on-surface">{formatCurrency(deposit)}</p>
         </div>
-        <div className="col-span-2 rounded-xl border border-[#b80049]/30 bg-[#fdf3f6] p-3 sm:col-span-1">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#b80049]">
+        <div className="col-span-2 rounded-xl border border-stitch-primary/30 bg-stitch-highlight p-3 sm:col-span-1">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-stitch-primary">
             Saldo pendiente
           </p>
-          <p className="mt-1 text-lg font-bold text-[#b80049]">{formatCurrency(balance)}</p>
+          <p className="mt-1 text-lg font-bold text-stitch-primary">{formatCurrency(balance)}</p>
         </div>
       </div>
 
       {/* Notas */}
       {pedido.notes && (
-        <p className="whitespace-pre-line text-sm leading-[1.6] text-[#5f5e5e]">
-          <span className="font-semibold text-[#151c27]">Notas: </span>
+        <p className="whitespace-pre-line text-sm leading-[1.6] text-stitch-secondary">
+          <span className="font-semibold text-stitch-on-surface">Notas: </span>
           {pedido.notes}
         </p>
       )}
 
       {/* Acciones */}
-      <footer className="flex flex-col gap-3 border-t border-[#e4bdc2]/30 pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <footer className="flex flex-col gap-3 border-t border-stitch-outline-variant/30 pt-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-widest text-[#8a8a8a]">
+          <span className="text-xs font-semibold uppercase tracking-widest text-stitch-muted">
             Estado
           </span>
           <Select
@@ -224,7 +224,7 @@ function OrderCard({ pedido, isUpdating, onUpdateStatus, onDelete }: OrderCardPr
             onValueChange={(value) => onUpdateStatus(pedido, value as EstadoPedido)}
             disabled={isUpdating}
           >
-            <SelectTrigger className="!h-auto w-44 rounded-full border border-[#e4bdc2] bg-white px-3 py-2 text-sm text-[#151c27]">
+            <SelectTrigger className="!h-auto w-44 rounded-full border border-stitch-outline-variant bg-stitch-surface-container-lowest px-3 py-2 text-sm text-stitch-on-surface">
               <SelectValue />
             </SelectTrigger>
             <SelectContent
@@ -232,13 +232,13 @@ function OrderCard({ pedido, isUpdating, onUpdateStatus, onDelete }: OrderCardPr
               side="bottom"
               align="start"
               avoidCollisions={false}
-              className="rounded-xl border border-gray-200 bg-white shadow-lg"
+              className="rounded-xl border border-gray-200 dark:border-stitch-outline-variant bg-stitch-surface-container-lowest shadow-lg"
             >
               {(Object.keys(STATUS_META) as EstadoPedido[]).map((status) => (
                 <SelectItem
                   key={status}
                   value={status}
-                  className="text-[#151c27] focus:bg-[#ffd9de] focus:text-[#400014]"
+                  className="text-stitch-on-surface focus:bg-stitch-primary-fixed focus:text-stitch-on-primary-fixed"
                 >
                   {STATUS_META[status].label}
                 </SelectItem>
@@ -246,7 +246,7 @@ function OrderCard({ pedido, isUpdating, onUpdateStatus, onDelete }: OrderCardPr
             </SelectContent>
           </Select>
           {isUpdating && (
-            <span className="material-symbols-outlined animate-spin text-[18px] text-[#b80049]">
+            <span className="material-symbols-outlined animate-spin text-[18px] text-stitch-primary">
               progress_activity
             </span>
           )}
@@ -254,7 +254,7 @@ function OrderCard({ pedido, isUpdating, onUpdateStatus, onDelete }: OrderCardPr
         <button
           type="button"
           onClick={() => onDelete(pedido)}
-          className="inline-flex items-center justify-center gap-2 rounded-full border border-[#ba1a1a]/40 px-4 py-2 text-sm font-semibold text-[#ba1a1a] transition-colors hover:bg-[#ffdad6]/50"
+          className="inline-flex items-center justify-center gap-2 rounded-full border border-[#ba1a1a]/40 px-4 py-2 text-sm font-semibold text-stitch-error transition-colors hover:bg-stitch-error-container/50"
         >
           <span className="material-symbols-outlined text-[18px]">delete</span>
           Eliminar pedido
@@ -364,12 +364,12 @@ export default function PedidosPage() {
       <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-up">
         <div>
           <h1
-            className="text-[28px] md:text-[32px] leading-[1.2] md:tracking-[-0.01em] font-bold text-[#151c27] mb-2"
+            className="text-[28px] md:text-[32px] leading-[1.2] md:tracking-[-0.01em] font-bold text-stitch-on-surface mb-2"
             style={manrope}
           >
             Mis Pedidos
           </h1>
-          <p className="text-[#5f5e5e] text-[18px] leading-[1.6]">
+          <p className="text-stitch-secondary text-[18px] leading-[1.6]">
             {isLoading
               ? 'Cargando tus pedidos...'
               : pedidos.length === 0
@@ -392,41 +392,41 @@ export default function PedidosPage() {
           {[0, 1, 2].map((index) => (
             <div
               key={index}
-              className="animate-pulse rounded-[24px] border border-[#e4bdc2]/30 bg-white p-6 space-y-4"
+              className="animate-pulse rounded-[24px] border border-stitch-outline-variant/30 bg-stitch-surface-container-lowest p-6 space-y-4"
             >
-              <div className="h-5 w-1/3 rounded bg-[#f0f3ff]" />
-              <div className="h-4 w-1/2 rounded bg-[#f0f3ff]" />
+              <div className="h-5 w-1/3 rounded bg-stitch-surface-container-low" />
+              <div className="h-4 w-1/2 rounded bg-stitch-surface-container-low" />
               <div className="grid grid-cols-3 gap-3">
-                <div className="h-16 rounded-xl bg-[#f0f3ff]" />
-                <div className="h-16 rounded-xl bg-[#f0f3ff]" />
-                <div className="h-16 rounded-xl bg-[#f0f3ff]" />
+                <div className="h-16 rounded-xl bg-stitch-surface-container-low" />
+                <div className="h-16 rounded-xl bg-stitch-surface-container-low" />
+                <div className="h-16 rounded-xl bg-stitch-surface-container-low" />
               </div>
             </div>
           ))}
         </div>
       ) : loadError ? (
-        <div className="flex flex-col items-center justify-center rounded-[24px] border border-[#e4bdc2]/40 bg-white py-16 text-center">
-          <span className="material-symbols-outlined mb-3 text-[40px] text-[#ba1a1a]">
+        <div className="flex flex-col items-center justify-center rounded-[24px] border border-stitch-outline-variant/40 bg-stitch-surface-container-lowest py-16 text-center">
+          <span className="material-symbols-outlined mb-3 text-[40px] text-stitch-error">
             error
           </span>
-          <p className="mb-4 text-[#5f5e5e]">No pudimos cargar tus pedidos.</p>
+          <p className="mb-4 text-stitch-secondary">No pudimos cargar tus pedidos.</p>
           <button
             type="button"
             onClick={() => setReloadKey((key) => key + 1)}
-            className="rounded-full border border-[#b80049] px-6 py-2.5 text-sm font-semibold text-[#b80049] transition-colors hover:bg-[#b80049]/10"
+            className="rounded-full border border-stitch-primary px-6 py-2.5 text-sm font-semibold text-stitch-primary transition-colors hover:bg-[#b80049]/10"
           >
             Reintentar
           </button>
         </div>
       ) : pedidos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-[32px] border border-dashed border-[#e4bdc2] bg-[#f0f3ff] py-20 text-center">
-          <span className="material-symbols-outlined mb-4 text-[48px] text-[#5a5c5d]">
+        <div className="flex flex-col items-center justify-center rounded-[32px] border border-dashed border-stitch-outline-variant bg-stitch-surface-container-low py-20 text-center">
+          <span className="material-symbols-outlined mb-4 text-[48px] text-stitch-tertiary">
             receipt_long
           </span>
-          <h3 className="mb-2 font-semibold text-[24px] leading-[1.3] text-[#151c27]" style={manrope}>
+          <h3 className="mb-2 font-semibold text-[24px] leading-[1.3] text-stitch-on-surface" style={manrope}>
             Todavía no hay pedidos
           </h3>
-          <p className="mb-6 max-w-md text-[16px] leading-[1.5] text-[#5f5e5e]">
+          <p className="mb-6 max-w-md text-[16px] leading-[1.5] text-stitch-secondary">
             Creá tu primer presupuesto para empezar a organizarte.
           </p>
           <TransitionLink
@@ -463,8 +463,8 @@ export default function PedidosPage() {
           className="max-w-sm rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant"
         >
           <AlertDialogHeader>
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#ffdad6]">
-              <span className="material-symbols-outlined text-[#ba1a1a]" style={{ fontSize: 24 }}>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-stitch-error-container">
+              <span className="material-symbols-outlined text-stitch-error" style={{ fontSize: 24 }}>
                 delete
               </span>
             </div>
@@ -482,7 +482,7 @@ export default function PedidosPage() {
           <AlertDialogFooter className="mt-2 sm:flex-row gap-2">
             <AlertDialogCancel
               disabled={isDeleting}
-              className="flex-1 rounded-full border border-gray-300 bg-white text-gray-700 font-medium text-sm py-2.5 hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus-visible:ring-0 shadow-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 rounded-full border border-gray-300 bg-stitch-surface-container-lowest text-gray-700 dark:border-stitch-outline-variant dark:bg-white/10 dark:text-stitch-on-surface font-medium text-sm py-2.5 hover:bg-gray-50 hover:border-gray-400 dark:hover:bg-white/15 dark:hover:border-stitch-outline-variant focus:outline-none focus-visible:ring-0 shadow-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Cancelar
             </AlertDialogCancel>

@@ -67,7 +67,7 @@ export default function RecetaDetailPage() {
   const handleDelete = () => {
     if (!recipe) return;
     toast.custom((t) => (
-      <div className="w-[360px] rounded-xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+      <div className="w-[360px] rounded-xl bg-stitch-surface-container-lowest dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
         <div className="p-4 flex items-start gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500">
             <span className="material-symbols-outlined text-[20px]">delete</span>
@@ -146,7 +146,7 @@ export default function RecetaDetailPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <h2 className="font-stitch-headline-lg text-stitch-headline-lg-mobile md:text-stitch-headline-lg text-stitch-on-surface">{recipe.name}</h2>
             {(hasPortions || hasGrams) && (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#ffd9de] text-[#b80049] text-[11px] leading-[1.4] tracking-[0.05em] font-semibold whitespace-nowrap">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-stitch-primary-fixed text-stitch-primary text-[11px] leading-[1.4] tracking-[0.05em] font-semibold whitespace-nowrap">
                 {[hasPortions ? portionsLabel(recipe.yieldPortions ?? 0) : '', hasGrams ? `${recipe.yieldGrams} g` : ''].filter(Boolean).join(' • ')}
               </span>
             )}
@@ -261,7 +261,7 @@ export default function RecetaDetailPage() {
                 <span className="font-stitch-body-md text-stitch-body-md font-medium text-stitch-on-surface">
                   {getIngredientName(ing)}
                   {ing.componentType === 'subproduct' && (
-                    <span className="inline-flex items-center ml-2 px-2 py-0.5 rounded-full bg-[#ffd9de] text-[#b80049] text-[10px] leading-[1.4] tracking-[0.05em] font-semibold whitespace-nowrap align-middle">
+                    <span className="inline-flex items-center ml-2 px-2 py-0.5 rounded-full bg-stitch-primary-fixed text-stitch-primary text-[10px] leading-[1.4] tracking-[0.05em] font-semibold whitespace-nowrap align-middle">
                       Receta
                     </span>
                   )}

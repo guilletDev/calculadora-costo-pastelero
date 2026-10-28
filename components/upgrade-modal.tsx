@@ -64,10 +64,10 @@ export function UpgradeModal({ open, onOpenChange, resourceType }: UpgradeModalP
             <span className="line-through text-gray-400 text-sm">
               {formatProOriginalPrice()}
             </span>
-            <span className="rounded-full bg-[#ffd9de]/70 text-[#b80049] text-xs font-bold px-2.5 py-1">
+            <span className="rounded-full bg-stitch-primary-fixed/70 text-stitch-primary text-xs font-bold px-2.5 py-1">
               {PRO_PLAN_OFFER_BADGE}
             </span>
-            <span className="rounded-full bg-slate-100 text-slate-500 text-xs font-semibold px-2 py-1">
+            <span className="rounded-full bg-slate-100 text-slate-500 dark:bg-[#3a2831] dark:text-slate-300 text-xs font-semibold px-2 py-1">
               {PRO_PLAN_OFFER_DISCOUNT}
             </span>
           </div>
@@ -82,7 +82,7 @@ export function UpgradeModal({ open, onOpenChange, resourceType }: UpgradeModalP
 
         <AlertDialogFooter className="flex flex-col sm:flex-row gap-3 mt-6 items-center justify-end">
           <AlertDialogCancel
-            className="w-full sm:w-auto text-sm py-2.5 px-4 h-auto rounded-md border border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface font-semibold hover:bg-stitch-surface-container-low transition-colors"
+            className="w-full sm:w-auto text-sm py-2.5 px-4 h-auto rounded-md border border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface font-semibold hover:bg-stitch-surface-container-low dark:bg-white/10 dark:hover:bg-white/15 transition-colors"
           >
             Quizás más tarde
           </AlertDialogCancel>

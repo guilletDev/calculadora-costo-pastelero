@@ -164,9 +164,9 @@ function DashboardContent() {
   const totalProductos = products.length;
 
   const kpis = [
-    { label: 'Recetas', value: String(totalRecetas), icon: 'menu_book', iconBg: 'bg-[#ffd9de]/50 text-[#b80049]', href: '/recetas' },
-    { label: 'Productos', value: String(totalProductos), icon: 'storefront', iconBg: 'bg-[#dce2f3]/50 text-[#151c27]', href: '/productos' },
-    { label: 'Ingredientes', value: String(totalIngredientes), icon: 'inventory_2', iconBg: 'bg-[#ffd9de]/50 text-[#b80049]', href: '/inventario' },
+    { label: 'Recetas', value: String(totalRecetas), icon: 'menu_book', iconBg: 'bg-stitch-primary-fixed/50 text-stitch-primary', href: '/recetas' },
+    { label: 'Productos', value: String(totalProductos), icon: 'storefront', iconBg: 'bg-stitch-surface-container-highest/50 text-stitch-on-surface', href: '/productos' },
+    { label: 'Ingredientes', value: String(totalIngredientes), icon: 'inventory_2', iconBg: 'bg-stitch-primary-fixed/50 text-stitch-primary', href: '/inventario' },
   ];
 
   const orderMetrics = [
@@ -182,7 +182,7 @@ function DashboardContent() {
 
   if (!ready || (ready && !paymentSuccess && !paymentFailed && ingredients.length < 2)) {
     return (
-      <main className="flex-grow w-full max-w-[1200px] mx-auto px-6 md:px-[10%] py-12 flex flex-col items-center justify-center gap-2 text-[#5f5e5e]">
+      <main className="flex-grow w-full max-w-[1200px] mx-auto px-6 md:px-[10%] py-12 flex flex-col items-center justify-center gap-2 text-stitch-secondary">
         <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
         <p className="text-[16px]">Cargando tu panel...</p>
       </main>
@@ -195,12 +195,12 @@ function DashboardContent() {
       <section className="space-y-6 animate-fade-up">
         <div>
           <h1
-            className="text-[28px] md:text-[32px] leading-[1.2] md:tracking-[-0.01em] font-bold text-[#151c27] mb-2"
+            className="text-[28px] md:text-[32px] leading-[1.2] md:tracking-[-0.01em] font-bold text-stitch-on-surface mb-2"
             style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
           >
             Hola, {userName || 'pastelero'}
           </h1>
-          <p className="text-[#5f5e5e] text-[18px] leading-[1.6]">
+          <p className="text-stitch-secondary text-[18px] leading-[1.6]">
             ¿Qué vamos a crear hoy?
           </p>
         </div>
@@ -216,7 +216,7 @@ function DashboardContent() {
                 <span className="text-[10px] sm:text-xs tracking-normal font-bold text-stitch-secondary flex-1 break-words pr-1 leading-tight">
                   {metric.label}
                 </span>
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#ffd9de]/50 flex items-center justify-center shrink-0 ml-auto">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-stitch-primary-fixed/50 flex items-center justify-center shrink-0 ml-auto">
                   <span className="material-symbols-outlined text-[18px]">{metric.icon}</span>
                 </div>
               </div>
@@ -238,7 +238,7 @@ function DashboardContent() {
           </TransitionLink>
           <TransitionLink
             href="/dashboard/pedidos/rapido"
-            className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 border border-[#b80049] text-[#b80049] rounded-full text-[14px] leading-[1.4] tracking-[0.02em] font-semibold uppercase hover:bg-[#b80049]/10 transition-colors"
+            className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 border border-stitch-primary text-stitch-primary rounded-full text-[14px] leading-[1.4] tracking-[0.02em] font-semibold uppercase hover:bg-[#b80049]/10 transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">request_quote</span>
             Presupuesto rápido
@@ -249,7 +249,7 @@ function DashboardContent() {
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <h2
-              className="text-xl font-semibold text-[#151c27]"
+              className="text-xl font-semibold text-stitch-on-surface"
               style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
             >
               Pedidos a confirmar
@@ -257,24 +257,24 @@ function DashboardContent() {
             {!ordersLoading && pendingOrders.length > 0 && (
               <TransitionLink
                 href="/dashboard/pedidos"
-                className="text-sm font-semibold text-[#b80049] hover:underline whitespace-nowrap"
+                className="text-sm font-semibold text-stitch-primary hover:underline whitespace-nowrap"
               >
                 Ver todos
               </TransitionLink>
             )}
           </div>
-          <div className="bg-white rounded-[24px] border border-stitch-outline-variant p-6">
+          <div className="bg-stitch-surface-container-lowest rounded-[24px] border border-stitch-outline-variant p-6">
             {ordersLoading ? (
               <div className="space-y-3">
                 {[0, 1].map((index) => (
                   <div
                     key={index}
-                    className="h-14 animate-pulse rounded-xl bg-[#f0f3ff]"
+                    className="h-14 animate-pulse rounded-xl bg-stitch-surface-container-low"
                   />
                 ))}
               </div>
             ) : pendingOrders.length === 0 ? (
-              <p className="text-center text-[16px] leading-[1.6] text-[#5f5e5e]">
+              <p className="text-center text-[16px] leading-[1.6] text-stitch-secondary">
                 Todavía no hay pedidos. Creá tu primer presupuesto para empezar a organizarte.
               </p>
             ) : (
@@ -283,13 +283,13 @@ function DashboardContent() {
                   <TransitionLink
                     key={order.id}
                     href="/dashboard/pedidos"
-                    className="flex items-center justify-between gap-3 rounded-xl border border-[#e4bdc2]/30 p-4 transition-colors hover:border-[#b80049]/40 hover:bg-[#fdf3f6]"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-stitch-outline-variant/30 p-4 transition-colors hover:border-stitch-primary/40 hover:bg-stitch-highlight"
                   >
                     <div className="min-w-0">
-                      <p className="truncate font-semibold text-[#151c27]">
+                      <p className="truncate font-semibold text-stitch-on-surface">
                         {order.title?.trim() || 'Pedido'}
                       </p>
-                      <p className="truncate text-xs text-[#8a8a8a]">
+                      <p className="truncate text-xs text-stitch-muted">
                         {order.client_name}
                         {' · '}
                         {new Date(order.created_at).toLocaleDateString('es-AR', {
@@ -300,10 +300,10 @@ function DashboardContent() {
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="font-semibold text-[#b80049]">
+                      <p className="font-semibold text-stitch-primary">
                         {formatCurrency(Number(order.sale_price) || 0)}
                       </p>
-                      <p className="text-[11px] uppercase tracking-wide text-[#8a8a8a]">
+                      <p className="text-[11px] uppercase tracking-wide text-stitch-muted">
                         Pendiente
                       </p>
                     </div>
@@ -318,7 +318,7 @@ function DashboardContent() {
       {/* ── Resumen de tu negocio ── */}
       <section className="space-y-6">
         <h2
-          className="text-xl font-semibold text-[#151c27]"
+          className="text-xl font-semibold text-stitch-on-surface"
           style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
         >
           Resumen de tu negocio
@@ -351,7 +351,7 @@ function DashboardContent() {
 
       {/* ── Banner Mercado Pago (solo Free) ── */}
       {!isPro && !isBannerDismissed && (
-        <section className="bg-[#1e2330] text-white rounded-[24px] p-8 md:p-10 border border-[#b80049]/40 shadow-floating relative overflow-hidden animate-fade-up">
+        <section className="bg-[#1e2330] text-white rounded-[24px] p-8 md:p-10 border border-stitch-primary/40 shadow-floating relative overflow-hidden animate-fade-up">
           <button
             type="button"
             aria-label="Cerrar aviso"
@@ -404,7 +404,7 @@ function DashboardContent() {
       {/* ── Accesos Rápidos ── */}
       <section className="space-y-6">
         <h2
-          className="text-[24px] leading-[1.3] font-semibold text-[#151c27]"
+          className="text-[24px] leading-[1.3] font-semibold text-stitch-on-surface"
           style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
         >
           Crea y Calcula
@@ -414,16 +414,16 @@ function DashboardContent() {
             <TransitionLink
               key={action.href}
               href={action.href}
-              className="group bg-white rounded-[24px] p-8 border border-[#e4bdc2] hover:border-[#b80049] hover:shadow-xl transition-all duration-300 flex flex-col gap-4 [box-shadow:0_10px_40px_rgba(0,0,0,0.04)]"
+              className="group bg-stitch-surface-container-lowest rounded-[24px] p-8 border border-stitch-outline-variant hover:border-stitch-primary hover:shadow-xl transition-all duration-300 flex flex-col gap-4 [box-shadow:0_10px_40px_rgba(0,0,0,0.04)]"
             >
-              <div className="w-12 h-12 rounded-xl bg-[#ffd9de]/50 flex items-center justify-center text-[#b80049] group-hover:scale-105 transition-transform">
+              <div className="w-12 h-12 rounded-xl bg-stitch-primary-fixed/50 flex items-center justify-center text-stitch-primary group-hover:scale-105 transition-transform">
                 <span className="material-symbols-outlined">{action.icon}</span>
               </div>
               <div>
-                <h3 className="font-semibold text-[20px] leading-[1.3] text-[#151c27] group-hover:text-[#b80049] transition-colors">
+                <h3 className="font-semibold text-[20px] leading-[1.3] text-stitch-on-surface group-hover:text-stitch-primary transition-colors">
                   {action.label}
                 </h3>
-                <p className="mt-2 text-[14px] leading-[1.5] text-[#5f5e5e]">
+                <p className="mt-2 text-[14px] leading-[1.5] text-stitch-secondary">
                   {action.description}
                 </p>
               </div>
@@ -443,7 +443,7 @@ export default function DashboardPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex-grow w-full max-w-[1200px] mx-auto px-6 md:px-[10%] py-12 flex flex-col items-center justify-center gap-2 text-[#5f5e5e]">
+        <main className="flex-grow w-full max-w-[1200px] mx-auto px-6 md:px-[10%] py-12 flex flex-col items-center justify-center gap-2 text-stitch-secondary">
           <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
           <p className="text-[16px]">Cargando tu panel...</p>
         </main>

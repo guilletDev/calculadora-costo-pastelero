@@ -19,6 +19,7 @@ import { PRO_PLAN_NAME, PRO_PLAN_DESCRIPTION, formatProValidUntil, formatProPric
 import { FREE_TIER_INGREDIENTS_LIMIT, FREE_TIER_RECIPES_LIMIT, FREE_TIER_PRODUCTS_LIMIT } from '@/lib/limits';
 import { formatCurrency } from '@/lib/cost';
 import { UpgradeButton } from '@/components/upgrade-button';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface PaymentRow {
   id: string;
@@ -128,7 +129,7 @@ export default function PerfilPage() {
   return (
     <main className="mx-auto w-full max-w-[900px] flex-1 px-5 py-10 space-y-8">
       {/* ── Header de Perfil ─────────────────────────────────────────────── */}
-      <section className="flex flex-col sm:flex-row sm:items-center gap-5 bg-white dark:bg-[#2a1a24] rounded-[24px] p-8 border border-[#e4bdc2]/30 shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
+      <section className="flex flex-col sm:flex-row sm:items-center gap-5 bg-stitch-surface-container-lowest dark:bg-[#2a1a24] rounded-[24px] p-8 border border-stitch-outline-variant/30 shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
         {avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -163,7 +164,7 @@ export default function PerfilPage() {
       </section>
 
       {/* ── Tarjeta de Suscripción ───────────────────────────────────────── */}
-      <section className="bg-white dark:bg-[#2a1a24] rounded-[24px] p-8 border border-[#e4bdc2]/30 shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
+      <section className="bg-stitch-surface-container-lowest dark:bg-[#2a1a24] rounded-[24px] p-8 border border-stitch-outline-variant/30 shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
         {isPro ? (
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
             <div>
@@ -234,8 +235,21 @@ export default function PerfilPage() {
         )}
       </section>
 
+      {/* ── Apariencia ───────────────────────────────────────────────────── */}
+      <section className="bg-stitch-surface-container-lowest dark:bg-[#2a1a24] rounded-[24px] p-8 border border-stitch-outline-variant/30 shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Apariencia</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Elegí entre modo claro y oscuro para la app.
+            </p>
+          </div>
+          <ThemeToggle />
+        </div>
+      </section>
+
       {/* ── Historial de Pagos ───────────────────────────────────────────── */}
-      <section className="bg-white dark:bg-[#2a1a24] rounded-[24px] p-8 border border-[#e4bdc2]/30 shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
+      <section className="bg-stitch-surface-container-lowest dark:bg-[#2a1a24] rounded-[24px] p-8 border border-stitch-outline-variant/30 shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
         <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">
           Historial de Pagos
         </h2>
@@ -297,7 +311,7 @@ export default function PerfilPage() {
       </section>
 
       {/* ── Zona de Peligro ──────────────────────────────────────────────── */}
-      <section className="bg-white dark:bg-[#2a1a24] rounded-[24px] p-8 border border-red-200/60 dark:border-red-900/40 shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
+      <section className="bg-stitch-surface-container-lowest dark:bg-[#2a1a24] rounded-[24px] p-8 border border-red-200/60 dark:border-red-900/40 shadow-[0_10px_40px_rgba(0,0,0,0.04)]">
         <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
           Zona de Peligro
         </h2>
@@ -308,7 +322,7 @@ export default function PerfilPage() {
         <button
           type="button"
           onClick={() => setDeleteOpen(true)}
-          className="inline-flex items-center gap-2 rounded-full border border-[#ba1a1a] text-[#ba1a1a] font-semibold text-sm px-6 py-2.5 hover:bg-[#ffdad6]/40 transition-colors"
+          className="inline-flex items-center gap-2 rounded-full border border-[#ba1a1a] text-stitch-error font-semibold text-sm px-6 py-2.5 hover:bg-stitch-error-container/40 transition-colors"
         >
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete_forever</span>
           Eliminar mi cuenta
@@ -322,8 +336,8 @@ export default function PerfilPage() {
           className="max-w-sm rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant"
         >
           <AlertDialogHeader>
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#ffdad6]">
-              <span className="material-symbols-outlined text-[#ba1a1a]" style={{ fontSize: 24 }}>delete_forever</span>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-stitch-error-container">
+              <span className="material-symbols-outlined text-stitch-error" style={{ fontSize: 24 }}>delete_forever</span>
             </div>
             <AlertDialogTitle className="text-center text-base font-bold text-stitch-on-surface">
               ¿Eliminar mi cuenta?
@@ -336,7 +350,7 @@ export default function PerfilPage() {
           <AlertDialogFooter className="mt-2 sm:flex-row gap-2">
             <AlertDialogCancel
               disabled={isDeletingAccount}
-              className="flex-1 rounded-full border border-gray-300 bg-white text-gray-700 font-medium text-sm py-2.5 hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus-visible:ring-0 shadow-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 rounded-full border border-gray-300 bg-stitch-surface-container-lowest text-gray-700 dark:border-stitch-outline-variant dark:bg-white/10 dark:text-stitch-on-surface font-medium text-sm py-2.5 hover:bg-gray-50 hover:border-gray-400 dark:hover:bg-white/15 dark:hover:border-stitch-outline-variant focus:outline-none focus-visible:ring-0 shadow-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Cancelar
             </AlertDialogCancel>

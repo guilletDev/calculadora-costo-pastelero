@@ -23,10 +23,10 @@ interface BudgetDraft {
 }
 
 const inputClass =
-  'w-full px-4 py-3 rounded-xl border border-[#e4bdc2] bg-[#f9f9ff] focus:bg-white text-[#151c27] placeholder:text-[#c5c7c8] focus:ring-2 focus:ring-[#b80049]/20 focus:border-[#b80049] outline-none transition-all text-[15px]';
+  'w-full px-4 py-3 rounded-xl border border-stitch-outline-variant bg-stitch-surface focus:bg-stitch-surface-container-lowest text-stitch-on-surface placeholder:text-stitch-tertiary-fixed-dim focus:ring-2 focus:ring-[#b80049]/20 focus:border-stitch-primary outline-none transition-all text-[15px]';
 
 const cardClass =
-  'bg-white rounded-[24px] border border-[#e4bdc2]/30 p-6';
+  'bg-stitch-surface-container-lowest rounded-[24px] border border-stitch-outline-variant/30 p-6';
 
 const cardShadow = { boxShadow: '0 10px 40px rgba(0,0,0,0.04)' } as const;
 
@@ -186,10 +186,10 @@ export default function PresupuestoRapidoPage() {
     <main className="mx-auto w-full max-w-[900px] flex-1 px-5 py-8 space-y-8">
       {/* ── Header ── */}
       <div className="relative w-full flex items-center justify-center min-h-[44px] mb-6">
-        <Link className="absolute left-0 top-1/2 -translate-y-1/2 text-sm font-semibold text-[#b80049] hover:underline flex items-center gap-1 z-10" href="/dashboard">
+        <Link className="absolute left-0 top-1/2 -translate-y-1/2 text-sm font-semibold text-stitch-primary hover:underline flex items-center gap-1 z-10" href="/dashboard">
           ← Volver
         </Link>
-        <h1 className="text-base sm:text-xl md:text-2xl font-bold text-[#151c27] text-center uppercase tracking-tight px-14 sm:px-16 w-full">
+        <h1 className="text-base sm:text-xl md:text-2xl font-bold text-stitch-on-surface text-center uppercase tracking-tight px-14 sm:px-16 w-full">
           PRESUPUESTO RÁPIDO
         </h1>
       </div>
@@ -197,7 +197,7 @@ export default function PresupuestoRapidoPage() {
       {/* ── Datos del presupuesto ── */}
       <section className={`${cardClass} space-y-4`} style={cardShadow}>
         <div>
-          <label className="block text-sm font-semibold text-[#5f5e5e] mb-1.5">
+          <label className="block text-sm font-semibold text-stitch-secondary mb-1.5">
             Título (ej: Torta cumple Emma)
           </label>
           <input
@@ -208,7 +208,7 @@ export default function PresupuestoRapidoPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-semibold text-[#5f5e5e] mb-1.5">
+          <label className="block text-sm font-semibold text-stitch-secondary mb-1.5">
             Nombre del cliente (opcional)
           </label>
           <input
@@ -223,7 +223,7 @@ export default function PresupuestoRapidoPage() {
       {/* ── Qué incluye ── */}
       <section className={`${cardClass} space-y-4`} style={cardShadow}>
         <h2
-          className="text-xl font-semibold text-[#151c27]"
+          className="text-xl font-semibold text-stitch-on-surface"
           style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
         >
           QUÉ INCLUYE
@@ -241,7 +241,7 @@ export default function PresupuestoRapidoPage() {
                 onKeyDown={handleLineKeyDown}
               />
               <div className="relative w-32 shrink-0">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#c5c7c8] pointer-events-none">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-stitch-tertiary-fixed-dim pointer-events-none">
                   $
                 </span>
                 <input
@@ -262,7 +262,7 @@ export default function PresupuestoRapidoPage() {
           type="button"
           onClick={handleAddLine}
           disabled={!canAddLine}
-          className="w-full py-3 rounded-full border border-[#b80049] text-[#b80049] text-sm font-semibold hover:bg-[#b80049]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          className="w-full py-3 rounded-full border border-stitch-primary text-stitch-primary text-sm font-semibold hover:bg-[#b80049]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
           + Agregar línea
         </button>
@@ -271,22 +271,22 @@ export default function PresupuestoRapidoPage() {
       {/* ── Total y seña ── */}
       <section className="space-y-4">
         <div
-          className="bg-white rounded-[24px] border border-[#e4bdc2]/40 p-6 flex items-center justify-between"
+          className="bg-stitch-surface-container-lowest rounded-[24px] border border-stitch-outline-variant/40 p-6 flex items-center justify-between"
           style={cardShadow}
         >
-          <span className="text-sm font-bold uppercase tracking-widest text-[#5f5e5e]">
+          <span className="text-sm font-bold uppercase tracking-widest text-stitch-secondary">
             TOTAL
           </span>
-          <span className="font-bold text-2xl text-[#b80049]">
+          <span className="font-bold text-2xl text-stitch-primary">
             {formatCurrency(total)}
           </span>
         </div>
         <div>
-          <label className="block text-sm font-semibold text-[#5f5e5e] mb-1.5">
+          <label className="block text-sm font-semibold text-stitch-secondary mb-1.5">
             Seña (opcional)
           </label>
           <div className="relative w-full sm:w-48">
-            <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-[#c5c7c8] pointer-events-none">
+            <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-stitch-tertiary-fixed-dim pointer-events-none">
               $
             </span>
             <input
@@ -320,7 +320,7 @@ export default function PresupuestoRapidoPage() {
         aria-hidden="true"
         className="fixed top-0 left-0 -z-50 h-px w-px overflow-hidden opacity-0 pointer-events-none"
       >
-        <div ref={ticketRef} className="w-[480px] bg-white">
+        <div ref={ticketRef} className="w-[480px] bg-stitch-surface-container-lowest">
           <PresupuestoTicket
             title={title}
             clientName={clientName}

@@ -8,6 +8,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  color-scheme: light;
   --background: oklch(0.99 0.005 85);
   --foreground: oklch(0.20 0.02 85);
   --card: oklch(1 0 0);
@@ -44,6 +45,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: oklch(0.15 0.01 85);
   --foreground: oklch(0.95 0.005 85);
   --card: oklch(0.18 0.01 85);
@@ -76,6 +78,71 @@
   --sidebar-accent-foreground: oklch(0.95 0.005 85);
   --sidebar-border: oklch(0.25 0.01 85);
   --sidebar-ring: oklch(0.50 0.18 35);
+
+  /* Stitch tokens (dark) */
+  --color-stitch-primary-fixed: #4a2433;
+  --color-stitch-primary-fixed-dim: #ffb2be;
+  --color-stitch-on-primary-fixed: #ffd9de;
+  --color-stitch-on-primary-fixed-variant: #ffcad5;
+  --color-stitch-secondary: #c9b6bc;
+  --color-stitch-on-surface: #f6edf0;
+  --color-stitch-on-background: #f6edf0;
+  --color-stitch-surface: #221016;
+  --color-stitch-surface-container-lowest: #2a1a24;
+  --color-stitch-surface-container-low: #33222b;
+  --color-stitch-surface-container-high: #3a2831;
+  --color-stitch-surface-container-highest: #432f3a;
+  --color-stitch-surface-variant: #432f3a;
+  --color-stitch-on-surface-variant: #d9c3ca;
+  --color-stitch-tertiary: #b3a2a8;
+  --color-stitch-tertiary-fixed-dim: #8a7a80;
+  --color-stitch-outline-variant: #5f4653;
+  --color-stitch-error: #ff6b6b;
+  --color-stitch-error-container: #4a1f22;
+  --color-stitch-on-error: #ffffff;
+  --color-stitch-on-error-container: #ffdad6;
+  --color-stitch-muted: #a99a9f;
+  --color-stitch-highlight: #3a2530;
+}
+
+/* En dark, el magenta se usa más claro para texto/bordes; los botones
+   rellenos conservan el brand (#b80049) con texto blanco. */
+.dark .text-stitch-primary {
+  color: #ff8fae;
+}
+
+.dark .border-stitch-primary {
+  border-color: #ff8fae;
+}
+
+/* Stitch Calculator Tokens (prefixed to avoid landing conflicts).
+   Van en @theme (no inline) para que las utilidades usen var(--color-stitch-*)
+   y el modo oscuro pueda sobreescribirlas. */
+@theme {
+  --color-stitch-primary: #b80049;
+  --color-stitch-primary-fixed: #ffd9de;
+  --color-stitch-primary-fixed-dim: #ffb2be;
+  --color-stitch-on-primary-fixed: #400014;
+  --color-stitch-on-primary-fixed-variant: #900038;
+  --color-stitch-secondary: #5f5e5e;
+  --color-stitch-on-surface: #151c27;
+  --color-stitch-on-background: #151c27;
+  --color-stitch-surface: #f9f9ff;
+  --color-stitch-surface-container-low: #f0f3ff;
+  --color-stitch-surface-container-high: #e2e8f8;
+  --color-stitch-surface-container-highest: #dce2f3;
+  --color-stitch-surface-container-lowest: #ffffff;
+  --color-stitch-surface-variant: #dce2f3;
+  --color-stitch-on-surface-variant: #5b3f43;
+  --color-stitch-tertiary: #5a5c5d;
+  --color-stitch-tertiary-fixed-dim: #c5c7c8;
+  --color-stitch-outline-variant: #e4bdc2;
+  --color-stitch-error: #ba1a1a;
+  --color-stitch-error-container: #ffdad6;
+  --color-stitch-on-error: #ffffff;
+  --color-stitch-on-error-container: #93000a;
+  --color-stitch-muted: #8a8a8a;
+  --color-stitch-highlight: #fdf3f6;
 }
 
 @theme inline {
@@ -117,30 +184,6 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-
-  /* Stitch Calculator Tokens (prefixed to avoid landing conflicts) */
-  --color-stitch-primary: #b80049;
-  --color-stitch-primary-fixed: #ffd9de;
-  --color-stitch-primary-fixed-dim: #ffb2be;
-  --color-stitch-on-primary-fixed: #400014;
-  --color-stitch-on-primary-fixed-variant: #900038;
-  --color-stitch-secondary: #5f5e5e;
-  --color-stitch-on-surface: #151c27;
-  --color-stitch-on-background: #151c27;
-  --color-stitch-surface: #f9f9ff;
-  --color-stitch-surface-container-low: #f0f3ff;
-  --color-stitch-surface-container-high: #e2e8f8;
-  --color-stitch-surface-container-highest: #dce2f3;
-  --color-stitch-surface-container-lowest: #ffffff;
-  --color-stitch-surface-variant: #dce2f3;
-  --color-stitch-on-surface-variant: #5b3f43;
-  --color-stitch-tertiary: #5a5c5d;
-  --color-stitch-tertiary-fixed-dim: #c5c7c8;
-  --color-stitch-outline-variant: #e4bdc2;
-  --color-stitch-error: #ba1a1a;
-  --color-stitch-error-container: #ffdad6;
-  --color-stitch-on-error: #ffffff;
-  --color-stitch-on-error-container: #93000a;
 
   --font-stitch-display: 'Manrope', sans-serif;
   --font-stitch-headline-md: 'Manrope', sans-serif;
