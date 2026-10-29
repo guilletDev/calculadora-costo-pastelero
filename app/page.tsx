@@ -52,14 +52,15 @@ export default function LandingPage() {
               <span className="text-[#b80049] relative inline-block whitespace-nowrap">
                 cada receta
                 <svg
-                  className="absolute -bottom-2 left-0 w-full h-3 text-[#ffb2be]/50"
+                  aria-hidden="true"
+                  focusable="false"
+                  className="pointer-events-none absolute -bottom-2 left-0 w-full h-3 text-[#ffb2be]/50"
                   preserveAspectRatio="none"
                   viewBox="0 0 100 10"
                 >
                   <path d="M0,5 Q50,10 100,0" fill="none" stroke="currentColor" strokeWidth="4" />
                 </svg>
               </span>
-              .
             </h1>
             <p
               className="text-lg leading-relaxed text-[#5f5e5e] max-w-lg"

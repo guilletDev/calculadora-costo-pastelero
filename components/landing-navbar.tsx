@@ -103,7 +103,7 @@ export function LandingNavbar() {
           role="dialog"
           aria-modal="true"
           aria-label="Menú de navegación"
-          className="fixed inset-0 z-50 h-dvh w-full bg-white dark:bg-background p-6 flex flex-col justify-between animate-in slide-in-from-top duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] lg:hidden"
+          className="fixed inset-0 z-50 h-dvh w-full bg-[#f9f9ff] p-6 flex flex-col justify-between animate-in slide-in-from-top duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] lg:hidden"
         >
           <div>
             {/* Header: logo + cierre */}
@@ -145,7 +145,7 @@ export function LandingNavbar() {
           </div>
 
           {/* CTAs inferiores */}
-          <div className="border-t border-border/60 pt-6 space-y-3">
+          <div className="border-t border-[#e4bdc2]/60 pt-6 space-y-3">
             <TransitionLink
               href="/login"
               onClick={() => setIsOpen(false)}
