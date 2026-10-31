@@ -102,6 +102,18 @@ export default function PresupuestoRapidoPage() {
     return () => window.clearTimeout(timer);
   }, [hydrated, title, clientName, deposit, lines]);
 
+  const handleResetForm = () => {
+    setTitle('');
+    setClientName('');
+    setDeposit('');
+    setLines([{ id: crypto.randomUUID(), concepto: '', precio: '' }]);
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch (error) {
+      console.error('[presupuesto-rapido] No se pudo limpiar el borrador:', error);
+    }
+  };
+
   const handleShare = async () => {
     if (!hasCompleteLine) {
       toast.error('Completá el concepto y precio de las líneas');
@@ -111,6 +123,7 @@ export default function PresupuestoRapidoPage() {
     if (!node || isSharing) return;
 
     setIsSharing(true);
+    let completed = false;
     try {
       const dataUrl = await toPng(node, {
         cacheBust: true,
@@ -132,6 +145,7 @@ export default function PresupuestoRapidoPage() {
       if (canShareFiles && typeof navigator.share === 'function') {
         try {
           await navigator.share({ files: [file], title: 'Presupuesto - Costo Repostero' });
+          completed = true;
         } catch (shareError) {
           // El usuario puede cancelar el share nativo: no es un error real.
           if (!(shareError instanceof Error) || shareError.name !== 'AbortError') throw shareError;
@@ -141,6 +155,16 @@ export default function PresupuestoRapidoPage() {
         link.href = dataUrl;
         link.download = 'presupuesto.png';
         link.click();
+        completed = true;
+      }
+
+      if (completed) {
+        toast.success('Presupuesto listo', {
+          action: {
+            label: 'Limpiar',
+            onClick: handleResetForm,
+          },
+        });
       }
     } catch (error) {
       console.error('[presupuesto-rapido] Error generando la imagen:', error);
@@ -192,6 +216,16 @@ export default function PresupuestoRapidoPage() {
         <h1 className="text-base sm:text-xl md:text-2xl font-bold text-stitch-on-surface text-center uppercase tracking-tight px-14 sm:px-16 w-full">
           PRESUPUESTO RÁPIDO
         </h1>
+        <button
+          type="button"
+          onClick={handleResetForm}
+          disabled={isSharing}
+          aria-label="Limpiar todo"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 inline-flex items-center gap-1.5 rounded-full border border-stitch-outline-variant px-3 py-2 text-xs font-semibold text-stitch-secondary transition-colors hover:bg-stitch-surface-container-low hover:text-stitch-on-surface disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm"
+        >
+          <span className="material-symbols-outlined text-[18px]">delete_sweep</span>
+          <span className="hidden sm:inline">Limpiar todo</span>
+        </button>
       </div>
 
       {/* ── Datos del presupuesto ── */}
