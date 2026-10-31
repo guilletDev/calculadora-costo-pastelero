@@ -121,7 +121,14 @@ export async function deleteIngredient(id: string): Promise<void> {
     .delete()
     .eq('id', id);
 
-  if (error) throw new Error(`Error al eliminar ingrediente: ${error.message}`);
+  if (error) {
+    if (error.code === '23503') {
+      throw new Error(
+        'No se puede eliminar definitivamente: el ingrediente está referenciado en recetas.'
+      );
+    }
+    throw new Error(`Error al eliminar ingrediente: ${error.message}`);
+  }
 }
 
 // Upsert atómico en la base de datos: si ya existe un ingrediente con

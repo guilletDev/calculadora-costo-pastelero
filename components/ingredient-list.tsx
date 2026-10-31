@@ -11,6 +11,7 @@ import {
   updateIngredient,
   softDeleteIngredient,
   restoreIngredient,
+  deleteIngredient,
   upsertIngredient,
 } from '@/lib/ingredients-db';
 import { formatCurrency } from '@/lib/cost';
@@ -59,6 +60,8 @@ export function IngredientList({
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
   const [deleteTarget, setDeleteTarget] = useState<BaseIngredient | null>(null);
+  const [permanentDeleteTarget, setPermanentDeleteTarget] = useState<BaseIngredient | null>(null);
+  const [isPermanentDeleting, setIsPermanentDeleting] = useState(false);
   const [view, setView] = useState<'active' | 'trash'>('active');
   const [deletedIngredients, setDeletedIngredients] = useState<BaseIngredient[]>([]);
   const { ready, user, ingredients: bootIngredients, recipes: bootRecipes, applyLocal } = useAppBoot();
@@ -394,6 +397,21 @@ export function IngredientList({
     }
   };
 
+  const handlePermanentDelete = async (id: string) => {
+    if (isPermanentDeleting) return;
+    setIsPermanentDeleting(true);
+    try {
+      await deleteIngredient(id);
+      setDeletedIngredients(prev => prev.filter(ing => ing.id !== id));
+      toast.success('Ingrediente eliminado permanentemente');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar definitivamente';
+      toast.error(message);
+    } finally {
+      setIsPermanentDeleting(false);
+    }
+  };
+
   const handleCancel = () => {
     setIsAdding(false);
     setFormData({ name: '', purchasedQuantity: '', unit: 'kg', totalPrice: '' });
@@ -478,7 +496,7 @@ export function IngredientList({
                 <th className="pb-4 pt-8 pl-8 font-semibold">INGREDIENTE</th>
                 <th className="pb-4 pt-8 font-semibold">UNIDAD</th>
                 <th className="pb-4 pt-8 font-semibold">ELIMINADO</th>
-                <th className="pb-4 pt-8 w-32"></th>
+                <th className="pb-4 pt-8 w-80"></th>
               </tr>
             </thead>
             <tbody className="text-[16px] leading-[1.5] text-stitch-on-surface divide-y divide-gray-50 dark:divide-stitch-outline-variant/40">
@@ -496,7 +514,7 @@ export function IngredientList({
                 </tr>
               ) : (
                 filteredDeleted.map((ing) => (
-                  <tr key={ing.id} className="interactive-row">
+                  <tr key={ing.id}>
                     <td className="pl-8 py-4 font-medium">{ing.name}</td>
                     <td className="py-4">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stitch-surface-container-highest text-stitch-on-surface-variant">
@@ -507,15 +525,24 @@ export function IngredientList({
                       {ing.deletedAt ? new Date(ing.deletedAt).toLocaleDateString('es-AR') : '—'}
                     </td>
                     <td className="py-4 pr-8">
-                      <div className="flex justify-end">
+                      <div className="flex justify-end items-center gap-1">
                         <button
                           onClick={() => handleRestore(ing.id)}
-                          disabled={isSaving}
+                          disabled={isSaving || isPermanentDeleting}
                           className="interactive-btn flex items-center gap-1.5 px-3 py-2 text-stitch-primary hover:text-stitch-on-primary-fixed-variant rounded-lg hover:bg-stitch-primary-fixed text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Restaurar"
                         >
                           <span className="material-symbols-outlined text-[18px]">undo</span>
                           Restaurar
+                        </button>
+                        <button
+                          onClick={() => setPermanentDeleteTarget(ing)}
+                          disabled={isSaving || isPermanentDeleting}
+                          className="interactive-btn flex items-center gap-1.5 px-3 py-2 text-stitch-error rounded-lg hover:bg-stitch-error-container/30 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Eliminar definitivamente"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">delete_forever</span>
+                          Eliminar definitivamente
                         </button>
                       </div>
                     </td>
@@ -876,6 +903,47 @@ export function IngredientList({
               className="flex-1 rounded-md bg-[#ba1a1a] text-white font-semibold text-sm py-2.5 hover:bg-[#a31313] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? 'Eliminando...' : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={permanentDeleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setPermanentDeleteTarget(null); }}
+      >
+        <AlertDialogContent className="max-w-sm rounded-[24px] bg-stitch-surface-container-lowest border-stitch-outline-variant">
+          <AlertDialogHeader>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-stitch-error-container">
+              <span className="material-symbols-outlined text-stitch-error" style={{ fontSize: 24 }}>delete_forever</span>
+            </div>
+            <AlertDialogTitle className="text-center text-base font-bold text-stitch-on-surface">
+              ¿Eliminar definitivamente?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-sm text-stitch-secondary leading-relaxed">
+              ¿Estás seguro de que querés eliminar &quot;{permanentDeleteTarget?.name}&quot; de forma
+              permanente? Esta acción no se puede deshacer. El insumo se borrará de la base de datos
+              y se desvinculará de las recetas que lo usen, conservando su nombre en el historial de
+              cada receta.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-2 sm:flex-row gap-2">
+            <AlertDialogCancel
+              className="flex-1 rounded-md border border-stitch-outline-variant bg-stitch-surface-container-lowest text-stitch-on-surface font-semibold text-sm py-2.5 hover:bg-stitch-surface-container-low dark:bg-white/10 dark:hover:bg-white/15 transition-colors"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!permanentDeleteTarget) return;
+                const id = permanentDeleteTarget.id;
+                setPermanentDeleteTarget(null);
+                await handlePermanentDelete(id);
+              }}
+              disabled={isPermanentDeleting}
+              className="flex-1 rounded-md bg-[#ba1a1a] text-white font-semibold text-sm py-2.5 hover:bg-[#a31313] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isPermanentDeleting ? 'Eliminando...' : 'Eliminar definitivamente'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

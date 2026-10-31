@@ -193,7 +193,7 @@ export function PresupuestoTicket({
               }}
             >
               <span>Seña</span>
-              <span style={{ fontWeight: 600 }}>- {formatCurrency(deposit)}</span>
+              <span style={{ fontWeight: 600 }}>{formatCurrency(deposit)}</span>
             </div>
             <div
               style={{
@@ -203,7 +203,7 @@ export function PresupuestoTicket({
                 fontWeight: 700,
               }}
             >
-              <span>Saldo a abonar</span>
+              <span>Saldo restante</span>
               <span style={{ color: '#b80049' }}>{formatCurrency(balance)}</span>
             </div>
           </div>
