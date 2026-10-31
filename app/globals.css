@@ -524,6 +524,11 @@ html {
   background-color: rgba(240, 243, 255, 0.8) !important;
 }
 
+/* Dark: destello sutil sobre superficie oscura sin afectar el contraste del texto. */
+.dark .interactive-row:hover {
+  background-color: var(--color-stitch-surface-container-high) !important;
+}
+
 /* Recetas Page Animations */
 @keyframes fadeUp {
   from {
