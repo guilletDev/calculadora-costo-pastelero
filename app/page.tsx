@@ -1,4 +1,5 @@
 import { LandingNavbar } from '@/components/landing-navbar';
+import { DemoVideoPlayer } from '@/components/landing/demo-video-player';
 import { TransitionLink } from '@/components/transition-link';
 import { UpgradeButton } from '@/components/upgrade-button';
 import { Reveal, Stagger } from '@/components/landing-scroll-reveal';
@@ -96,12 +97,14 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Ancla del video demo (placeholder para el iframe futuro) */}
+        {/* Video demo */}
         <section
           id="demo"
           aria-label="Demo"
-          className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 py-16 scroll-mt-24"
-        />
+          className="max-w-4xl mx-auto mt-10 md:mt-16 px-4 scroll-mt-24"
+        >
+          <DemoVideoPlayer />
+        </section>
 
         {/* Benefits Section */}
 <section
