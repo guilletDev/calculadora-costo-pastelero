@@ -29,13 +29,17 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
 
   return (
     <AppBootProvider>
-      <Navbar />
-      <div className="flex-1 flex flex-col">
-        {children}
+      <div className="flex min-h-screen w-full flex-1 flex-col md:flex-row">
+        <Navbar />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex-1 overflow-y-auto p-0">
+            {children}
+          </div>
+          <footer className="border-t border-slate-200 dark:border-slate-800 py-6 text-center text-slate-400 text-sm">
+            <p>© 2026 costo repostero. Hecho para emprendedores pasteleros.</p>
+          </footer>
+        </div>
       </div>
-      <footer className="border-t border-slate-200 dark:border-slate-800 py-6 text-center text-slate-400 text-sm">
-        <p>© 2026 costo repostero. Hecho para emprendedores pasteleros.</p>
-      </footer>
     </AppBootProvider>
   );
 }
