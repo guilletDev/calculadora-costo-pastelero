@@ -115,7 +115,7 @@ function UserMenu({ onLogout, side = 'bottom' }: UserMenuProps) {
             className={`flex items-center gap-2.5 px-2 py-2 rounded-sm text-sm font-semibold transition-colors ${
               pathname === '/perfil'
                 ? 'text-[#ee2b6c] bg-[#ee2b6c]/5'
-                : 'text-slate-600 hover:text-[#ee2b6c] dark:text-slate-400'
+                : 'text-slate-600 hover:text-[#ee2b6c] dark:text-white'
             }`}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>person</span>
@@ -133,7 +133,7 @@ function UserMenu({ onLogout, side = 'bottom' }: UserMenuProps) {
                 className={`flex items-center gap-2.5 px-2 py-2 rounded-sm text-sm font-semibold transition-colors ${
                   isActivePath(pathname, href)
                     ? 'text-[#ee2b6c] bg-[#ee2b6c]/5'
-                    : 'text-slate-600 hover:text-[#ee2b6c] dark:text-slate-400'
+                    : 'text-slate-600 hover:text-[#ee2b6c] dark:text-white'
                 }`}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{icon}</span>
@@ -222,7 +222,7 @@ function DesktopUserCard({ onLogout }: { onLogout: () => void }) {
         <button
           type="button"
           onClick={onLogout}
-          className="flex w-full items-center justify-start gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-[#ee2b6c] dark:text-slate-300 dark:hover:bg-white/5 transition-colors"
+          className="flex w-full items-center justify-start gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-[#ee2b6c] dark:text-white dark:hover:bg-white/5 dark:hover:text-[#ee2b6c] transition-colors"
         >
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>logout</span>
           Cerrar sesión
@@ -327,7 +327,7 @@ export function Navbar() {
                 className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors ${
                   isActivePath(pathname, href)
                     ? 'bg-[#ee2b6c]/10 text-[#ee2b6c]'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-[#ee2b6c] dark:text-slate-400 dark:hover:bg-slate-800'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-[#ee2b6c] dark:text-white dark:hover:bg-white/5 dark:hover:text-[#ee2b6c]'
                 }`}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{icon}</span>
@@ -339,7 +339,7 @@ export function Navbar() {
               className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors ${
                 pathname === '/perfil'
                   ? 'bg-[#ee2b6c]/10 text-[#ee2b6c]'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-[#ee2b6c] dark:text-slate-400 dark:hover:bg-slate-800'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-[#ee2b6c] dark:text-white dark:hover:bg-white/5 dark:hover:text-[#ee2b6c]'
               }`}
             >
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>person</span>
