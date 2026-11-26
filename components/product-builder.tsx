@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Product, Recipe, BaseIngredient, ComponentType, Unit, AdditionalCost, EXTRA_COST_LABELS } from '@/lib/types';
 import { fetchProductById, upsertProduct } from '@/lib/products-db';
-import { formatCurrency, proportionalCost, costPerGram, costPerPortion, calculateTotalCost, sumIngredientCosts, calculateSalePrice, calculateIngredientCost } from '@/lib/cost';
+import { formatCurrency, costPerGram, costPerPortion, calculateProductComponentCost, calculateProductCosts } from '@/lib/cost';
 import { toBaseQuantity } from '@/lib/units';
 import { portionsLabel } from '@/lib/units';
 import { navigateWithTransition } from '@/lib/view-transition';
@@ -132,21 +132,47 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     setDraft({
       name: product.name,
       description: product.description,
-      components: product.components.map(c => ({
-        componentType: c.componentType,
-        recipeId: c.recipeId,
-        recipeName: c.recipeName,
-        ingredientId: c.ingredientId,
-        ingredientName: c.ingredientName,
-        quantityUsed: String(c.quantityUsed),
-        unit: c.unit,
-        cost: c.cost,
-        useUnit: c.useUnit ?? null,
-      })),
+      components: product.components.map(c => {
+        let cost = c.cost;
+
+        if (c.componentType === 'ingredient') {
+          const ingredient = bootIngredients.find(i => i.id === c.ingredientId);
+          cost = calculateProductComponentCost({
+            componentType: 'ingredient',
+            quantityUsed: c.quantityUsed,
+            unit: c.unit,
+            ingredientPricePerUnit: ingredient?.pricePerUnit,
+            fallbackCost: c.cost,
+          });
+        } else {
+          const recipe = bootRecipes.find(r => r.id === c.recipeId);
+          cost = calculateProductComponentCost({
+            componentType: 'recipe',
+            quantityUsed: c.quantityUsed,
+            useUnit: c.useUnit,
+            recipeTotalCost: recipe?.totalCost,
+            recipeYieldPortions: recipe?.yieldPortions,
+            recipeYieldGrams: recipe?.yieldGrams,
+            fallbackCost: c.cost,
+          });
+        }
+
+        return {
+          componentType: c.componentType,
+          recipeId: c.recipeId,
+          recipeName: c.recipeName,
+          ingredientId: c.ingredientId,
+          ingredientName: c.ingredientName,
+          quantityUsed: String(c.quantityUsed),
+          unit: c.unit,
+          cost,
+          useUnit: c.useUnit ?? null,
+        };
+      }),
       additionalCosts: existingCosts.length > 0 ? existingCosts : defaultAdditionalCosts(),
       profitMargin: String(product.profitMargin || ''),
     });
-  }, []);
+  }, [bootIngredients, bootRecipes]);
 
   // Catálogo de recetas elegibles + ingredientes desde el boot cache (sin fetch).
   useEffect(() => {
@@ -202,17 +228,24 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     const qty = parseFloat(quantityUsed) || 0;
     if (component.componentType === 'ingredient') {
       const ingredient = baseIngredients.find(i => i.id === component.ingredientId);
-      if (!ingredient) return fallback ?? 0;
-      return calculateIngredientCost(ingredient.pricePerUnit, qty, component.unit ?? 'g');
+      return calculateProductComponentCost({
+        componentType: 'ingredient',
+        quantityUsed: qty,
+        unit: component.unit,
+        ingredientPricePerUnit: ingredient?.pricePerUnit,
+        fallbackCost: fallback,
+      });
     }
     const recipe = eligibleRecipes.find(r => r.id === component.recipeId);
-    if (!recipe) return fallback ?? 0;
-    if (component.useUnit === 'gram') {
-      if (recipe.yieldGrams == null) return fallback ?? 0;
-      return proportionalCost(recipe.totalCost, recipe.yieldGrams, qty);
-    }
-    if (recipe.yieldPortions == null) return fallback ?? 0;
-    return proportionalCost(recipe.totalCost, recipe.yieldPortions, qty);
+    return calculateProductComponentCost({
+      componentType: 'recipe',
+      quantityUsed: qty,
+      useUnit: component.useUnit,
+      recipeTotalCost: recipe?.totalCost,
+      recipeYieldPortions: recipe?.yieldPortions,
+      recipeYieldGrams: recipe?.yieldGrams,
+      fallbackCost: fallback,
+    });
   };
 
   const addUnitOptions: string[] = (() => {
@@ -236,17 +269,24 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     const [type, id] = selectedValue.split(':');
     if (type === 'recipe') {
       const recipe = eligibleRecipes.find(r => r.id === id);
-      if (!recipe) return 0;
-      if (newUnit === 'porc.') {
-        if (recipe.yieldPortions == null) return 0;
-        return proportionalCost(recipe.totalCost, recipe.yieldPortions, qty);
-      }
-      if (recipe.yieldGrams == null) return 0;
-      return proportionalCost(recipe.totalCost, recipe.yieldGrams, toBaseQuantity(qty, newUnit));
+      const isPortions = newUnit === 'porc.';
+      return calculateProductComponentCost({
+        componentType: 'recipe',
+        quantityUsed: qty,
+        unit: isPortions ? null : newUnit,
+        useUnit: isPortions ? 'portion' : 'gram',
+        recipeTotalCost: recipe?.totalCost,
+        recipeYieldPortions: recipe?.yieldPortions,
+        recipeYieldGrams: recipe?.yieldGrams,
+      });
     }
     const ingredient = baseIngredients.find(i => i.id === id);
-    if (!ingredient) return 0;
-    return calculateIngredientCost(ingredient.pricePerUnit, qty, newUnit as Unit);
+    return calculateProductComponentCost({
+      componentType: 'ingredient',
+      quantityUsed: qty,
+      unit: newUnit as Unit,
+      ingredientPricePerUnit: ingredient?.pricePerUnit,
+    });
   })();
 
   const addComponentToProduct = () => {
@@ -267,9 +307,15 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
         ingredientName: null,
         quantityUsed: String(isPortions ? qty : toBaseQuantity(qty, newUnit)),
         unit: isPortions ? null : 'g',
-        cost: isPortions
-          ? (recipe.yieldPortions != null ? proportionalCost(recipe.totalCost, recipe.yieldPortions, qty) : 0)
-          : (recipe.yieldGrams != null ? proportionalCost(recipe.totalCost, recipe.yieldGrams, toBaseQuantity(qty, newUnit)) : 0),
+        cost: calculateProductComponentCost({
+          componentType: 'recipe',
+          quantityUsed: qty,
+          unit: isPortions ? null : newUnit,
+          useUnit: isPortions ? 'portion' : 'gram',
+          recipeTotalCost: recipe.totalCost,
+          recipeYieldPortions: recipe.yieldPortions,
+          recipeYieldGrams: recipe.yieldGrams,
+        }),
         useUnit: isPortions ? 'portion' : 'gram',
       };
       setDraft(prev => ({ ...prev, components: [row, ...prev.components] }));
@@ -284,7 +330,12 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
         ingredientName: ingredient.name,
         quantityUsed: newQuantity,
         unit: newUnit as Unit,
-        cost: calculateIngredientCost(ingredient.pricePerUnit, qty, newUnit as Unit),
+        cost: calculateProductComponentCost({
+          componentType: 'ingredient',
+          quantityUsed: qty,
+          unit: newUnit as Unit,
+          ingredientPricePerUnit: ingredient.pricePerUnit,
+        }),
         useUnit: null,
       };
       setDraft(prev => ({ ...prev, components: [row, ...prev.components] }));
@@ -392,11 +443,12 @@ export function ProductBuilder({ productId }: ProductBuilderProps) {
     (component.componentType === 'recipe' && component.recipeId == null) ||
     (component.componentType === 'ingredient' && component.ingredientId == null);
 
-  const componentsCost = sumIngredientCosts(draft.components);
-  const extraCostsTotal = draft.additionalCosts.reduce((sum, row) => sum + (parseFloat(row.value) || 0), 0);
-  const totalCost = calculateTotalCost(componentsCost, extraCostsTotal);
   const margin = parseFloat(draft.profitMargin) || 0;
-  const salePrice = calculateSalePrice(totalCost, margin);
+  const { componentsCost, extraCostsTotal, totalCost, salePrice } = calculateProductCosts({
+    components: draft.components,
+    extraCosts: draft.additionalCosts,
+    profitMargin: margin,
+  });
 
   const canSave = draft.name.trim() !== '' && draft.components.length > 0;
 

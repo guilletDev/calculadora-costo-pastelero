@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
 import { useAppBoot } from '@/components/boot/app-boot-context';
+import { useRecalculateCosts, formatRecalcToast } from '@/hooks/use-recalculate-costs';
 
 export function HourlyRateCard() {
   // Valor hora desde el contexto de boot (sin consultas propias de sesión/perfil).
   const { ready, profile, refreshProfile } = useAppBoot();
+  const { recalc, isRecalculating } = useRecalculateCosts();
   const [hourlyRate, setHourlyRate] = useState('');
   const [initialized, setInitialized] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -30,6 +32,7 @@ export function HourlyRateCard() {
   const isValid = hourlyRate.trim() !== '' && !isNaN(parsedRate) && parsedRate > 0;
 
   const handleSave = async () => {
+    if (isSaving || isRecalculating) return;
     if (!isValid) {
       toast.error('Ingresá un valor hora válido');
       return;
@@ -40,8 +43,24 @@ export function HourlyRateCard() {
       const { error } = await supabase.rpc('update_user_hourly_rate', { p_rate: parsedRate });
       if (error) throw new Error(error.message);
       setHasSavedValue(true);
-      toast.success('Valor hora guardado');
-      void refreshProfile();
+
+      const profileRefresh = refreshProfile().catch(() => {});
+
+      let successMessage: string | null = null;
+      try {
+        const { updated } = await recalc({ trigger: 'hourly_rate' });
+        successMessage = formatRecalcToast('Valor hora guardado', updated);
+      } catch {
+        successMessage = null;
+      }
+
+      await profileRefresh;
+
+      if (successMessage) {
+        toast.success(successMessage);
+      } else {
+        toast.warning('Valor hora guardado, pero no se pudieron recalcular los costos');
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al guardar el valor hora');
     } finally {
@@ -96,11 +115,11 @@ export function HourlyRateCard() {
             </div>
             <button
               onClick={handleSave}
-              disabled={isSaving || !isValid}
+              disabled={isSaving || isRecalculating || !isValid}
               className="interactive-btn flex items-center gap-2 px-6 py-3 bg-[#b80049] text-white rounded-full text-[16px] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="material-symbols-outlined text-[20px]">save</span>
-              {isSaving ? 'Guardando...' : hasSavedValue ? 'Actualizar Valor Hora' : 'Guardar Valor Hora'}
+              {isRecalculating ? 'Actualizando costos...' : isSaving ? 'Guardando...' : hasSavedValue ? 'Actualizar Valor Hora' : 'Guardar Valor Hora'}
             </button>
           </div>
         )}

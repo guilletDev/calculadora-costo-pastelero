@@ -1,36 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
-import { Recipe, RecipeIngredient, Unit, SaleType, ExtraCosts } from './types';
-import { RecipeRow, RecipeIngredientRow } from './database.types';
-
-// Convertir DB Row (con recipe_ingredients embebido) a Frontend Type
-type RecipeRowWithIngredients = RecipeRow & { recipe_ingredients: RecipeIngredientRow[] | null };
-
-function rowToRecipe(row: RecipeRowWithIngredients): Recipe {
-  return {
-    id: row.id,
-    name: row.name,
-    description: row.description ?? '',
-    yieldPortions: row.yield_portions,
-    yieldGrams: row.yield_grams,
-    saleType: row.sale_type as SaleType,
-    extraCosts: row.extra_costs as ExtraCosts,
-    profitMargin: row.profit_margin,
-    totalCost: row.total_cost,
-    costPerUnit: row.cost_per_unit,
-    laborMinutes: row.labor_minutes ?? 0,
-    ingredients: (row.recipe_ingredients ?? []).map(ingRow => ({
-      id: ingRow.id,
-      baseIngredientId: ingRow.ingredient_id,
-      ingredientName: ingRow.ingredient_name,
-      quantityUsed: ingRow.quantity_used,
-      unit: ingRow.unit as Unit,
-      cost: ingRow.cost,
-      componentType: ingRow.component_type as 'ingredient' | 'subproduct',
-      subproductRecipeId: ingRow.subproduct_recipe_id,
-      subproductRecipeName: ingRow.subproduct_recipe_name,
-    })),
-  };
-}
+import { Recipe } from './types';
+import { rowToRecipe, RecipeRowWithIngredients } from './db-mappers';
 
 export async function fetchRecipes(): Promise<Recipe[]> {
   const supabase = createClient();

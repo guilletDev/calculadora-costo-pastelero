@@ -1,32 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
-import { Product, ProductComponent, ComponentType, Unit, ExtraCosts } from './types';
-import { ProductRow, ProductRecipeRow } from './database.types';
-
-// Convertir DB Row (con product_recipes embebido) a Frontend Type
-type ProductRowWithComponents = ProductRow & { product_recipes: ProductRecipeRow[] | null };
-
-function rowToProduct(row: ProductRowWithComponents): Product {
-  return {
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    profitMargin: row.profit_margin,
-    extraCosts: row.extra_costs as ExtraCosts,
-    totalCost: row.total_cost,
-    components: (row.product_recipes ?? []).map(componentRow => ({
-      id: componentRow.id,
-      componentType: componentRow.component_type as ComponentType,
-      recipeId: componentRow.recipe_id,
-      recipeName: componentRow.recipe_name,
-      ingredientId: componentRow.ingredient_id,
-      ingredientName: componentRow.ingredient_name,
-      quantityUsed: componentRow.quantity_used,
-      unit: componentRow.unit as Unit | null,
-      cost: componentRow.cost,
-      useUnit: componentRow.use_unit as 'portion' | 'gram' | null,
-    })),
-  };
-}
+import { Product } from './types';
+import { rowToProduct, ProductRowWithComponents } from './db-mappers';
 
 export async function fetchProducts(): Promise<Product[]> {
   const supabase = createClient();

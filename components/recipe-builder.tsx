@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { AdditionalCost, BaseIngredient, EXTRA_COST_LABELS, Recipe, RecipeIngredient, SaleType, Unit } from '@/lib/types';
 import { storage } from '@/lib/storage';
 import { fetchIngredients } from '@/lib/ingredients-db';
 import { upsertRecipe } from '@/lib/recipes-db';
-import { calculateIngredientCost, costPerGram, costPerPortion, formatCurrency, proportionalCost, sumIngredientCosts } from '@/lib/cost';
-import { convertToBaseUnit, toBaseQuantity } from '@/lib/units';
+import { calculateProductComponentCost, calculateRecipeCosts, costPerGram, costPerPortion, formatCurrency } from '@/lib/cost';
+import { getRecipeAncestorIds } from '@/lib/cost-recalc';
+import { convertToBaseUnit } from '@/lib/units';
 import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
+import { useRecalculateCosts, formatRecalcToast } from '@/hooks/use-recalculate-costs';
 import { UpgradeModal } from '@/components/upgrade-modal';
 import { useAppBoot } from '@/components/boot/app-boot-context';
 import { navigateWithTransition } from '@/lib/view-transition';
@@ -49,6 +51,7 @@ interface RecipeBuilderProps {
 }
 
 const UNIT_OPTIONS: Unit[] = ['kg', 'g', 'l', 'ml', 'unidad'];
+const SUBPRODUCT_UNIT_OPTIONS: Unit[] = ['g', 'kg'];
 
 const QUICK_TIME_PRESETS = [
   { label: '30 min', minutes: 30 },
@@ -99,6 +102,44 @@ function additionalCostsToExtraCosts(rows: AdditionalCost[]): Record<string, num
   return result;
 }
 
+/**
+ * Recalcula el costo de una fila de receta con las fuentes actuales del boot
+ * cache. Si la referencia fue eliminada, conserva el snapshot guardado.
+ */
+function recalcRecipeIngredientCost(
+  ingredient: RecipeIngredient,
+  baseIngredients: readonly BaseIngredient[],
+  recipes: readonly Recipe[]
+): RecipeIngredient {
+  if (ingredient.componentType === 'subproduct') {
+    const subproduct = recipes.find(r => r.id === ingredient.subproductRecipeId);
+    return {
+      ...ingredient,
+      cost: calculateProductComponentCost({
+        componentType: 'recipe',
+        quantityUsed: ingredient.quantityUsed,
+        unit: ingredient.unit,
+        useUnit: 'gram',
+        recipeTotalCost: subproduct?.totalCost,
+        recipeYieldGrams: subproduct?.yieldGrams,
+        fallbackCost: ingredient.cost,
+      }),
+    };
+  }
+
+  const base = baseIngredients.find(i => i.id === ingredient.baseIngredientId);
+  return {
+    ...ingredient,
+    cost: calculateProductComponentCost({
+      componentType: 'ingredient',
+      quantityUsed: ingredient.quantityUsed,
+      unit: ingredient.unit,
+      ingredientPricePerUnit: base?.pricePerUnit,
+      fallbackCost: ingredient.cost,
+    }),
+  };
+}
+
 const stitchFontManrope = { fontFamily: 'var(--font-manrope), sans-serif' } as const;
 const stitchShadow = { boxShadow: '0 10px 40px rgba(0,0,0,0.04)' } as const;
 
@@ -106,6 +147,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const router = useRouter();
   const [baseIngredients, setBaseIngredients] = useState<BaseIngredient[]>([]);
   const { ready, ingredients: bootIngredients, recipes: bootRecipes, profile, applyLocal } = useAppBoot();
+  const { recalc, isRecalculating } = useRecalculateCosts();
   const { upgradeType, closeUpgrade, guardUpgrade } = useUpgradeGuard();
 
   const defaultDraft: RecipeDraft = {
@@ -186,7 +228,9 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
         setCurrentRecipe({
           name: recipeToEdit.name,
           description: recipeToEdit.description ?? '',
-          ingredients: recipeToEdit.ingredients,
+          ingredients: recipeToEdit.ingredients.map(ing =>
+            recalcRecipeIngredientCost(ing, bootIngredients, bootRecipes)
+          ),
           yieldPortions: recipeToEdit.yieldPortions != null && recipeToEdit.yieldPortions > 0 ? String(recipeToEdit.yieldPortions) : '',
           yieldGrams: recipeToEdit.yieldGrams != null && recipeToEdit.yieldGrams > 0 ? String(recipeToEdit.yieldGrams) : '',
           profitMargin: String(recipeToEdit.profitMargin || ''),
@@ -228,21 +272,45 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
   );
 
+  // Recetas que contienen a la receta editada: no se pueden elegir como
+  // sub-recetas porque crearían un ciclo.
+  const ancestorIds = useMemo(
+    () => (editingRecipeId ? getRecipeAncestorIds(bootRecipes, editingRecipeId) : new Set<string>()),
+    [bootRecipes, editingRecipeId]
+  );
+
   // Recetas con rendimiento en gramos: se pueden usar como componente (se miden en gramos).
   const yieldRecipes: Recipe[] = bootRecipes.filter(r =>
     r.id !== editingRecipeId &&
+    !ancestorIds.has(r.id) &&
     r.yieldGrams != null && r.yieldGrams > 0
   );
+
+  const editingComponent = currentRecipe.ingredients?.find(ing => ing.id === editingComponentId);
+  const isEditingSubproduct = editingComponent?.componentType === 'subproduct';
+  const isSubproductSelection = selectedValue.startsWith('subproduct:');
 
   const resolveComponentCost = (ing: RecipeIngredient, qty: number, unit: Unit, fallback?: number): number => {
     if (ing.componentType === 'subproduct') {
       const sub = yieldRecipes.find(s => s.id === ing.subproductRecipeId);
-      if (!sub || sub.yieldGrams == null) return fallback ?? 0;
-      return proportionalCost(sub.totalCost, sub.yieldGrams, toBaseQuantity(qty, unit));
+      return calculateProductComponentCost({
+        componentType: 'recipe',
+        quantityUsed: qty,
+        unit,
+        useUnit: 'gram',
+        recipeTotalCost: sub?.totalCost,
+        recipeYieldGrams: sub?.yieldGrams,
+        fallbackCost: fallback,
+      });
     }
     const base = baseIngredients.find(i => i.id === ing.baseIngredientId);
-    if (!base) return fallback ?? 0;
-    return calculateIngredientCost(base.pricePerUnit, qty, unit);
+    return calculateProductComponentCost({
+      componentType: 'ingredient',
+      quantityUsed: qty,
+      unit,
+      ingredientPricePerUnit: base?.pricePerUnit,
+      fallbackCost: fallback,
+    });
   };
 
   const addComponentToRecipe = () => {
@@ -263,7 +331,13 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
         ingredientName: sub.name,
         quantityUsed: normalized.quantity,
         unit: normalized.unit,
-        cost: proportionalCost(sub.totalCost, sub.yieldGrams, normalized.quantity),
+        cost: calculateProductComponentCost({
+          componentType: 'recipe',
+          quantityUsed: normalized.quantity,
+          useUnit: 'gram',
+          recipeTotalCost: sub.totalCost,
+          recipeYieldGrams: sub.yieldGrams,
+        }),
         componentType: 'subproduct',
         subproductRecipeId: sub.id,
         subproductRecipeName: sub.name,
@@ -278,7 +352,12 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
         ingredientName: base.name,
         quantityUsed: normalized.quantity,
         unit: normalized.unit,
-        cost: calculateIngredientCost(base.pricePerUnit, qty, newUnit),
+        cost: calculateProductComponentCost({
+          componentType: 'ingredient',
+          quantityUsed: qty,
+          unit: newUnit,
+          ingredientPricePerUnit: base.pricePerUnit,
+        }),
         componentType: 'ingredient',
       };
     }
@@ -303,6 +382,13 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
 
   const startEditComponent = (ing: RecipeIngredient) => {
     setEditingComponentId(ing.id);
+    if (ing.componentType === 'subproduct') {
+      // Las sub-recetas se miden siempre en gramos; normalizamos filas legacy.
+      const normalized = convertToBaseUnit(ing.quantityUsed, ing.unit);
+      setEditingQuantity(String(normalized.quantity));
+      setEditingUnit('g');
+      return;
+    }
     setEditingQuantity(String(ing.quantityUsed));
     setEditingUnit(ing.unit);
   };
@@ -371,22 +457,30 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
     storage.clearDraft();
   };
 
-  // ── Cálculos en tiempo real ──
-  const componentsCost = sumIngredientCosts(currentRecipe.ingredients);
+  // ── Cálculos en tiempo real (fórmula canónica compartida) ──
   const minutes = parseFloat(currentRecipe.laborMinutes) || 0;
-  const laborCost = (minutes / 60) * hourlyRate;
-  const extraCostsTotal = currentRecipe.additionalCosts.reduce((sum, row) => sum + (parseFloat(row.value) || 0), 0);
-  const totalCost = componentsCost + laborCost + extraCostsTotal;
-  const baseCost = componentsCost + laborCost;
   const portions = parseFloat(currentRecipe.yieldPortions) || 0;
   const grams = parseFloat(currentRecipe.yieldGrams) || 0;
   const margin = parseFloat(currentRecipe.profitMargin) || 0;
+  const {
+    componentsCost,
+    laborCost,
+    extraCostsTotal,
+    totalCost,
+    baseCost,
+    salePriceTotal,
+    costPerUnit: salePerUnit,
+  } = calculateRecipeCosts({
+    ingredients: currentRecipe.ingredients,
+    laborMinutes: minutes,
+    hourlyRate,
+    extraCosts: currentRecipe.additionalCosts,
+    profitMargin: margin,
+    yieldPortions: portions,
+    yieldGrams: grams,
+  });
   const costPerPortionNet = costPerPortion(baseCost, portions);
   const costPerGramNet = costPerGram(baseCost, grams);
-  const salePriceTotal = totalCost * (1 + margin / 100);
-  const salePerUnit = portions > 0
-    ? salePriceTotal / portions
-    : (grams > 0 ? salePriceTotal / grams : 0);
 
   const isNameValid = currentRecipe.name.trim().length > 0;
   const hasComponents = (currentRecipe.ingredients || []).length > 0;
@@ -401,20 +495,32 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
   const previewCost = (() => {
     if (!selectedValue || !newQuantity) return 0;
     const qty = parseFloat(newQuantity);
+    if (!qty || qty <= 0) return 0;
     const [type, id] = selectedValue.split(':');
     if (type === 'subproduct') {
       const sub = yieldRecipes.find(s => s.id === id);
-      if (!sub || sub.yieldGrams == null) return 0;
-      return proportionalCost(sub.totalCost, sub.yieldGrams, toBaseQuantity(qty, newUnit));
+      return calculateProductComponentCost({
+        componentType: 'recipe',
+        quantityUsed: qty,
+        unit: newUnit,
+        useUnit: 'gram',
+        recipeTotalCost: sub?.totalCost,
+        recipeYieldGrams: sub?.yieldGrams,
+      });
     }
     const base = baseIngredients.find(i => i.id === id);
-    if (!base) return 0;
-    return calculateIngredientCost(base.pricePerUnit, qty, newUnit);
+    return calculateProductComponentCost({
+      componentType: 'ingredient',
+      quantityUsed: qty,
+      unit: newUnit,
+      ingredientPricePerUnit: base?.pricePerUnit,
+    });
   })();
 
   const saveRecipe = async () => {
-    if (savingRef.current || isSaving) return;
+    if (savingRef.current || isSaving || isRecalculating) return;
     if (!canSave) return;
+    const wasEditing = editingRecipeId !== null;
     const recipeCount = bootRecipes.length - (editingRecipeId ? 1 : 0);
     if (!guardUpgrade('recipes', recipeCount)) return;
 
@@ -440,9 +546,27 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
         ? bootRecipes.map(r => r.id === editingRecipeId ? savedRecipe : r)
         : [savedRecipe, ...bootRecipes];
       applyLocal({ recipes: nextRecipes });
+
+      let successMessage: string | null = null;
+      try {
+        const { updated } = await recalc({ trigger: 'recipe', id: savedRecipe.id });
+        successMessage = formatRecalcToast(
+          wasEditing ? 'Receta actualizada' : 'Receta guardada',
+          updated
+        );
+      } catch {
+        successMessage = null;
+      }
+
       setEditingRecipeId(null);
       resetCurrentRecipe();
-      toast.success(editingRecipeId ? 'Receta actualizada exitosamente' : 'Receta guardada exitosamente', { duration: 2500 });
+
+      if (successMessage) {
+        toast.success(successMessage, { duration: 2500 });
+      } else {
+        toast.warning('Receta guardada, pero no se pudieron recalcular los costos');
+      }
+
       navigateWithTransition(router, '/recetas');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al guardar receta');
@@ -612,7 +736,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                       value={editingUnit}
                       onChange={(e) => setEditingUnit(e.target.value as Unit)}
                     >
-                      {UNIT_OPTIONS.map(u => (
+                      {(isEditingSubproduct ? SUBPRODUCT_UNIT_OPTIONS : UNIT_OPTIONS).map(u => (
                         <option key={u} value={u}>{u === 'unidad' ? 'unidad' : u}</option>
                       ))}
                     </select>
@@ -740,7 +864,7 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
                     value={newUnit}
                     onChange={(e) => setNewUnit(e.target.value as Unit)}
                   >
-                    {UNIT_OPTIONS.map(u => (
+                    {(isSubproductSelection ? SUBPRODUCT_UNIT_OPTIONS : UNIT_OPTIONS).map(u => (
                       <option key={u} value={u}>{u === 'unidad' ? 'unidad' : u}</option>
                     ))}
                   </select>
@@ -823,11 +947,11 @@ export function RecipeBuilder({ isIngredientsLocked = false, ingredientsVersion 
           <div className="mt-10 pt-6 border-t border-white/20">
             <button
               onClick={saveRecipe}
-              disabled={!canSave || isSaving}
+              disabled={!canSave || isSaving || isRecalculating}
               className="interactive-btn w-full py-4 bg-stitch-surface-container-lowest text-stitch-primary rounded-full font-bold tracking-wider hover:bg-stitch-primary-fixed hover:text-stitch-on-primary-fixed shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ fontSize: '14px', letterSpacing: '0.05em', lineHeight: '1.4', fontWeight: '600', fontFamily: 'var(--font-inter), sans-serif' }}
             >
-              {isSaving ? 'GUARDANDO...' : (editingRecipeId ? 'ACTUALIZAR RECETA' : sandbox ? 'GUARDAR COMO RECETA OFICIAL' : 'GUARDAR RECETA')}
+              {isRecalculating ? 'ACTUALIZANDO COSTOS...' : isSaving ? 'GUARDANDO...' : (editingRecipeId ? 'ACTUALIZAR RECETA' : sandbox ? 'GUARDAR COMO RECETA OFICIAL' : 'GUARDAR RECETA')}
             </button>
             {!canSave && (
               <p className="mt-3 text-center text-[13px] text-[#ffd9de]">

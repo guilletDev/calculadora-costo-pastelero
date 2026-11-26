@@ -19,6 +19,7 @@ import { convertToBaseUnit } from '@/lib/units';
 import { withClockSkewRetry } from '@/lib/retry';
 import { FREE_TIER_INGREDIENTS_LIMIT } from '@/lib/limits';
 import { useUpgradeGuard } from '@/hooks/use-upgrade-guard';
+import { useRecalculateCosts, formatRecalcToast } from '@/hooks/use-recalculate-costs';
 import { UpgradeModal } from '@/components/upgrade-modal';
 import { useAppBoot } from '@/components/boot/app-boot-context';
 import {
@@ -65,6 +66,7 @@ export function IngredientList({
   const [view, setView] = useState<'active' | 'trash'>('active');
   const [deletedIngredients, setDeletedIngredients] = useState<BaseIngredient[]>([]);
   const { ready, user, ingredients: bootIngredients, recipes: bootRecipes, applyLocal } = useAppBoot();
+  const { recalc, isRecalculating } = useRecalculateCosts();
   const router = useRouter();
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const [milestoneOpen, setMilestoneOpen] = useState(false);
@@ -204,7 +206,7 @@ export function IngredientList({
   };
 
   const saveInlineEdit = async (ingredient: BaseIngredient) => {
-    if (savingRef.current || isSaving) return;
+    if (savingRef.current || isSaving || isRecalculating) return;
     const rawQuantity = parseFloat(editInlineData.purchasedQuantity);
     const price = parseFloat(editInlineData.totalPrice);
     const trimmedName = editInlineData.name.trim();
@@ -216,19 +218,26 @@ export function IngredientList({
     savingRef.current = true;
     setIsSaving(true);
     try {
-      const updated = await updateIngredient(ingredient.id, {
+      const savedIngredient = await updateIngredient(ingredient.id, {
         name: trimmedName,
         purchasedQuantity: converted.quantity,
         unit: converted.unit,
         totalPrice: price,
         pricePerUnit,
       });
-      const next = ingredients.map(ing => ing.id === ingredient.id ? updated : ing);
+      const next = ingredients.map(ing => ing.id === ingredient.id ? savedIngredient : ing);
       const sorted = [...next].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
       setIngredients(sorted);
       applyLocal({ ingredients: sorted });
       onIngredientsChange?.(sorted);
       setEditingId(null);
+
+      try {
+        const { updated } = await recalc({ trigger: 'ingredient', id: savedIngredient.id });
+        toast.success(formatRecalcToast('Ingrediente actualizado', updated));
+      } catch {
+        toast.warning('Ingrediente actualizado, pero no se pudieron recalcular los costos');
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al guardar';
       toast.error(message);
@@ -244,7 +253,7 @@ export function IngredientList({
 
   // Guardar ingrediente nuevo
   const handleSave = async () => {
-    if (savingRef.current || isSaving) return;
+    if (savingRef.current || isSaving || isRecalculating) return;
     if (!formData.name || !formData.purchasedQuantity || !formData.totalPrice) return;
 
     const normalizedName = formData.name.toLowerCase().trim();
@@ -323,6 +332,13 @@ export function IngredientList({
       setIngredients(reconciledSorted);
       applyLocal({ ingredients: reconciledSorted });
       onIngredientsChange?.(reconciledSorted);
+
+      try {
+        const { updated } = await recalc({ trigger: 'ingredient', id: savedIngredient.id });
+        toast.success(formatRecalcToast('Ingrediente guardado', updated));
+      } catch {
+        toast.warning('Ingrediente guardado, pero no se pudieron recalcular los costos');
+      }
     } catch (err) {
       // Rollback al estado previo y devolución de los datos al formulario
       setIngredients(snapshot);
@@ -625,7 +641,7 @@ export function IngredientList({
                         <div className="flex gap-1.5 items-center justify-end">
                           <button
                             onClick={() => saveInlineEdit(ingredient)}
-                            disabled={isSaving}
+                            disabled={isSaving || isRecalculating}
                             className="interactive-btn flex items-center gap-1 px-3 py-1.5 bg-[#b80049] text-white rounded-lg text-xs font-bold"
                           >
                             <span className="material-symbols-outlined text-[14px]">check</span>
@@ -737,7 +753,7 @@ export function IngredientList({
             </button>
             <button
               type="submit"
-              disabled={isSaving}
+              disabled={isSaving || isRecalculating}
               className="interactive-btn px-6 py-3 bg-[#b80049] text-white rounded-full text-[16px] font-medium disabled:opacity-50"
             >
               {isSaving ? 'Guardando...' : 'Guardar'}

@@ -7,6 +7,7 @@ import { ArrowRight, Check, X } from 'lucide-react';
 import { TransitionLink } from '@/components/transition-link';
 import { UpgradeButton } from '@/components/upgrade-button';
 import { useAppBoot } from '@/components/boot/app-boot-context';
+import { useRecalculateCosts } from '@/hooks/use-recalculate-costs';
 import { createClient } from '@/utils/supabase/client';
 import { isProUser } from '@/lib/limits';
 import {
@@ -35,6 +36,7 @@ interface OrderSummaryRow {
 function DashboardContent() {
   const router = useRouter();
   const { ready, ingredients, recipes, products, user, isPro: bootIsPro, refreshProfile } = useAppBoot();
+  const { recalc, isRecalculating } = useRecalculateCosts();
 
   // override local para reflejar el plan al instante al confirmar el pago,
   // sin esperar a que el contexto vuelva a consultar.
@@ -180,6 +182,38 @@ function DashboardContent() {
     { href: '/inventario', label: 'Inventario de Insumos', description: 'Actualizar precios de ingredientes y empaques', icon: 'inventory', cta: 'Ver' },
   ];
 
+  const handleSyncCosts = async () => {
+    if (isRecalculating) return;
+
+    try {
+      const { updated } = await recalc({ trigger: 'all' });
+      const hasInternalChanges =
+        updated.recipeIngredients > 0 || updated.productComponents > 0;
+
+      if (updated.recipes === 0 && updated.products === 0) {
+        toast.success(
+          hasInternalChanges
+            ? 'Costos sincronizados · costos internos actualizados'
+            : 'Todos los costos ya estaban al día'
+        );
+        return;
+      }
+
+      const recipesLabel = `${updated.recipes} ${
+        updated.recipes === 1 ? 'receta' : 'recetas'
+      }`;
+      const productsLabel = `${updated.products} ${
+        updated.products === 1 ? 'producto' : 'productos'
+      }`;
+
+      toast.success(
+        `Costos sincronizados · ${recipesLabel} y ${productsLabel} actualizados`
+      );
+    } catch {
+      toast.warning('No se pudieron sincronizar los costos. Intentá de nuevo.');
+    }
+  };
+
   if (!ready || (ready && !paymentSuccess && !paymentFailed && ingredients.length < 2)) {
     return (
       <main className="flex-grow w-full max-w-[1200px] mx-auto px-6 md:px-[10%] py-12 flex flex-col items-center justify-center gap-2 text-stitch-secondary">
@@ -317,12 +351,30 @@ function DashboardContent() {
 
       {/* ── Resumen de tu negocio ── */}
       <section className="space-y-6">
-        <h2
-          className="text-xl font-semibold text-stitch-on-surface"
-          style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
-        >
-          Resumen de tu negocio
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2
+            className="text-xl font-semibold text-stitch-on-surface"
+            style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
+          >
+            Resumen de tu negocio
+          </h2>
+          <button
+            type="button"
+            onClick={handleSyncCosts}
+            disabled={isRecalculating}
+            className="interactive-btn inline-flex items-center gap-2 px-4 py-2 rounded-full border border-stitch-outline-variant bg-stitch-surface-container-lowest text-[13px] font-semibold text-stitch-secondary hover:text-stitch-primary hover:border-stitch-primary/40 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            title="Recalcular recetas y productos con los precios actuales"
+          >
+            <span
+              className={`material-symbols-outlined text-[18px] ${
+                isRecalculating ? 'animate-spin' : ''
+              }`}
+            >
+              sync
+            </span>
+            {isRecalculating ? 'Sincronizando...' : 'Sincronizar costos'}
+          </button>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {kpis.map((kpi) => (
             <TransitionLink
